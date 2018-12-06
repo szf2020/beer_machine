@@ -1,0 +1,72 @@
+#ifndef  __PRESSURE_TASK_H__
+#define  __PRESSURE_TASK_H__
+#include "stdint.h"
+#include "stdbool.h"
+
+
+#ifdef  __cplusplus
+#define PRESSURE_TASK_BEGIN  extern "C" {
+#define PRESSURE_TASK_END    }
+#else
+#define PRESSURE_TASK_BEGIN  
+#define PRESSURE_TASK_END   
+#endif
+
+
+PRESSURE_TASK_BEGIN
+
+extern osThreadId   pressure_task_handle;
+extern osMessageQId pressure_task_msg_q_id;
+
+void pressure_task(void const *argument);
+
+#define  PRESSURE_TASK_PRESSURE_CHANGE_CNT                2
+#define  PRESSURE_TASK_PRESSURE_CHANGE_NEGATIVE_CNT      -2
+
+#define  PRESSURE_VALUE_STANDARD_ATM               10.33 /*标准大气压 kg/cm表示 放大10倍*/
+#define  PRESSURE_VALUE_IN_KG_CM2_MAX              10    /*最大显示压力 放大10倍 1.0kg/cm2 约0.1Mpa*/
+#define  PRESSURE_VALUE_IN_KG_CM2_MIN              1     /*最小显示压力 放大10倍 0.1kg/cm2 约0.01Mpa*/
+ 
+#define  PA_VALUE_PER_1KG_CM2                      98066.5 /*单位换算 1kg/cm2 == 98066.5Pa */
+
+
+#define  PRESSURE_SENSOR_REFERENCE_VOLTAGE         3.3   /*压力传感器参考电压电压 单位:V*/
+#define  PRESSURE_SENSOR_OUTPUT_VOLTAGE_MIN        0.5   /*压力传感器最小输出电压 单位:V*/
+#define  PRESSURE_SENSOR_OUTPUT_VOLTAGE_MAX        4.5   /*压力传感器最大输出电压 单位:V*/
+
+#define  PRESSURE_SENSOR_INPUT_PA_MIN             (101325.0)/*压力传感器最小压力 单位:Pa*/
+#define  PRESSURE_SENSOR_INPUT_PA_MAX             (1*1000000.0 + 101325.0)/*压力传感器最大输入压力 单位:Pa*/
+
+#define  PRESSURE_SENSOR_ADC_VALUE_MAX             4095/*AD转换最大数值*/    
+
+
+
+#define  PRESSURE_TASK_MSG_WAIT_TIMEOUT            osWaitForever
+#define  PRESSURE_TASK_PUT_MSG_TIMEOUT             5
+
+#define  PRESSURE_ERR_VALUE_OVER_HIGH              (0xe * 10 + 3)/*压力显示过载错误代码    e3*/
+#define  PRESSURE_ERR_VALUE_OVER_LOW               (0xe * 10 + 4)/*压力显示低载错误代码    e4*/
+#define  PRESSURE_ERR_VALUE_SENSOR                 (0xe * 10 + 5)/*压力显示AD传感器错误代码e5*/
+
+
+typedef enum
+{
+PRESSURE_TASK_MSG_ADC_COMPLETED,
+PRESSURE_TASK_MSG_CAPACITY,
+}pressure_task_msg_type_t;
+
+
+
+typedef struct
+{
+uint32_t type:8;
+uint32_t value:16;
+uint32_t reserved:8;
+}pressure_task_msg_t;
+
+
+
+
+PRESSURE_TASK_END
+
+#endif
