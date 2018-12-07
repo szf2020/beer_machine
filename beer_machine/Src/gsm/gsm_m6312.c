@@ -15,213 +15,6 @@ static osMutexId gsm_mutex;
 #define  GSM_M6312_MALLOC(x)           pvPortMalloc((x))
 #define  GSM_M6312_FREE(x)             vPortFree((x))
 
-
-
-
-#define  GSM_M6312_ASSERT_NULL_POINTER(x)            \
-if((x) == NULL){                                     \
-return -1;                                           \
-}
-
-
-
-#define  GSM_6312_SMALL_REQUEST_SIZE             200
-#define  GSM_6312_SMALL_RESPONSE_SIZE            200
-
-#define  GSM_6312_MIDDLE_REQUEST_SIZE            500
-#define  GSM_6312_MIDDLE_RESPONSE_SIZE           500
-
-#define  GSM_6312_LARGE_REQUEST_SIZE             1600
-#define  GSM_6312_LARGE_RESPONSE_SIZE            1600
-
-#define  CHINA_MOBILE_OPERATOR_NUMERIC_NAME_STR              "\"46000\""
-#define  CHINA_UNICOM_OPERATOR_NUMERIC_NAME_STR              "\"46001\""
-
-#define  CHINA_MOBILE_OPERATOR_SHORT_NAME_STR                "\"CMCC\""
-#define  CHINA_UNICOM_OPERATOR_SHORT_NAME_STR                "\"UNICOM\""
-
-#define  CHINA_MOBILE_OPERATOR_LONG_NAME_STR                 "\"ChinaMobile\""
-#define  CHINA_UNICOM_OPERATOR_LONG_NAME_STR                 "\"ChinaUnicom\""
-
-#define  GSM_M6312_SIM_CARD_READY_STR                        "READY"
-#define  GSM_M6312_NO_SIM_CARD_STR                           "NO SIM"
-
-#define  GSM_M6312_IS_READY_AT_STR                            "AT"
-#define  GSM_M6312_IS_READY_RESPONSE_OK_AT_STR                "OK\r\n"
-#define  GSM_M6312_IS_READY_RESPONSE_ERR_AT_STR               "ERROR"
-#define  GSM_M6312_IS_READY_TIMEOUT                           1000
-
-#define  GSM_M6312_SET_ECHO_ON_AT_STR                         "ATE1"
-#define  GSM_M6312_SET_ECHO_OFF_AT_STR                        "ATE0"
-#define  GSM_M6312_SET_ECHO_RESPONSE_OK_AT_STR                "OK\r\n"
-#define  GSM_M6312_SET_ECHO_RESPONSE_ERR_AT_STR               "ERROR"
-#define  GSM_M6312_SET_ECHO_TIMEOUT                           1000
-
-#define  GSM_M6312_IS_SIM_READY_AT_STR                        "AT+CPIN?"
-#define  GSM_M6312_IS_SIM_READY_RESPONSE_OK_AT_STR            "OK\r\n"
-#define  GSM_M6312_IS_SIM_READY_RESPONSE_ERR_AT_STR           "ERROR"
-#define  GSM_M6312_IS_SIM_READY_TIMEOUT                       1000
-
-#define  GSM_M6312_GET_IMEI_AT_STR                            "AT+CGSN"
-#define  GSM_M6312_GET_IMEI_RESPONSE_OK_AT_STR                "OK\r\n"
-#define  GSM_M6312_GET_IMEI_RESPONSE_ERR_AT_STR               "ERROR"
-#define  GSM_M6312_GET_IMEI_TIMEOUT                           1000
-
-#define  GSM_M6312_GET_SN_AT_STR                              "AT^SN"
-#define  GSM_M6312_GET_SN_RESPONSE_OK_AT_STR                  "OK\r\n"
-#define  GSM_M6312_GET_SN_RESPONSE_ERR_AT_STR                 "ERROR"
-#define  GSM_M6312_GET_SN_TIMEOUT                             1000
-
-#define  GSM_M6312_GPRS_SET_APN_AT_STR                        "AT+CGDCONT="
-#define  GSM_M6312_GPRS_SET_APN_RESPONSE_OK_AT_STR            "OK\r\n"
-#define  GSM_M6312_GPRS_SET_APN_RESPONSE_ERR_AT_STR           "ERROR"
-#define  GSM_M6312_GPRS_SET_APN_TIMEOUT                       2000
-
-#define  GSM_M6312_GPRS_APN_IP_AT_STR                         "\"IP\""
-#define  GSM_M6312_GPRS_APN_CMNET_AT_STR                      "\"cmnet\""
-#define  GSM_M6312_GPRS_APN_UNINET_AT_STR                     "\"uninet\""
-
-
-#define  GSM_M6312_GPRS_GET_APN_AT_STR                        "AT+CGDCONT?"
-#define  GSM_M6312_GPRS_GET_APN_RESPONSE_OK_AT_STR            "OK\r\n"
-#define  GSM_M6312_GPRS_GET_APN_RESPONSE_ERR_AT_STR           "ERROR"
-#define  GSM_M6312_GPRS_GET_APN_TIMEOUT                       1000
-
-#define  GSM_M6312_GPRS_SET_ACTIVE_AT_STR                     "AT+CGACT="
-#define  GSM_M6312_GPRS_SET_ACTIVE_RESPONSE_OK_AT_STR         "OK\r\n"
-#define  GSM_M6312_GPRS_SET_ACTIVE_RESPONSE_ERR_AT_STR        "ERROR"
-#define  GSM_M6312_GPRS_SET_ACTIVE_TIMEOUT                    2000
-
-#define  GSM_M6312_GPRS_ACTIVE_AT_STR                         "1"
-#define  GSM_M6312_GPRS_INACTIVE_AT_STR                       "0"
-#define  GSM_M6312_GPRS_GET_ACTIVE_AT_STR                     "AT+CGACT?"
-#define  GSM_M6312_GPRS_GET_ACTIVE_RESPONSE_OK_AT_STR         "OK\r\n"
-#define  GSM_M6312_GPRS_GET_ACTIVE_RESPONSE_ERR_AT_STR        "ERROR"
-#define  GSM_M6312_GPRS_GET_ACTIVE_TIMEOUT                    2000
-#define  GSM_M6312_GPRS_SET_ATTACH_AT_STR                     "AT+CGATT="
-#define  GSM_M6312_GPRS_SET_ATTACH_RESPONSE_OK_AT_STR         "OK\r\n"
-#define  GSM_M6312_GPRS_SET_ATTACH_RESPONSE_ERR_AT_STR        "ERROR"
-#define  GSM_M6312_GPRS_SET_ATTACH_TIMEOUT                     5000
-#define  GSM_M6312_GPRS_ATTACH_AT_STR                         "1"
-#define  GSM_M6312_GPRS_NOT_ATTACH_AT_STR                     "0"
-
-#define  GSM_M6312_GPRS_GET_ATTACH_AT_STR                      "AT+CGATT?"
-#define  GSM_M6312_GPRS_GET_ATTACH_RESPONSE_OK_AT_STR          "OK\r\n"
-#define  GSM_M6312_GPRS_GET_ATTACH_RESPONSE_ERR_AT_STR         "ERROR"
-#define  GSM_M6312_GPRS_GET_ATTACH_TIMEOUT                     1000
-
-#define  GSM_M6312_GPRS_SET_CONNECT_MODE_AT_STR                "AT+CMMUX="
-#define  GSM_M6312_GPRS_SET_CONNECT_MODE_RESPONSE_OK_AT_STR    "OK\r\n"
-#define  GSM_M6312_GPRS_SET_CONNECT_MODE_RESPONSE_ERR_AT_STR   "ERROR"
-#define  GSM_M6312_GPRS_SET_CONNECT_MODE_TIMEOUT                5000
-#define  GSM_M6312_GPRS_MULTIPLE_MODE_AT_STR                   "1"
-#define  GSM_M6312_GPRS_SINGLE_MODE_AT_STR                     "0"
-
-#define  GSM_M6312_GPRS_GET_OPERATOR_AT_STR                    "AT+COPS?"
-#define  GSM_M6312_GPRS_GET_OPERATOR_RESPONSE_OK_AT_STR        "OK\r\n"
-#define  GSM_M6312_GPRS_GET_OPERATOR_RESPONSE_ERR_AT_STR       "ERROR"
-#define  GSM_M6312_GPRS_GET_OPERATOR_TIMEOUT                   1000
-
-#define  GSM_M6312_GPRS_SET_OPERATOR_AT_STR                    "AT+COPS="
-#define  GSM_M6312_GPRS_SET_OPERATOR_RESPONSE_OK_AT_STR        "OK\r\n"
-#define  GSM_M6312_GPRS_SET_OPERATOR_RESPONSE_ERR_AT_STR       "ERROR"
-#define  GSM_M6312_GPRS_SET_OPERATOR_TIMEOUT                   20000
-
-
-#define  GSM_M6312_GPRS_OPERATOR_AUTO_MODE_AT_STR              "0"
-#define  GSM_M6312_GPRS_OPERATOR_MANUAL_MODE_AT_STR            "1"
-#define  GSM_M6312_GPRS_OPERATOR_LOGOUT_MODE_AT_STR            "2"
-
-#define  GSM_M6312_OPERATOR_FORMAT_LONG_NAME_AT_STR            "0"
-#define  GSM_M6312_OPERATOR_FORMAT_SHORT_NAME_AT_STR           "1"
-#define  GSM_M6312_OPERATOR_FORMAT_NUMERIC_NAME_AT_STR         "2"
-
-#define  GSM_M6312_SET_SEND_PROMPT_AT_STR                    "AT+PROMPT="
-#define  GSM_M6312_SET_SEND_PROMPT_RESPONSE_OK_AT_STR        "OK\r\n"
-#define  GSM_M6312_SET_SEND_PROMPT_RESPONSE_ERR_AT_STR       "ERROR"
-#define  GSM_M6312_SET_SEND_PROMPT_TIMEOUT                    1000
-
-#define  GSM_M6312_SEND_PROMPT_AT_STR                         "1"
-#define  GSM_M6312_NO_SEND_PROMPT_AT_STR                      "0"
-
-#define  GSM_M6312_SET_TRANSPARENT_AT_STR                     "AT+CMMODE="
-#define  GSM_M6312_SET_TRANSPARENT_RESPONSE_OK_AT_STR         "OK\r\n"
-#define  GSM_M6312_SET_TRANSPARENT_RESPONSE_ERR_AT_STR        "ERROR"
-#define  GSM_M6312_SET_TRANSPARENT_TIMEOUT                    1000
-#define  GSM_M6312_TRANSPARENT_AT_STR                         "1"
-#define  GSM_M6312_NO_TRANSPARENT_AT_STR                      "0"
-
-#define  GSM_M6312_GPRS_CANCLE_REPORT_AT_STR                  "AT^CURC="
-#define  GSM_M6312_GPRS_CANCLE_REPORT_RESPONSE_OK_AT_STR      "OK\r\n"
-#define  GSM_M6312_GPRS_CANCLE_REPORT_RESPONSE_ERR_AT_STR     "ERROR"
-#define  GSM_M6312_REPORT_ON_AT_STR                           "1"
-#define  GSM_M6312_REPORT_OFF_AT_STR                          "0"
-#define  GSM_M6312_GPRS_CANCLE_REPORT_TIMEOUT                 1000
-
-
-#define  GSM_M6312_GPRS_OPEN_CLIENT_AT_STR                    "AT+IPSTART="
-#define  GSM_M6312_GPRS_OPEN_CLIENT_RESPONSE_OK_AT_STR        "CONNECT OK\r\n"
-#define  GSM_M6312_GPRS_OPEN_CLIENT_RESPONSE_ERR_AT_STR       "CONNECT FAIL"AT_CMD_ERR_BREAK_STR"ERROR"AT_CMD_ERR_BREAK_STR"ALREADY CONNECT"AT_CMD_ERR_BREAK_STR"COMMAND TIMEOUT"
-#define  GSM_M6312_GPRS_OPEN_CLIENT_TIMEOUT                   20000
-#define  GSM_M6312_NET_PROTOCOL_TCP_AT_STR                    "\"TCP\""
-#define  GSM_M6312_NET_PROTOCOL_UDP_AT_STR                    "\"UDP\""
-
-#define  GSM_M6312_GPRS_CLOSE_CLIENT_AT_STR                   "AT+IPCLOSE="
-#define  GSM_M6312_GPRS_CLOSE_CLIENT_RESPONSE_OK_AT_STR       "OK\r\n"
-#define  GSM_M6312_GPRS_CLOSE_CLIENT_RESPONSE_ERR_AT_STR      "ERROR"
-#define  GSM_M6312_GPRS_CLOSE_CLIENT_TIMEOUT                  1000
-
-#define  GSM_M6312_GPRS_GET_CONNECT_STATUS_AT_STR                "AT+CMSTATE"
-#define  GSM_M6312_GPRS_GET_CONNECT_STATUS_RESPONSE_OK_AT_STR    "OK\r\n"
-#define  GSM_M6312_GPRS_GET_CONNECT_STATUS_RESPONSE_ERR_AT_STR   "ERROR"
-#define  GSM_M6312_GPRS_GET_CONNECT_STATUS_TIMEOUT               1000
-
-#define  GSM_M6312_TCP_CONNECT_STATUS_INIT_AT_STR                "IP INITIAL"
-#define  GSM_M6312_TCP_CONNECT_STATUS_CONNECT_OK_AT_STR          "CONNECT OK"
-#define  GSM_M6312_TCP_CONNECT_STATUS_CLOSE_AT_STR               "IP CLOSE"
-
-
-#define  GSM_M6312_SEND_AT_STR                                "AT+IPSEND="
-#define  GSM_M6312_SEND_RESPONSE_OK_AT_STR                    "> "
-#define  GSM_M6312_SEND_RESPONSE_ERR_AT_STR                   "ERROR"
-#define  GSM_M6312_SEND_TIMEOUT                               10000
-
-#define  GSM_M6312_SEND_START_AT_STR                          ""                        
-#define  GSM_M6312_SEND_START_RESPONSE_OK_AT_STR              "SEND OK\r\n"
-#define  GSM_M6312_SEND_START_RESPONSE_ERR_AT_STR             "ERROR"
-#define  GSM_M6312_SEND_START_TIMEOUT                          15000
-
-#define  GSM_M6312_CONFIG_RECV_BUFFER_AT_STR                   "AT+CMNDI="
-#define  GSM_M6312_CONFIG_RECV_BUFFER_RESPONSE_OK_AT_STR       "OK\r\n"
-#define  GSM_M6312_CONFIG_RECV_BUFFER_RESPONSE_ERR_AT_STR      "ERROR"
-#define  GSM_M6312_CONFIG_RECV_BUFFER_TIMEOUT                  1000
-
-#define  GSM_M6312_RECV_BUFFER_AT_STR                          "1"
-#define  GSM_M6312_RECV_NO_BUFFER_AT_STR                       "0"
-
-#define  GSM_M6312_GET_RECV_BUFFER_SIZE_AT_STR                 "AT+CMRD?"
-#define  GSM_M6312_GET_RECV_BUFFER_SIZE_RESPONSE_OK_AT_STR     "OK\r\n"
-#define  GSM_M6312_GET_RECV_BUFFER_SIZE_RESPONSE_ERR_AT_STR    "ERROR"
-#define  GSM_M6312_GET_RECV_BUFFER_SIZE_TIMEOUT                1000
-
-#define  GSM_M6312_RECV_AT_STR                                 "AT+CMRD="
-#define  GSM_M6312_RECV_RESPONSE_OK_AT_STR                     "OK\r\n"
-#define  GSM_M6312_RECV_RESPONSE_ERR_AT_STR                    "ERROR"
-#define  GSM_M6312_RECV_TIMEOUT                                1000
-
-
-
-#define  GSM_M6312_SIM_CARD_STATUS_HEADER_STR                  "+CPIN: "
-#define  GSM_M6312_IMEI_HEADER_STR                             "+CGSN: "
-#define  GSM_M6312_SN_HEADER_STR                               "M6312"
-#define  GSM_M6312_APN_HEADER_STR                              "+CGDCONT: "
-#define  GSM_M6312_ACTIVE_HEADER_STR                           "+CGACT: "
-#define  GSM_M6312_ATTACH_HEADER_STR                           "+CGATT: "
-#define  GSM_M6312_OPERATOR_HEADER_STR                         "+COPS: "
-#define  GSM_M6312_CONNECT_STATUS_HEADER_STR                   "+CMSTATE: "
-#define  GSM_M6312_RECV_BUFFER_SIZE_HEADER_STR                 "+CMRD: "
-
-
 #define  GSM_M6312_PWR_ON_DELAY                4000
 #define  GSM_M6312_PWR_OFF_DELAY               10000
 
@@ -320,61 +113,128 @@ return 0;
 }
 
 
-/* 函数名：gsm_m6312_is_ready
-*  功能：  gsm_m6312模块是否就绪
+enum
+{
+ GSM_ERR_OK,
+ GSM_ERR_NO_MEM  = -1,
+ GSM_ERR_CMD_ERR = -2,
+ GSM_ERR_CMD_TIMEOUT = -3,
+ GSM_ERR_RSP_TIMEOUT = -4,
+ GSM_ERR_SERIAL_SEND = -5,
+ GSM_ERR_SERIAL_RECV = -6,
+ GSM_ERR_RECV_NO_SPACE = -7,
+};
+
+static void gsm_m6312_print_err(const int err_code)
+{
+  switch(err_code)
+  {
+  case  GSM_ERR_OK:
+  log_debug("GSM ERR CODE:%d OK.\r\n",err_code);
+  break;
+
+  case  GSM_ERR_NO_MEM:
+  log_error("GSM ERR CODE:%d malloc fail.\r\n",err_code);
+  break;
+    
+  case  GSM_ERR_CMD_ERR:
+  log_error("GSM ERR CODE:%d cmd execute err.\r\n",err_code);
+  break;  
+  
+  case  GSM_ERR_CMD_TIMEOUT:
+  log_error("GSM ERR CODE:%d cmd execute timeout.\r\n",err_code);   
+  break;
+  
+  case  GSM_ERR_RSP_TIMEOUT:
+  log_error("GSM ERR CODE:%d cmd rsp timeout.\r\n",err_code);   
+  break;
+  
+  case  GSM_ERR_SERIAL_SEND:
+  log_error("GSM ERR CODE:%d cmd send serial err .\r\n",err_code);   
+  break;
+  
+  case  GSM_ERR_SERIAL_RECV:
+  log_error("GSM ERR CODE:%d cmd recv serial err .\r\n",err_code);   
+  break;
+  
+  case  GSM_ERR_RECV_NO_SPACE:
+  log_error("GSM ERR CODE:%d cmd recv no space err .\r\n",err_code);   
+  break;
+  default:
+  log_error("GSM ERR CODE:%d unknowed.\r\n",err_code);   
+  }
+}
+
+
+typedef enum
+{
+GSM_M6312_STATUS_READY,
+GSM_M6312_STATUS_NOT_READY
+}gsm_m6312_status_t;
+
+
+static int gsm_m6312_at_cmd_build(char *buffer,const uint16_t size,const char *format,...)
+{
+  
+  
+}
+
+static int gsm_m6312_at_cmd_send(const char *send,const uint16_t size,const uint32_t timeout)
+{
+  
+  
+return GSM_ERR_NO_MEM;
+}
+
+static int gsm_m6312_at_cmd_recv(char *recv,const uint16_t size,const uint32_t timeout)
+{
+  
+  
+  
+  
+}
+
+#define  GSM_M6312_GET_SIM_CARD_STATUS_SEND_TIMEOUT      10
+#define  GSM_M6312_GET_SIM_CARD_STATUS_RECV_TIMEOUT      1000
+
+/* 函数名：gsm_m6312_get_sim_card_status
+*  功能：  获取 sim card 状态
 *  参数：  无 
 *  返回：  0：ready 其他：失败
 */
-int gsm_m6312_is_ready()
+int gsm_m6312_get_sim_card_status(sim_card_status_t *status)
 {
- int at_rc;
- int ready_rc;
- at_cmd_t cmd;  
+ int rc;
+ char rsp[20];
+ const char *at_cmd = "AT+CPIN?\r\n";
  
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),GSM_M6312_GET_SIM_CARD_STATUS_SEND_TIMEOUT);
+ GSM_M6312_CHECK_ERR_CODE(rc);
  
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- ready_rc = -1;
- goto err_handler;
+ memset(rsp,0,20);
+ rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_GET_SIM_CARD_STATUS_RECV_TIMEOUT);
+ GSM_M6312_CHECK_ERR_CODE(rc);
+ 
+ if(strstr(rsp,"+CPIN: ERROR") != NULL){ 
+ return GSM_ERR_CMD_ERR;  
  }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
  
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- 
- strcpy(cmd.request,GSM_M6312_IS_READY_AT_STR);
- strcat(cmd.request,AT_CMD_EOF_STR);
- 
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_IS_READY_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_IS_READY_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_IS_READY_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- ready_rc = -1;
- goto err_handler;
+ if(strstr(rsp,"+CPIN: READY\r\n") != NULL){
+ *status = SIM_CARD_STATUS_READY;
+ }else if(strstr(rsp,"+CPIN: NO SIM\r\n") != NULL){
+ *status = SIM_CARD_STATUS_NO_SIM_CARD;
+ }else if(strstr(rsp,"+CPIN: BLOCK\r\n") != NULL){
+ *status = SIM_CARD_STATUS_BLOCK;
  }else{
- ready_rc =0;
+ *status = SIM_CARD_STATUS_UNKNOW;  
  }
  
-err_handler:
- if(ready_rc == 0){
- log_debug("gsm m6312 is <rdy> ok.\r\n");
- }else{
- log_error("gsm m6312 is <not rdy> err.\r\n");  
+ return GSM_ERR_OK;  
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
- osMutexRelease(gsm_mutex);
- return ready_rc;
-} 
+ 
 
-
+#define  GSM_M6312_SET_ECHO_RSP_TIMEOUT      1000
 /* 函数名：gsm_m6312_set_echo
 *  功能：  设置是否回显输入的命令
 *  参数：  echo回显设置 
@@ -382,189 +242,36 @@ err_handler:
 */
 int gsm_m6312_set_echo(gsm_m6312_echo_t echo)
 {
- int at_rc;
- int echo_rc;
- at_cmd_t cmd;  
+ int rc;
+ char rsp[10];
+ char *at_str;
  
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
  
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- echo_rc = -1;
- goto err_handler;
- }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
- 
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
  if(echo == GSM_M6312_ECHO_ON){
- strcpy(cmd.request,GSM_M6312_SET_ECHO_ON_AT_STR);
+ at_str = "ATE1\r\n";
  }else{
- strcpy(cmd.request,GSM_M6312_SET_ECHO_OFF_AT_STR);
- } 
- strcat(cmd.request,AT_CMD_EOF_STR);
+ at_str = "ATE0\r\n";
+ }
+ rc = gsm_m6312_at_cmd_send(at_str,strlen(at_str),5);
+ GSM_M6312_CHECK_ERR_CODE(rc);
  
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_SET_ECHO_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_SET_ECHO_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_SET_ECHO_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- echo_rc = -1;
- goto err_handler;
- }else{
- echo_rc =0;
+ rc = gsm_m6312_at_cmd_recv(rsp,10,GSM_M6312_SET_ECHO_RSP_TIMEOUT);
+ GSM_M6312_CHECK_ERR_CODE(rc);
+ 
+ if(strstr(rsp,"ERROR") != NULL){
+ return GSM_ERR_CMD_ERR;
  }
  
-err_handler:
- if(echo_rc == 0){
- log_debug("gsm m6312 set echo ok.\r\n");
- }else{
- log_error("gsm m6312 set echo err.\r\n");  
- }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
- osMutexRelease(gsm_mutex);
- return echo_rc;
-} 
-
-/* 函数名：gsm_m6312_dump_sim_card_status
-*  功能：  dump sim card rdy status
-*  参数：  buffer源数据指针
-*  参数：  status状态指针
-*  返回：  0：ready 其他：失败
-*/
-static int gsm_m6312_dump_sim_card_status(const char *buffer,sim_card_status_t *status)
-{
- char *pos;
- int size;
- char status_str[8];
- 
- GSM_M6312_ASSERT_NULL_POINTER(buffer);
- GSM_M6312_ASSERT_NULL_POINTER(status);
- 
- /*找到header位置*/
- pos = strstr(buffer,GSM_M6312_SIM_CARD_STATUS_HEADER_STR);
- if(pos == NULL){
- log_error("cant find sim card header.r\n");
- return -1;
- }
- buffer = pos + strlen(GSM_M6312_SIM_CARD_STATUS_HEADER_STR);
- /*找到EOF位置*/
- pos = strstr(buffer,AT_CMD_EOF_STR);
- GSM_M6312_ASSERT_NULL_POINTER(pos);
- 
- size = pos - buffer > 7 ? 7 : pos - buffer;
- memcpy(status_str,buffer,size);
- status_str[size] = '\0';
- 
- if(strcmp(status_str,GSM_M6312_SIM_CARD_READY_STR) == 0){
- *status = SIM_CARD_STATUS_READY;
- log_debug("sim card is <ready>.\r\n");
- }else if(strcmp(status_str,GSM_M6312_NO_SIM_CARD_STR) == 0){
- *status = SIM_CARD_STATUS_NO_SIM_CARD; 
- log_debug("sim card is <no sim card>.\r\n");
- }else{
- log_error("sim card is <%s> unknowed.\r\n",status_str);
- return -1;
- }
-  
- return 0; 
-}
-
-/* 函数名：gsm_m6312_is_sim_card_ready
-*  功能：  查询sim卡是否解锁就绪
-*  参数：  status状态指针 
-*  返回：  0：成功 其他：失败
-*/
-int gsm_m6312_is_sim_card_ready(sim_card_status_t *status)
-{ 
- int at_rc;
- int sim_rc;
- at_cmd_t cmd;  
- 
- osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
- 
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- sim_rc = -1;
- goto err_handler;
- }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
- 
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_IS_SIM_READY_AT_STR);
- strcat(cmd.request,AT_CMD_EOF_STR);
- 
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_IS_SIM_READY_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_IS_SIM_READY_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_IS_SIM_READY_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- sim_rc = -1;
- goto err_handler;
+ if(strstr(rsp,"OK") != NULL){
+ return GSM_ERR_OK;
  }
  
- sim_rc = gsm_m6312_dump_sim_card_status(cmd.response,status);
-   
-err_handler:
- if(sim_rc == 0){
- log_debug("gsm m6312 sim is rdy ok.\r\n");
- }else{
- log_error("gsm m6312 sim is rdy err.\r\n");  
- }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
- osMutexRelease(gsm_mutex);
- return sim_rc;
+ return GSM_ERR_UNKNOW;
 } 
 
 
-/* 函数名：gsm_m6312_dump_imei
-*  功能：  dump设备IMEI串号
-*  参数：  buffer数据源 
-*  参数：  imei指针
-*  返回：  0：ready 其他：失败
-*/
-static int gsm_m6312_dump_imei(const char *buffer,char *imei)
-{
- char *pos;
- int size;
- 
- GSM_M6312_ASSERT_NULL_POINTER(buffer); 
- GSM_M6312_ASSERT_NULL_POINTER(imei); 
- /*找到header*/
- pos = strstr(buffer,GSM_M6312_IMEI_HEADER_STR);
- if(pos == NULL){
- log_error("cant find imei header.\r\n");
- return -1;
- }
- buffer = pos + strlen(GSM_M6312_IMEI_HEADER_STR);
- /*找到结束EOF*/
- pos = strstr(buffer,AT_CMD_EOF_STR);
- size = pos - buffer;
- /*IMEI必须为15位*/
- if(size != GSM_M6312_IMEI_LEN){
- log_error("imei len:%d is invalid.\r\n",size);
- return -1; 
- }
- memcpy(imei,buffer,GSM_M6312_IMEI_LEN);
- imei[GSM_M6312_IMEI_LEN]='\0';
- log_debug("imei:<%s>ok.\r\n",imei);
- 
- return 0;
-}
-
+#define  GSM_M6312_GET_IMEI_RSP_TIMEOUT      1000
 /* 函数名：gsm_m6312_get_imei
 *  功能：  获取设备IMEI串号
 *  参数：  imei imei指针
@@ -572,211 +279,137 @@ static int gsm_m6312_dump_imei(const char *buffer,char *imei)
 */
 int gsm_m6312_get_imei(char *imei)
 {
- int at_rc;
- int imei_rc;
- at_cmd_t cmd;  
+ int rc;
+ const char *at_cmd = "AT+CGSN\r\n";
+ char rsp[30];
+ char *p;
  
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
  
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- imei_rc = -1;
- goto err_handler;
- }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),5);
+ GSM_M6312_CHECK_ERR_CODE(rc);
  
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_GET_IMEI_AT_STR);
- strcat(cmd.request,AT_CMD_EOF_STR);
+ rc = gsm_m6312_at_cmd_recv(rsp,30,GSM_M6312_GET_IMEI_RSP_TIMEOUT);
+ GSM_M6312_CHECK_ERR_CODE(rc); 
  
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_GET_IMEI_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_GET_IMEI_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_GET_IMEI_TIMEOUT;
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- imei_rc = -1;
- goto err_handler;
+ if(strstr(rsp,"ERROR") != NULL){
+ return GSM_ERR_CMD_ERR;
  }
-
- imei_rc = gsm_m6312_dump_imei(cmd.response,imei);
-err_handler:
- if(imei_rc == 0){
- log_debug("gsm m6312 get imei ok.\r\n");
- }else{
- log_error("gsm m6312 get imei err.\r\n");  
- }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
- osMutexRelease(gsm_mutex);
- return imei_rc;
-} 
-
-
-/* 函数名：gsm_m6312_dump_sn
-*  功能：  dump设备SN号
-*  参数：  buffer 数据源 
-*  参数：  sn 指针
-*  返回：  0：ready 其他：失败
-*/
-static int gsm_m6312_dump_sn(const char *buffer,char *sn)
-{
- char *pos;
- int size;
  
- GSM_M6312_ASSERT_NULL_POINTER(buffer); 
- GSM_M6312_ASSERT_NULL_POINTER(sn); 
- /*找到开始M6312*/
- pos = strstr(buffer,GSM_M6312_SN_HEADER_STR);
- if(pos == NULL){
- log_error("cant find sn start tag.\r\n");
- return -1;
+ p = strst(rsp,"+CGSN: ");
+ if(p){
+ memcpy(imei,p + strlen("+CGSN: "),15);
+ imei[15] = '\0';
+ return GSM_ERR_OK;
  }
- buffer = pos;
- /*找到结束EOF*/
- pos = strstr(buffer,AT_CMD_EOF_STR);
- size = pos - buffer;
- /*SN必须为20位*/
- if(size != GSM_M6312_SN_LEN){
- log_error("sn len:%d is invalid.\r\n",size);
- return -1; 
- }
- memcpy(sn,buffer,GSM_M6312_SN_LEN);
- sn[GSM_M6312_SN_LEN]='\0';
- log_debug("sn:<%s> ok.\r\n",sn);
  
- return 0;
+return GSM_ERR_UNKNOW; 
 }
 
-/* 函数名：gsm_m6312_get_sn
-*  功能：  获取设备SN号
+
+
+#define  GSM_M6312_GET_SN_RSP_TIMEOUT      1000
+/* 函数名：gsm_m6312_get_imei
+*  功能：  获取设备IMEI串号
 *  参数：  sn sn指针
-*  返回：  0：ready 其他：失败
+*  返回：  GSM_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_get_sn(char *sn)
 {
- int at_rc;
- int sn_rc;
- at_cmd_t cmd;  
+ int rc;
+ const char *at_cmd = "AT^SN\r\n";
+ char rsp[30];
+ char *start,*end;
+ 
+ if(sn == NULL){
+ return GSM_ERR_NULL_POINTER;
+ }
  
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
  
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- sn_rc = -1;
- goto err_handler;
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),5);
+ if(rc = GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
  
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_GET_SN_AT_STR);
- strcat(cmd.request,AT_CMD_EOF_STR);
- 
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_GET_SN_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_GET_SN_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_GET_SN_TIMEOUT;
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- sn_rc = -1;
- goto err_handler;
+ rc = gsm_m6312_at_cmd_recv(rsp,30,GSM_M6312_GET_IMEI_RSP_TIMEOUT);
+ if(rc = GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
-
- sn_rc = gsm_m6312_dump_sn(cmd.response,sn);
-err_handler:
- if(sn_rc == 0){
- log_debug("gsm m6312 get sn ok.\r\n");
+ 
+ if(strstr(rsp,"ERROR") != NULL){
+ rc = GSM_ERR_CMD_ERR;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ p = strst(rsp,"M6312");
+ if(p){
+ memcpy(sn,p,20);
+ sn[20] = '\0';
+ rc = GSM_ERR_OK;
  }else{
- log_error("gsm m6312 get sn err.\r\n");  
+ rc = GSM_ERR_UNKNOW;   
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
+
+err_exit:
  osMutexRelease(gsm_mutex);
- return sn_rc;
+ return rc; 
 }
 
 /* 函数名：gsm_m6312_gprs_set_apn
 *  功能：  设置指定cid的gprs的APN
-*  参数：  cid 指定的cid
 *  参数：  apn 网络APN 
 *  返回：  0：成功 其他：失败
 */
-int gsm_m6312_gprs_set_apn(int cid,gsm_gprs_apn_t apn)
+int gsm_m6312_gprs_set_apn(gsm_gprs_apn_t apn)
 {
- int at_rc;
- int apn_rc;
- at_cmd_t cmd;  
+ int rc;
+ const char *at = "AT+CGDCONT=1,\"IP\",%s\r\n";
+ char at_cmd[30] ={ 0 };
+ char rsp[20] = { 0 };
+ char *apn_str;
  
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
- 
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- apn_rc = -1;
- goto err_handler;
- }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
- 
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_GPRS_SET_APN_AT_STR);
- 
- if(cid < 1 || cid > 11){
- cid = 1;
- log_warning("cid is use default value:%d.\r\n",cid);
- }
-
- snprintf(cmd.request + strlen(cmd.request),3,"%d",cid);
- strcat(cmd.request,AT_CMD_BREAK_STR);
- strcat(cmd.request,GSM_M6312_GPRS_APN_IP_AT_STR);
- strcat(cmd.request,AT_CMD_BREAK_STR);
  
  if(apn == GSM_GPRS_APN_CMNET){
- strcat(cmd.request,GSM_M6312_GPRS_APN_CMNET_AT_STR);
- }else if(apn == GSM_GPRS_APN_UNINET) {
- strcat(cmd.request,GSM_M6312_GPRS_APN_UNINET_AT_STR); 
+ apn_str = "CMNET";
  }else{
- apn_rc = -1;
- log_error("gprs apn:%d is not support.\r\n",apn); 
- goto err_handler;
+ apn_str = "UNINET";
  }
- strcat(cmd.request,AT_CMD_EOF_STR);
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_GPRS_SET_APN_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_GPRS_SET_APN_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_GPRS_SET_APN_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- apn_rc = -1;
- goto err_handler;
- }else{
- apn_rc = 0;
+ snprintf(at_cmd,30,at,apn_str);
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
  
-err_handler:
- if(apn_rc == 0){
- log_debug("gsm m6312 set gprs apn ok.\r\n");
- }else{
- log_error("gsm m6312 set gprs apn err.\r\n");  
+ rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_SET_APN_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
+ 
+ if(strstr(rsp,"ERROR") != NULL){
+ rc = GSM_ERR_CMD_ERR;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"OK") == NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ rc = GSM_ERR_OK;
+
+err_exit:
  osMutexRelease(gsm_mutex);
- return apn_rc;
-} 
+ return rc; 
+ 
+}
+ 
 
 /* 函数名：m6312_2g_dump_apn
 *  功能：  m6312 2g dump cid 和 apn代码
@@ -851,52 +484,57 @@ static int gsm_m6312_dump_apn(const char *buffer,int cid,gsm_gprs_apn_t *apn)
 */
 int gsm_m6312_gprs_get_apn(int cid,gsm_gprs_apn_t *apn)
 {
- int at_rc;
- int apn_rc;
- at_cmd_t cmd;  
+ int rc;
+ const char *at_cmd = "AT+CGDCONT?\r\n";
+ char rsp[30] = { 0 };
+ char *apn_str;
  
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
  
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- apn_rc = -1;
- goto err_handler;
- }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
- 
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_GPRS_GET_APN_AT_STR);
- strcat(cmd.request,AT_CMD_EOF_STR);
- 
- 
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_GPRS_GET_APN_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_GPRS_GET_APN_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_GPRS_GET_APN_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- apn_rc = -1;
- goto err_handler;
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
  
-apn_rc = gsm_m6312_dump_apn(cmd.response,cid,apn);
-
-err_handler:
- if(apn_rc == 0){
- log_debug("gsm m6312 get gprs cid apn ok.\r\n");
+ rc = gsm_m6312_at_cmd_recv(rsp,30,GSM_M6312_GET_APN_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"ERROR") != NULL){
+ rc = GSM_ERR_CMD_ERR;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"OK") == NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ apn_str = strstr(rsp,"CMNET");
+ if(apn_str == NULL){
+ apn_str = strstr(rsp,"UNINET");
+ if(apn_str == NULL){   
+ rc = GSM_ERR_UNKNOW;
  }else{
- log_error("gsm m6312 get gprs cid apn err.\r\n");  
+ *apn = GSM_M6312_APN_UNINET;
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
+ }else{
+ *apn = GSM_M6312_APN_CMNET;
+ }
+ 
+ rc = GSM_ERR_OK;
+ 
+err_exit:
  osMutexRelease(gsm_mutex);
- return apn_rc;
-} 
+ return rc;  
+  
+}
+
 
 /* 函数名：gsm_m6312_gprs_set_active_status
 *  功能：  激活或者去激活指定cid的GPRS功能
@@ -904,483 +542,253 @@ err_handler:
 *  参数：  active 状态 
 *  返回：  0：成功 其他：失败
 */
-int gsm_m6312_gprs_set_active_status(int cid,gsm_gprs_active_status_t active)
+int gsm_m6312_gprs_set_active_status(gsm_m6312_active_status_t active)
 {
- int at_rc;
- int active_rc;
- at_cmd_t cmd;  
+ int rc;
+ char *at_cmd;
+ char rsp[20] = { 0 };
  
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
- 
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- active_rc = -1;
- goto err_handler;
- }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
- 
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_GPRS_SET_ACTIVE_AT_STR);
- if(active == GSM_GPRS_ACTIVE){
- strcat(cmd.request,GSM_M6312_GPRS_ACTIVE_AT_STR);
+ if(active == GSM_M6312_ACTIVE){
+ at_cmd = "AT+CGACT=1,1\r\n";
  }else{
- strcat(cmd.request,GSM_M6312_GPRS_INACTIVE_AT_STR);  
- } 
- strcat(cmd.request,AT_CMD_BREAK_STR);
- if(cid < 1 || cid > 11){
- log_error("set act cid:%d is invalid.\r\n",cid);
- goto err_handler;
+ at_cmd = "AT+CGACT=0,1\r\n";
  }
- snprintf(cmd.request + strlen(cmd.request),3,"%d",cid);
- strcat(cmd.request,AT_CMD_EOF_STR);
- 
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_GPRS_SET_ACTIVE_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_GPRS_SET_ACTIVE_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_GPRS_SET_ACTIVE_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- active_rc = -1;
- goto err_handler;
- }else{
- active_rc = 0;
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
  
-err_handler:
- if(active_rc == 0){
- log_debug("gsm m6312 gprs active ok.\r\n");
- }else{
- log_error("gsm m6312 gprs active err.\r\n");  
+ rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_GET_APN_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
+ 
+ if(strstr(rsp,"ERROR") != NULL){
+ rc = GSM_ERR_CMD_ERR;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"OK") == NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ rc = GSM_ERR_OK;
+ 
+err_exit:
  osMutexRelease(gsm_mutex);
- return active_rc;
-} 
-
-/* 函数名：gsm_m6312_gprs_dump_active_status
-*  功能：  获取对应cid的GPRS激活状态
-*  参数：  buffer 数据源指针 
-*  参数：  cid    gprs的id 
-*  参数：  active gprs激活状态指针 
-*  返回：  0：成功 其他：失败
-*/
-static int gsm_m6312_gprs_dump_active_status(const char *buffer,int cid,gsm_gprs_active_status_t *active)
-{
- char *pos;
- int  cid_temp;
- char status_str[2];
- int size;
- int loop_cnt = 12;
- 
- GSM_M6312_ASSERT_NULL_POINTER(buffer);
- GSM_M6312_ASSERT_NULL_POINTER(active);
- 
- /*保证最多循环次数*/
- while(loop_cnt --){
- /*找到header位置*/
- pos = strstr(buffer,GSM_M6312_ACTIVE_HEADER_STR);
- if(pos == NULL){
- /*默认是未激活*/
- *active = GSM_GPRS_INACTIVE;
- log_debug("can not find act header .default is inactive.\r\n"); 
- return 0;
- }
- 
- buffer = pos + strlen(GSM_M6312_ACTIVE_HEADER_STR);
- cid_temp = atoi(buffer);
- if(cid_temp != cid){
- /*跳过这一行的查找*/
- pos = strstr(buffer,AT_CMD_EOF_STR);
- GSM_M6312_ASSERT_NULL_POINTER(pos);  
- buffer = pos +  strlen(AT_CMD_EOF_STR);
- continue;
- }
- /*找到第1个brak位置*/
- pos = strstr(buffer,AT_CMD_BREAK_STR);
- GSM_M6312_ASSERT_NULL_POINTER(pos);
- buffer = pos + strlen(AT_CMD_BREAK_STR); 
- /*找到EOF位置*/
- pos = strstr(buffer,AT_CMD_EOF_STR);
- GSM_M6312_ASSERT_NULL_POINTER(pos);
- /*计算长度*/
- size = pos - buffer > 1 ? 1: pos - buffer;
- memcpy(status_str,buffer,size);
- status_str[size] = '\0';
-
- if(strcmp(status_str,GSM_M6312_GPRS_ACTIVE_AT_STR) == 0){
- *active = GSM_GPRS_ACTIVE;
- log_debug("cid:%d is <ACTIVE>.\r\n",cid);
- }else if(strcmp(status_str,GSM_M6312_GPRS_INACTIVE_AT_STR) == 0){
- *active = GSM_GPRS_INACTIVE; 
- log_debug("cid:%d is <INACTIVE>.\r\n",cid);
- }else{
- log_error("cid:%d active is <UNKNOW>.\r\n");
- *active = GSM_GPRS_ACTIVE_UNKNOW;
- } 
- return 0;
- }
- return  -1;   
+ return rc;  
 }
-
 
 /* 函数名：gsm_m6312_gprs_get_active_status
 *  功能：  获取对应cid的GPRS激活状态
-*  参数：  cid   gprs的id 
-*  参数：  active gprs状态指针 
+*  参数：  active 状态指针 
 *  返回：  0：成功 其他：失败
 */
-int gsm_m6312_gprs_get_active_status(int cid,gsm_gprs_active_status_t *active)
+int gsm_m6312_gprs_get_active_status(gsm_m6312_active_status_t *active)
 {
- int at_rc;
- int active_rc;
- at_cmd_t cmd;  
+ int rc;
+ char *at_cmd;= "AT+CGACT?\r\n";
+ char rsp[20] = { 0 };
+ char *active_str;
  
- GSM_M6312_ASSERT_NULL_POINTER(active);
- if(cid < 1 || cid > 11){
- log_error("set act cid:%d is invalid.\r\n",cid);
- return -1;
- }
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
  
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- active_rc = -1;
- goto err_handler;
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
  
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_GPRS_GET_ACTIVE_AT_STR);
- strcat(cmd.request,AT_CMD_EOF_STR);
- 
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_GPRS_GET_ACTIVE_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_GPRS_GET_ACTIVE_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_GPRS_GET_ACTIVE_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- active_rc = -1;
- goto err_handler;
+ rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_GET_ACTIVE_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- active_rc = gsm_m6312_gprs_dump_active_status(cmd.response,cid,active);
-err_handler:
- if(active_rc == 0){
- log_debug("gsm m6312 gprs get active ok.\r\n");
+ 
+ if(strstr(rsp,"ERROR") != NULL){
+ rc = GSM_ERR_CMD_ERR;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"OK") == NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"+CGACT: 0,1") || strstr(rsp,"+CGACT: 0,0")){
+ *active = GSM_M6312_INACTIVE;
+ }else if(strstr(rsp,"+CGACT: 0,1")){
+ *active = GSM_M6312_ACTIVE;
  }else{
- log_error("gsm m6312 gprs get active err.\r\n");  
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit;
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
- osMutexRelease(gsm_mutex);
- return active_rc;
-} 
 
+ rc = GSM_ERR_OK;
+err_exit:
+ osMutexRelease(gsm_mutex);
+ return rc;   
+} 
+  
 
 /* 函数名：gsm_m6312_gprs_set_attach_status
 *  功能：  设置GPRS网络附着状态
 *  参数：  attach GPRS附着状态 
 *  返回：  0：成功 其他：失败
 */
-int gsm_m6312_gprs_set_attach_status(gsm_gprs_attach_status_t attach)
+int gsm_m6312_set_attach_status(gsm_m6312_attach_status_t attach)
 {
- int at_rc;
- int attach_rc;
- at_cmd_t cmd;  
- 
+ int rc;
+ char *at_cmd;= "AT+CGATT=1\r\n";
+ char rsp[20] = { 0 };
+
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
- 
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- attach_rc = -1;
- goto err_handler;
- }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
- 
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_GPRS_SET_ATTACH_AT_STR);
- if(attach == GSM_GPRS_ATTACH){
- strcat(cmd.request,GSM_M6312_GPRS_ATTACH_AT_STR);
+ if(attach == GSM_M6312_ATTACH){
+ at_cmd = "AT+CGATT=1\r\n";
  }else{
- strcat(cmd.request,GSM_M6312_GPRS_NOT_ATTACH_AT_STR); 
+ at_cmd = "AT+CGATT=0\r\n";  
  }
- strcat(cmd.request,AT_CMD_EOF_STR);
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
  
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_GPRS_SET_ATTACH_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_GPRS_SET_ATTACH_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_GPRS_SET_ATTACH_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- attach_rc = -1;
- goto err_handler;
- }else{
- attach_rc = 0;
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
-
-err_handler:
- if(attach_rc == 0){
- log_debug("gsm m6312 gprs set attach ok.\r\n");
- }else{
- log_error("gsm m6312 gprs set attach err.\r\n");  
+ 
+ rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_GET_ATTACH_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
+ 
+ if(strstr(rsp,"ERROR") != NULL){
+ rc = GSM_ERR_CMD_ERR;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"OK") == NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ rc = GSM_ERR_OK;
+ 
+err_exit:
  osMutexRelease(gsm_mutex);
- return attach_rc;
-} 
-
-
-/* 函数名：gsm_m6312_gprs_dump_attach_status
-*  功能：  dump GPRS附着状态指令
-*  参数：  buffer 数据源指针指针 
-*  参数：  attach GPRS附着状态指针 
-*  返回：  0：成功 其他：失败
-*/
-static int gsm_m6312_gprs_dump_attach_status(const char *buffer,gsm_gprs_attach_status_t *attach)
-{
- char *pos;
- char attach_str[2];
- int size;
- 
- GSM_M6312_ASSERT_NULL_POINTER(buffer);
- GSM_M6312_ASSERT_NULL_POINTER(attach);
- 
- /*找到header位置*/
- pos = strstr(buffer,GSM_M6312_ATTACH_HEADER_STR);
- if(pos == NULL){
- log_debug("can not find attach header.\r\n"); 
- return -1;
- }
- buffer = pos + strlen(GSM_M6312_ATTACH_HEADER_STR);
- /*找到EOF位置*/
- pos = strstr(buffer,AT_CMD_EOF_STR);
- GSM_M6312_ASSERT_NULL_POINTER(pos);
- 
- size = pos - buffer > 1 ? 1 : pos - buffer;
- memcpy(attach_str,buffer,size);
- attach_str[size] = '\0';
- 
- if(strcmp(attach_str,GSM_M6312_GPRS_ATTACH_AT_STR) == 0){
- *attach = GSM_GPRS_ATTACH;
- log_debug("GPRS is <ATTACHED>.\r\n"); 
- }else if(strcmp(attach_str,GSM_M6312_GPRS_NOT_ATTACH_AT_STR) == 0){ 
- *attach = GSM_GPRS_NOT_ATTACH;
- log_debug("GPRS is <NOT ATTACHED>.\r\n"); 
- }else{
- *attach = GSM_GPRS_ATTACH_UNKNOW;   
- log_error("attach str:%s <UNKNOW>.\r\n",attach_str);
- }
-
- return 0;
+ return rc; 
 }
-
 
 /* 函数名：gsm_m6312_gprs_get_attach_status
 *  功能：  获取GPRS的附着状态
 *  参数：  attach GPRS附着状态指针
 *  返回：  0：成功 其他：失败
 */
-int gsm_m6312_gprs_get_attach_status(gsm_gprs_attach_status_t *attach)
+int gsm_m6312_get_attach_status(gsm_gprs_attach_status_t *attach)
 {
- int at_rc;
- int attach_rc;
- at_cmd_t cmd;  
+ int rc;
+ const char *at_cmd;= "AT+CGATT?\r\n";
+ char rsp[20] = { 0 };
+ char *attach_str;
  
- osMutexWait(gsm_mutex,osWaitForever); 
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
+ osMutexWait(gsm_mutex,osWaitForever);
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
  
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- attach_rc = -1;
- goto err_handler;
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
  
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_GPRS_GET_ATTACH_AT_STR);
- strcat(cmd.request,AT_CMD_EOF_STR);
- 
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_GPRS_GET_ATTACH_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_GPRS_GET_ATTACH_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_GPRS_GET_ATTACH_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- attach_rc = -1;
- goto err_handler;
+ rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_GET_ACTIVE_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
-attach_rc = gsm_m6312_gprs_dump_attach_status(cmd.response,attach);
-
-err_handler:
- if(attach_rc == 0){
- log_debug("gsm m6312 gprs get attach ok.\r\n");
+ 
+ if(strstr(rsp,"ERROR") != NULL){
+ rc = GSM_ERR_CMD_ERR;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"OK") == NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"+CGATT: 0")){
+ *attach = GSM_M6312_ATTACH;
+ rc = GSM_ERR_OK;
+ }else if(strstr(rsp,"+CGATT: 1"){
+ *attach = GSM_M6312_NOT_ATTACH;    
+ rc = GSM_ERR_OK;
  }else{
- log_error("gsm m6312 gprs get attach err.\r\n");  
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit;
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
- osMutexRelease(gsm_mutex);
- return attach_rc;
-} 
 
+err_exit:
+ osMutexRelease(gsm_mutex);
+ return rc; 
+}
+    
 /* 函数名：gsm_m6312_gprs_set_connect_mode
 *  功能：  设置连接模式指令
 *  参数：  mode 单路或者多路 
 *  返回：  0：成功 其他：失败
 */
-int gsm_m6312_gprs_set_connect_mode(gsm_m6312_gprs_connect_mode_t mode)
+int gsm_m6312_set_connect_mode(gsm_m6312_connect_mode_t mode)
 {
- int at_rc;
- int mode_rc;
- at_cmd_t cmd;  
- 
+ int rc;
+ char *at_cmd;
+ char rsp[20] = { 0 };
+
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
- 
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- mode_rc = -1;
- goto err_handler;
- }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
- 
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_GPRS_SET_CONNECT_MODE_AT_STR);
- if(mode == GSM_M6312_GPRS_CONNECT_MODE_SINGLE){
- strcat(cmd.request,GSM_M6312_GPRS_SINGLE_MODE_AT_STR);
+ if(mode == GSM_M6312_CONNECT_MODE_SINGLE){
+ at_cmd = "AT+CMMUX=0\r\n";
  }else{
- strcat(cmd.request,GSM_M6312_GPRS_MULTIPLE_MODE_AT_STR);
+ at_cmd = "AT+CMMUX=1\r\n";
  }
- strcat(cmd.request,AT_CMD_EOF_STR);
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
  
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_GPRS_SET_CONNECT_MODE_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_GPRS_SET_CONNECT_MODE_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_GPRS_SET_CONNECT_MODE_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- mode_rc = -1;
- goto err_handler;
- }else{
- mode_rc = 0;
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
-
-err_handler:
- if(mode_rc == 0){
- log_debug("gsm m6312 gprs set connection mode ok.\r\n");
- }else{
- log_error("gsm m6312 gprs set connection mode err.\r\n");  
+ 
+ rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_GET_ACTIVE_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
+ 
+ if(strstr(rsp,"ERROR") != NULL){
+ rc = GSM_ERR_CMD_ERR;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"OK") == NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ rc = GSM_ERR_OK;
+err_exit:
  osMutexRelease(gsm_mutex);
- return mode_rc;
-} 
-
-
-/* 函数名：gsm_m6312_gprs_dump_operator
-*  功能：  dump 运营商
-*  参数：  buffer 数据源指针 
-*  参数：  gsm_operator 运营商指针 
-*  返回：  0：成功 其他：失败
-*/
-static int gsm_m6312_gprs_dump_operator(const char *buffer, operator_name_t *gsm_operator)
-{
- char *pos;
- int mode;
- int format;
- char operator_str[17];
- int size;
- 
- GSM_M6312_ASSERT_NULL_POINTER(buffer);
- GSM_M6312_ASSERT_NULL_POINTER(gsm_operator);
- 
- /*找到header位置*/
- pos = strstr(buffer,GSM_M6312_OPERATOR_HEADER_STR);
- if(pos == NULL){
- log_debug("can not find operator header.\r\n"); 
- return -1;
- }
- buffer = pos + strlen(GSM_M6312_OPERATOR_HEADER_STR);
- mode = atoi(buffer);
- if(mode != OPERATOR_AUTO_MODE   &&
-    mode != OPERATOR_MANUAL_MODE &&
-    mode != OPERATOR_LOGOUT_MODE){  
-  log_error("operator mode:%d is err.\r\n",mode);   
-  return -1;
- }
- 
- /*找到第1个BREAK位置*/
- pos = strstr(buffer,AT_CMD_BREAK_STR);
- if(pos == NULL){
- *gsm_operator = OPERATOR_UNKNOW;
- log_debug("operator is <UNKNOW>.\r\n");
- return 0; 
- }
- buffer = pos + strlen(AT_CMD_BREAK_STR);
- format = atoi(buffer); 
- /*找到第2个BREAK位置*/
- pos = strstr(buffer,AT_CMD_BREAK_STR);
- GSM_M6312_ASSERT_NULL_POINTER(pos);
- buffer = pos + strlen(AT_CMD_BREAK_STR);
- /*找到EOF位置*/
- pos = strstr(buffer,AT_CMD_EOF_STR);
- GSM_M6312_ASSERT_NULL_POINTER(pos);
- size = pos - buffer > 16 ? 16 : pos - buffer;
- memcpy(operator_str,buffer,size);
- operator_str[size] = '\0';
- 
-if(format == GSM_M6312_OPERATOR_FORMAT_LONG_NAME   ||
-   format == GSM_M6312_OPERATOR_FORMAT_SHORT_NAME  ||
-   format == GSM_M6312_OPERATOR_FORMAT_NUMERIC_NAME){
-
-   if(strcmp(operator_str,CHINA_MOBILE_OPERATOR_LONG_NAME_STR)   == 0 ||
-      strcmp(operator_str,CHINA_MOBILE_OPERATOR_SHORT_NAME_STR)  == 0 ||
-      strcmp(operator_str,CHINA_MOBILE_OPERATOR_NUMERIC_NAME_STR)== 0 ){
-   *gsm_operator = OPERATOR_CHINA_MOBILE;
-   log_debug("operator is <%s>.\r\n",operator_str);
-   return 0;  
-   }
-   
-   if(strcmp(operator_str,CHINA_UNICOM_OPERATOR_LONG_NAME_STR)   == 0 ||
-      strcmp(operator_str,CHINA_UNICOM_OPERATOR_SHORT_NAME_STR)  == 0 ||
-      strcmp(operator_str,CHINA_UNICOM_OPERATOR_NUMERIC_NAME_STR)== 0 ){
-   *gsm_operator = OPERATOR_CHINA_UNICOM;
-   log_debug("operator is <%s>.\r\n",operator_str);
-   return 0;  
-   } 
- }else{
-   log_error("operator format:%d is err.\r\n",format);
- return -1;   
- }
- 
-return -1;
+ return rc; 
 }
-
+ 
 /* 函数名：gsm_m6312_get_operator
 *  功能：  查询运营商
 *  参数：  operator_name 运营商指针
@@ -1388,51 +796,53 @@ return -1;
 */
 int gsm_m6312_get_operator(operator_name_t *operator_name)
 {
- int at_rc;
- int operator_rc;
- at_cmd_t cmd; 
+ int rc;
+ const char *at_cmd = "AT+COPS?\r\n";
+ char rsp[20] = { 0 };
+ char *operator_str;
  
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
  
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- operator_rc = -1;
- goto err_handler;
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
  
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_GPRS_GET_OPERATOR_AT_STR);
- strcat(cmd.request,AT_CMD_EOF_STR);
- 
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_GPRS_GET_OPERATOR_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_GPRS_GET_OPERATOR_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_GPRS_GET_OPERATOR_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- operator_rc = -1;
- goto err_handler;
+ rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_GET_OPERATOR_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
-
- operator_rc = gsm_m6312_gprs_dump_operator(cmd.response,operator_name);
  
-err_handler:
- if(operator_rc == 0){
- log_debug("gsm m6312 get operator ok.\r\n");
+ if(strstr(rsp,"ERROR")){
+ rc = GSM_ERR_CMD_ERR;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"OK") == NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"46000") ||strstr(rsp,"CMCC") || strstr(rsp,"ChinaMobile")){
+ *operator_name = OPERATOR_CHINA_MOBILE;
+ rc = GSM_ERR_OK;
+ }else if(strstr(rsp,"46001") ||strstr(rsp,"UNICOM") || strstr(rsp,"ChinaUnicom")){
+ *operator_name = OPERATOR_CHINA_UNICOM;
+ rc = GSM_ERR_OK;
  }else{
- log_error("gsm m6312 get operator err.\r\n");  
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit;
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
+
+err_exit:
  osMutexRelease(gsm_mutex);
- return operator_rc;
-} 
+ return rc; 
+}
 
 
 /* 函数名：gsm_m6312_set_auto_operator_format
@@ -1442,120 +852,96 @@ err_handler:
 */
 int gsm_m6312_set_auto_operator_format(gsm_m6312_operator_format_t operator_format)
 {
- int at_rc;
- int operator_rc;
- at_cmd_t cmd;  
- 
+ int rc;
+ char *at_cmd;
+ char rsp[20] = { 0 };
+
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
  
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- operator_rc = -1;
- goto err_handler;
- }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
- 
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_GPRS_SET_OPERATOR_AT_STR);
- strcat(cmd.request,GSM_M6312_GPRS_OPERATOR_AUTO_MODE_AT_STR);
- strcat(cmd.request,AT_CMD_BREAK_STR);
- if(operator_format == GSM_M6312_OPERATOR_FORMAT_LONG_NAME){
- strcat(cmd.request,GSM_M6312_OPERATOR_FORMAT_LONG_NAME_AT_STR);
+ if(operator_format == GSM_M6312_OPERATOR_FORMAT_NUMERIC_NAME){
+ at_cmd = "AT+COPS=0,2\r\n";
  }else if(operator_format == GSM_M6312_OPERATOR_FORMAT_SHORT_NAME){
- strcat(cmd.request,GSM_M6312_OPERATOR_FORMAT_SHORT_NAME_AT_STR);
+ at_cmd = "AT+COPS=0,1\r\n";
  }else{
- strcat(cmd.request,GSM_M6312_OPERATOR_FORMAT_NUMERIC_NAME_AT_STR);
+ at_cmd = "AT+COPS=0,0\r\n";  
  }
- strcat(cmd.request,AT_CMD_EOF_STR);
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
  
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_GPRS_SET_OPERATOR_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_GPRS_SET_OPERATOR_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_GPRS_SET_OPERATOR_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- operator_rc = -1;
- goto err_handler;
- }else{
- operator_rc = 0;
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
  
-err_handler:
- if(operator_rc == 0){
- log_debug("gsm m6312 gprs set operator format ok.\r\n");
- }else{
- log_error("gsm m6312 gprs set operator format err.\r\n");  
+ rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_GET_ACTIVE_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
+ 
+ if(strstr(rsp,"ERROR") != NULL){
+ rc = GSM_ERR_CMD_ERR;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"OK") == NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ rc = GSM_ERR_OK;
+err_exit:
  osMutexRelease(gsm_mutex);
- return operator_rc;
-} 
-
-
+ return rc; 
+}
+ 
 /* 函数名：gsm_m6312_set_set_prompt
 *  功能：  设置发送提示
 *  参数：  prompt 设置的发送提示
 *  返回：  0：成功 其他：失败
 */
-int gsm_m6312_set_set_prompt(gsm_m6312_send_prompt_t prompt)
+int gsm_m6312_set_send_prompt(gsm_m6312_send_prompt_t prompt)
 {
- int at_rc;
- int prompt_rc;
- at_cmd_t cmd;  
- 
+ int rc;
+ char *at_cmd;
+ char rsp[20] = { 0 };
+
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_LARGE_RESPONSE_SIZE);
  
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- prompt_rc = -1;
- goto err_handler;
- }
-
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_LARGE_RESPONSE_SIZE );
- 
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_LARGE_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_SET_SEND_PROMPT_AT_STR);
  if(prompt == GSM_M6312_SEND_PROMPT){
- strcat(cmd.request,GSM_M6312_SEND_PROMPT_AT_STR);
- }else{
- strcat(cmd.request,GSM_M6312_NO_SEND_PROMPT_AT_STR);  
+ at_cmd = "AT+PROMPT=1\r\n";
+ }else {
+ at_cmd = "AT+PROMPT=0\r\n";
  }
- strcat(cmd.request,AT_CMD_EOF_STR);
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_SET_SEND_PROMPT_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_SET_SEND_PROMPT_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_SET_SEND_PROMPT_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- prompt_rc = -1;
- goto err_handler;
- }else{
- prompt_rc = 0;
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
+ 
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
-
-err_handler:
- if(prompt_rc == 0){
- log_debug("gsm m6312 gprs set send prompt ok.\r\n");
- }else{
- log_error("gsm m6312 gprs  set send prompt err.\r\n");  
+ 
+ rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_GET_ACTIVE_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
+ 
+ if(strstr(rsp,"ERROR") != NULL){
+ rc = GSM_ERR_CMD_ERR;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"OK") == NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ rc = GSM_ERR_OK;
+err_exit:
  osMutexRelease(gsm_mutex);
- return prompt_rc;
+ return rc;
 }
-
 
 /* 函数名：gsm_m6312_set_transparent
 *  功能：  设置透传模式
@@ -1564,57 +950,47 @@ err_handler:
 */
 int gsm_m6312_set_transparent(gsm_m6312_transparent_t transparent)
 {
- int at_rc;
- int transparent_rc;
- at_cmd_t cmd;  
- 
+ int rc;
+ char *at_cmd;
+ char rsp[20] = { 0 };
+
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
  
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- transparent_rc = -1;
- goto err_handler;
- }
-
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
- 
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_SET_TRANSPARENT_AT_STR);
  if(transparent == GSM_M6312_TRANPARENT){
- strcat(cmd.request,GSM_M6312_TRANSPARENT_AT_STR);
- }else{
- strcat(cmd.request,GSM_M6312_NO_TRANSPARENT_AT_STR);  
+ at_cmd = "AT+CMMODE=1\r\n";
+ }else {
+ at_cmd = "AT+CMMODE=0\r\n";
  }
- strcat(cmd.request,AT_CMD_EOF_STR);
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_SET_TRANSPARENT_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_SET_TRANSPARENT_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_SET_TRANSPARENT_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- transparent_rc = -1;
- goto err_handler;
- }else{
- transparent_rc = 0;
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
+ 
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
-
-err_handler:
- if(transparent_rc == 0){
- log_debug("gsm m6312 gprs set transparent mode ok.\r\n");
- }else{
- log_error("gsm m6312 gprs set transparent mode err.\r\n");  
+ 
+ rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_GET_ACTIVE_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
+ 
+ if(strstr(rsp,"ERROR") != NULL){
+ rc = GSM_ERR_CMD_ERR;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"OK") == NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ rc = GSM_ERR_OK;
+err_exit:
  osMutexRelease(gsm_mutex);
- return transparent_rc;
+ return rc;
 }
-
+          
 /* 函数名：gsm_m6312_set_report
 *  功能：  关闭信息上报
 *  参数：  无
@@ -1622,56 +998,47 @@ err_handler:
 */
 int gsm_m6312_set_report(gsm_m6312_report_t report)
 {
- int at_rc;
- int cancle_rc;
- at_cmd_t cmd;  
- 
+ int rc;
+ char *at_cmd;
+ char rsp[20] = { 0 };
+
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
  
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- cancle_rc = -1;
- goto err_handler;
- }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
- 
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_GPRS_CANCLE_REPORT_AT_STR);
  if(report == GSM_M6312_REPORT_ON){
- strcpy(cmd.request,GSM_M6312_REPORT_ON_AT_STR);
- }else{
- strcpy(cmd.request,GSM_M6312_REPORT_OFF_AT_STR);
- } 
- strcat(cmd.request,AT_CMD_EOF_STR);
-
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_GPRS_CANCLE_REPORT_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_GPRS_CANCLE_REPORT_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_GPRS_CANCLE_REPORT_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- cancle_rc = -1;
- goto err_handler;
- }else{
- cancle_rc = 0;
+ at_cmd = "AT^CURC=1\r\n";
+ }else {
+ at_cmd = "AT^CURC=0\r\n";
+ }
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
+ 
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
  
-err_handler:
- if(cancle_rc == 0){
- log_debug("gsm m6312 gprs cancle report ok.\r\n");
- }else{
- log_error("gsm m6312 gprs cancle report err.\r\n");  
+ rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_GET_ACTIVE_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
+ 
+ if(strstr(rsp,"ERROR") != NULL){
+ rc = GSM_ERR_CMD_ERR;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"OK") == NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ rc = GSM_ERR_OK;
+err_exit:
  osMutexRelease(gsm_mutex);
- return cancle_rc;
+ return rc;
 }
+          
 
 /* 函数名：gsm_m6312_open_client
 *  功能：  打开连接
@@ -1683,70 +1050,64 @@ err_handler:
 */
 int gsm_m6312_open_client(int conn_id,gsm_m6312_net_protocol_t protocol,const char *host,uint16_t port)
 {
- int at_rc;
- int open_rc;
- at_cmd_t cmd;  
- 
- if(conn_id < 0 || conn_id > 4){
- log_error("conn id:%d is invalid.\r\n",conn_id);
- return -1;
+ int rc;
+ char at_cmd[30] = { 0 };
+ char rsp[20] = { 0 };
+ char *protocol_str;
+
+ if(host == NULL ){
+ return GSM_ERR_NULL_POINTER;
  }
- GSM_M6312_ASSERT_NULL_POINTER(host);
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
- 
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- open_rc = -1;
- goto err_handler;
- }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
- 
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_GPRS_OPEN_CLIENT_AT_STR);
-
- 
- snprintf(cmd.request + strlen(cmd.request),2,"%d",conn_id);
- strcat(cmd.request,AT_CMD_BREAK_STR);
  if(protocol == GSM_M6312_NET_PROTOCOL_TCP){
- strcat(cmd.request,GSM_M6312_NET_PROTOCOL_TCP_AT_STR);
+ protocol_str = "\"TCP\"";
  }else{
- strcat(cmd.request,GSM_M6312_NET_PROTOCOL_UDP_AT_STR);
+ protocol_str = "\"UDP\"";  
  }
- strcat(cmd.request,AT_CMD_BREAK_STR);
- strcat(cmd.request,host);
- strcat(cmd.request,AT_CMD_BREAK_STR);
- snprintf(cmd.request + strlen(cmd.request),6,"%d",port);
- strcat(cmd.request,AT_CMD_EOF_STR);
-
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_GPRS_OPEN_CLIENT_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_GPRS_OPEN_CLIENT_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_GPRS_OPEN_CLIENT_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- open_rc = -1;
- goto err_handler;
- }else{
- open_rc = 0;
+ snprintf(at_cmd,30,"AT+IPSTART=%1d,%s,%d\r\n",conn_id,protocol_str,port);
+ 
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
+ 
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
-err_handler:
- if(open_rc == 0){
- log_debug("gsm m6312 gprs open client ok.\r\n");
- }else{
- log_error("gsm m6312 gprs open client err.\r\n");  
+ 
+ rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_GET_ACTIVE_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
+ 
+ if(strstr(rsp,"ERROR") != NULL){
+ rc = GSM_ERR_CMD_ERR;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ if(strstr(rsp,"CONNECT FAIL\r\n")){
+ rc = GSM_ERR_CONNECT_FAIL;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"COMMAND TIMEOUT\r\n")){
+ rc = GSM_ERR_CMD_TIMEOUT;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"CONNECT OK\r\n") == NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ rc = GSM_ERR_OK;
+ 
+err_exit:
  osMutexRelease(gsm_mutex);
- return open_rc;
+ return rc;
 }
-
-
+          
 /* 函数名：gsm_m6312_close_client
 *  功能：  关闭连接
 *  参数：  conn_id 连接ID
@@ -1754,138 +1115,39 @@ err_handler:
 */
 int gsm_m6312_close_client(int conn_id)
 {
- int at_rc;
- int close_rc;
- at_cmd_t cmd;  
- 
- if(conn_id < 0 || conn_id > 4){
- log_error("conn id:%d is invalid.\r\n",conn_id);
- return -1;
- }
+ int rc;
+ char at_cmd[20] = { 0 };
+ char rsp[20] = { 0 };
+ char *protocol_str;
+
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
+
+ snprintf(at_cmd,20,"AT+IPCLOSE=%1d\r\n",conn_id);
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
  
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- close_rc = -1;
- goto err_handler;
- }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
- 
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_GPRS_CLOSE_CLIENT_AT_STR);
-
- snprintf(cmd.request + strlen(cmd.request),2,"%d",conn_id);
- strcat(cmd.request,AT_CMD_EOF_STR);
-
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_GPRS_CLOSE_CLIENT_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_GPRS_CLOSE_CLIENT_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_GPRS_CLOSE_CLIENT_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- close_rc = -1;
- goto err_handler;
- }else{
- close_rc = 0;
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
  
-err_handler:
- if(close_rc == 0){
- log_debug("gsm m6312 gprs close client ok.\r\n");
- }else{
- log_error("gsm m6312 gprs close client err.\r\n");  
+ rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_GET_ACTIVE_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
+ 
+ if(strstr(rsp,"ERROR") != NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ rc = GSM_ERR_OK;
+err_exit:
  osMutexRelease(gsm_mutex);
- return close_rc;
+ return rc;
 }
-
-/* 函数名：gsm_m6312_dump_connect_status
-*  功能：  获取连接的状态
-*  参数：  buffer数据源
-*  参数：  conn_id 连接ID
-*  参数：  status连接状态指针
-*  返回：  0：成功 其他：失败
-*/
-static int gsm_m6312_dump_connect_status(const char *buffer,const int conn_id,tcp_connect_status_t *status)
-{
-char *pos;
-int conn_id_temp;
-int size;
-char status_str[15];
-int loop_cnt = 5;
-int break_str_len;
-
-GSM_M6312_ASSERT_NULL_POINTER(buffer);
-break_str_len = strlen(AT_CMD_BREAK_STR);
-
- while(loop_cnt -- ){
-/*找到header位置*/
- pos = strstr(buffer,GSM_M6312_CONNECT_STATUS_HEADER_STR);
- if(pos == NULL){
- log_error("can not find conn status header.\r\n");
- return -1;
- }
- /*找到conn id位置*/
- buffer = pos + strlen(GSM_M6312_CONNECT_STATUS_HEADER_STR);
- conn_id_temp = atoi(buffer);
- if(conn_id_temp != conn_id){
- /*结束这一行的查找*/
- pos = strstr(buffer,AT_CMD_EOF_STR);
- buffer = pos + strlen(AT_CMD_EOF_STR);
- continue;
- }
- /*找到第1个BREAK位置*/
- pos = strstr(buffer,AT_CMD_BREAK_STR);
- GSM_M6312_ASSERT_NULL_POINTER(pos);
- /*找到协议位置*/
- buffer = pos + break_str_len;
- /*找到第2个BREAK位置*/
- pos = strstr(buffer,AT_CMD_BREAK_STR);
- GSM_M6312_ASSERT_NULL_POINTER(pos);
- /*找到IP位置*/
- buffer = pos + break_str_len;
- /*找到第3个BREAK位置*/
- pos = strstr(buffer,AT_CMD_BREAK_STR);
- GSM_M6312_ASSERT_NULL_POINTER(pos);
- /*找到端口位置*/
- buffer = pos + break_str_len;
- /*找到第4个BREAK位置*/
- pos = strstr(buffer,AT_CMD_BREAK_STR);
- GSM_M6312_ASSERT_NULL_POINTER(pos);
- /*找到连接状态位置*/
- buffer = pos + break_str_len;
- /*找到行结束位置*/
- pos =strstr(buffer,AT_CMD_EOF_STR);
- /*计算连接状态长度*/
- size = pos - buffer > 14 ? 14 :pos - buffer;
- memcpy(status_str,buffer,size);
- status_str[size] = '\0';
- 
- if(strcmp(status_str,GSM_M6312_TCP_CONNECT_STATUS_INIT_AT_STR) == 0){
- *status = TCP_CONNECT_STATUS_INIT;
- log_debug("gsm tcp conn_id:%d status is <INIT>.\r\n",conn_id );
- }else if(strcmp(status_str,GSM_M6312_TCP_CONNECT_STATUS_CONNECT_OK_AT_STR) == 0){
- *status = TCP_CONNECT_STATUS_CONNECTED;
- log_debug("gsm tcp conn_id:%d status is <CONNECTED>.\r\n",conn_id);
- }else if(strcmp(status_str,GSM_M6312_TCP_CONNECT_STATUS_CLOSE_AT_STR) == 0){ 
- *status = TCP_CONNECT_STATUS_DISCONNECTED;
- log_debug("gsm tcp conn_id:%d status is <DISCONNECTED>.\r\n",conn_id);
- }else{
- log_error("gsm tcp conn_id:%d status:<%s> is unknow.\r\n",conn_id);
- return -1;
- }
- break;
-}
- log_debug("dump gsm tcp connect status ok.\r\n" );
- return 0;
-}
+          
 /* 函数名：gsm_m6312_get_connect_status
 *  功能：  获取连接的状态
 *  参数：  conn_id 连接ID
@@ -1894,56 +1156,74 @@ break_str_len = strlen(AT_CMD_BREAK_STR);
 */
 int gsm_m6312_get_connect_status(const int conn_id,tcp_connect_status_t *status)
 {
- int at_rc;
- int status_rc;
- at_cmd_t cmd;  
+ int rc;
+ char *at_cmd;
+ char conn_id_str[12];
+ char *rsp;
+ char *status_str;
  
- if(conn_id < 0 || conn_id > 4){
- log_error("conn id:%d is invalid.\r\n",conn_id);
- return -1;
+ rsp = GSM_M6312_MALLOC(GSM_M6312_CONNECT_STATUS_RSP_SIZE);
+ if(rsp == NULL){
+ return GSM_ERR_MALLOC_FAIL; 
  }
+ snprintf(conn_id_str,12,"+CMSTATE: %1d",conn_id);
+ 
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_MIDDLE_RESPONSE_SIZE);
  
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- status_rc = -1;
- goto err_handler;
- }
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_MIDDLE_RESPONSE_SIZE );
+ at_cmd = "AT+IPSTATE\r\n";
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
  
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_MIDDLE_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_GPRS_GET_CONNECT_STATUS_AT_STR);
- strcat(cmd.request,AT_CMD_EOF_STR);
-
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_GPRS_GET_CONNECT_STATUS_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_GPRS_GET_CONNECT_STATUS_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_GPRS_GET_CONNECT_STATUS_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- status_rc = -1;
- goto err_handler;
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
  
- status_rc = gsm_m6312_dump_connect_status(cmd.response,conn_id,status);
+ rc = gsm_m6312_at_cmd_recv(rsp,GSM_M6312_CONNECT_STATUS_RSP_SIZE,GSM_M6312_GET_CONN_STATUS_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
  
-err_handler:
- if(status_rc == 0){
- log_debug("gsm m6312 gprs get conn status ok.\r\n");
+ if(strstr(rsp,"ERROR")){
+ rc = GSM_ERR_CMD_ERR;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"OK") == NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ status_str = strstr(rsp,conn_id_str);
+ if(status_str){
+ if(strstr(status_str,"IP INITIAL")){
+ *status = GSM_M6312_SOCKET_INIT;
+ }else if(strstr(status_str,"IP CONNECT")){
+ *status = GSM_M6312_SOCKET_CONNECT;  
+ }else if(strstr(status_str,"IP CLOSE")){
+ *status = GSM_M6312_SOCKET_CLOSE; 
+ }else if(strstr(status_str,"BIND OK")){
+ *status = GSM_M6312_SOCKET_CONNECT; 
+ }else if(strstr(status_str,"IP CONNECTTING")){
+ *status = GSM_M6312_SOCKET_CONNECTTING; 
  }else{
- log_error("gsm m6312 gprs get conn status err.\r\n");  
+ rc = GSM_ERR_UNKNOW;  
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
+ }else{
+ *status = GSM_M6312_SOCKET_INIT; 
+ }
+ rc = GSM_ERR_OK;
+ 
+err_exit:
  osMutexRelease(gsm_mutex);
- return status_rc;
+ GSM_M6312_FREE(rsp);
+ return rc;
 }
-
+          
 /* 函数名：gsm_m6312_send
 *  功能：  发送数据
 *  参数：  conn_id 连接ID
@@ -1953,86 +1233,73 @@ err_handler:
 */
 int gsm_m6312_send(int conn_id,const char *data,const int size)
 {
- int at_rc;
- int send_rc;
- at_cmd_t cmd;  
- 
- if(conn_id < 0 || conn_id > 4){
- log_error("conn id:%d is invalid.\r\n",conn_id);
- return -1;
- }
+ int rc;
+ char at_cmd[30];
+ char *rsp;
+
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_LARGE_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
+ at_cmd = 
+ snprintf("AT+IPSEND=%1d,d\r\n",conn_id,size);
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
  
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- send_rc = -1;
- goto err_handler;
- } 
-/*第一步启动发送*/
- memset(cmd.request,0,GSM_6312_LARGE_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
- 
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_SEND_AT_STR);
-
- snprintf(cmd.request + strlen(cmd.request),2,"%d",conn_id);
- strcat(cmd.request,AT_CMD_BREAK_STR);
- if(size > GSM_6312_LARGE_REQUEST_SIZE - 1 || size > 1460){
- log_error("send size:%d is too large.\r\n",size);
- goto err_handler;
- }
- snprintf(cmd.request + strlen(cmd.request),5,"%d",size);
- strcat(cmd.request,AT_CMD_EOF_STR);
- 
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_SEND_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_SEND_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_SEND_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- send_rc = -1;
- goto err_handler;
- }else{
- send_rc = 0;
- }
- /*第二步输入发送的数据*/
- memset(cmd.request,0,GSM_6312_LARGE_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
- 
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- memcpy(cmd.request,data,size);
- cmd.request[size] = '\0';
- cmd.request_size = size;
- //cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_SEND_START_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_SEND_START_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_SEND_START_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- send_rc = -1;
- goto err_handler;
- }else{
- send_rc = 0;
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
  
-err_handler:
- if(send_rc == 0){
- log_debug("gsm m6312 send ok.\r\n");
- }else{
- log_error("gsm m6312 send err.\r\n");  
+ rc = gsm_m6312_at_cmd_recv(rsp,GSM_M6312_CONNECT_STATUS_RSP_SIZE,GSM_M6312_GET_CONN_STATUS_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
+ 
+ if(strstr(rsp,"ERROR")){
+ rc = GSM_ERR_CMD_ERR;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ if(strstr(rsp,">") == NULL){
+ rc = GSM_ERR_CMD_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ /*执行发送数据*/
+ rc = gsm_m6312_at_cmd_send(data,size,GSM_M6312_SEND_DATA_TIMEOUT);
+ 
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ rc = gsm_m6312_at_cmd_recv(rsp,GSM_M6312_CONNECT_STATUS_RSP_SIZE,GSM_M6312_GET_CONN_STATUS_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"SEND FAIL")){
+ rc = GSM_ERR_CMD_FAIL;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ if(strstr(rsp,"COMMAND TIMEOUT")){
+ rc = GSM_ERR_CMD_TIMEOUT;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"SEND OK") == NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ rc = GSM_ERR_OK;
+err_exit:
  osMutexRelease(gsm_mutex);
- return send_rc;
+ return rc;
 }
-
+          
 
 /* 函数名：gsm_m6312_config_recv_buffer
 *  功能：  配置数据接收缓存
@@ -2041,186 +1308,40 @@ err_handler:
 */
 int gsm_m6312_config_recv_buffer(gsm_m6312_recv_buffer_t buffer)
 {
- int at_rc;
- int buffer_rc;
- at_cmd_t cmd;  
- osMutexWait(gsm_mutex,osWaitForever); 
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
- 
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- buffer_rc = -1;
- goto err_handler;
- }
+ int rc;
+ char *at_cmd;
+ char rsp[20] = { 0 };
 
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
- 
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_CONFIG_RECV_BUFFER_AT_STR);
- if(buffer == GSM_M6312_RECV_BUFFERE){
- strcat(cmd.request,GSM_M6312_RECV_BUFFER_AT_STR);
- }else{
- strcat(cmd.request,GSM_M6312_RECV_NO_BUFFER_AT_STR);
- }
- strcat(cmd.request,AT_CMD_BREAK_STR);
- strcat(cmd.request,"0");
- strcat(cmd.request,AT_CMD_EOF_STR);
- 
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_CONFIG_RECV_BUFFER_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_CONFIG_RECV_BUFFER_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_CONFIG_RECV_BUFFER_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- buffer_rc = -1;
- goto err_handler;
- }else{
- buffer_rc = 0;
- }
- 
-err_handler:
- if(buffer_rc == 0){
- log_debug("gsm m6312 config recv buffer ok.\r\n");
- }else{
- log_error("gsm m6312 config recv buffer err.\r\n");  
- }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
- osMutexRelease(gsm_mutex);
- return buffer_rc;
-}
-
-
-/* 函数名：gsm_m6312_dump_recv_buffer_size_value
-*  功能：  dump数据缓存长度值
-*  参数：  buffer源数据
-*  返回：  >=0：缓存数据大小值 其他：失败
-*/
-static int gsm_m6312_dump_recv_buffer_size_value(const char *buffer,const int conn_id)
-{
- char *pos;
- int conn_id_temp;
- int total_buffer_size;
- //int last_recv_size;
- int loop_cnt;
- 
- GSM_M6312_ASSERT_NULL_POINTER(buffer);
- loop_cnt = 6;
- while(loop_cnt -- ){
- /*找到header位置*/
- pos = strstr(buffer,GSM_M6312_RECV_BUFFER_SIZE_HEADER_STR);
- if(pos == NULL){
- log_error("can not find recv buffer size header.\r\n");
- return -1;
- }
- /*conn id 位置*/
- buffer = pos + strlen(GSM_M6312_RECV_BUFFER_SIZE_HEADER_STR);
- conn_id_temp = atoi(buffer);
- if(conn_id != conn_id_temp){
- /*结束这一行查找*/
- pos = strstr(buffer,"\n");
- GSM_M6312_ASSERT_NULL_POINTER(pos);
- buffer = pos + 1;
- continue;  
- }
- /*第1个BREAK位置*/
- pos = strstr(buffer,AT_CMD_BREAK_STR);
- /*last recv size位置*/
- buffer = pos + strlen(AT_CMD_BREAK_STR);
- //last_recv_size = atoi(buffer);
-/*第2个BREAK位置*/
- pos = strstr(buffer,AT_CMD_BREAK_STR);
- /*total size位置*/
- buffer = pos + strlen(AT_CMD_BREAK_STR);
- total_buffer_size = atoi(buffer);
-
- log_debug("recv buffer size:<%d >ok.\r\n",total_buffer_size);
- return total_buffer_size;
- }
-
- return -1;
-}
-
-
-
-/* 函数名：gsm_m6312_get_recv_buffer_size
-*  功能：  获取数据缓存长度
-*  参数：  conn_id 连接ID
-*  返回：  >=0：缓存数据量 其他：失败
-*/
-int gsm_m6312_get_recv_buffer_size(int conn_id)
-{
- int at_rc;
- int buffer_size_rc;
- at_cmd_t cmd;  
- 
- if(conn_id < 0 || conn_id > 4){
- log_error("conn id:%d is invalid.\r\n",conn_id);
- return -1;
- }
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_RESPONSE_SIZE);
- 
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- buffer_size_rc = -1;
- goto err_handler;
- }
- 
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_SMALL_RESPONSE_SIZE );
- 
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_SMALL_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_GET_RECV_BUFFER_SIZE_AT_STR);
- strcat(cmd.request,AT_CMD_EOF_STR);
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_GET_RECV_BUFFER_SIZE_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_GET_RECV_BUFFER_SIZE_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_GET_RECV_BUFFER_SIZE_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- buffer_size_rc = -1;
- goto err_handler;
- }
- 
- buffer_size_rc = gsm_m6312_dump_recv_buffer_size_value(cmd.response,conn_id);
-err_handler:
- if(buffer_size_rc >= 0){
- log_debug("gsm m6312 get recv buffer size ok.\r\n");
+ if(buffer == GSM_M6312_RECV_BUFFERE){
+ at_cmd = "AT+CMNDI=1\r\n";
  }else{
- log_error("gsm m6312 get recv buffer size err.\r\n");  
+ at_cmd = "AT+CMNDI=1\r\n";
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
+ 
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_GET_ACTIVE_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"ERROR") != NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ rc = GSM_ERR_OK;
+err_exit:
  osMutexRelease(gsm_mutex);
- return buffer_size_rc;
+ return rc;  
 }
-
-/* 函数名：gsm_m6312_dump_recv_data
-*  功能：  dump接收到的数据
-*  参数：  dest 目的buffer
-*  参数：  src 源buffer
-*  参数：  size 接收到的大小
-*  返回：  0：成功 其他：失败
-*/
-static int gsm_m6312_dump_recv_data(char *buffer_dest,const char *buffer_src,const int size)
-{
- GSM_M6312_ASSERT_NULL_POINTER(buffer_dest);
- GSM_M6312_ASSERT_NULL_POINTER(buffer_src);
-
- memcpy(buffer_dest,buffer_src,size);
- buffer_dest[size] = '\0';
- return size;
-}
-
-
 
 /* 函数名：gsm_m6312_recv
 *  功能：  接收数据
@@ -2229,61 +1350,101 @@ static int gsm_m6312_dump_recv_data(char *buffer_dest,const char *buffer_src,con
 *  参数：  size buffer的size
 *  返回：  >=0：接收到的数据量 其他：失败
 */
-int gsm_m6312_recv(int conn_id,char *data,const int size)
+int gsm_m6312_recv(int conn_id,char *buffer,const int size)
 {
- int at_rc;
- int recv_rc;
- at_cmd_t cmd;  
+ int rc;
+ char at_cmd[30] = { 0 };
+ char *rsp;
+ char conn_id_str[10] = {0};
+ char *recv_buffer_str;
+ uint16_t recv_buffer_size;
+ char *tolon_str;
+ char *data_start;
  
- if(conn_id < 0 || conn_id > 4){
- log_error("conn id:%d is invalid.\r\n",conn_id);
- return -1;
+ if(size == 0 ){
+ return 0;  
  }
+ 
+ rsp = GSM_M6312_MALLOC(GSM_M6312_GET_RECV_BUFFER_SIZE_RSP_SIZE);
+ if(rsp == NULL){
+ rc = GSM_ERR_MALLOC_FAIL;
+ gsm_m6312_print_err_info(rc);
+ return rc;
+ }
+ 
  osMutexWait(gsm_mutex,osWaitForever);
- cmd.request = (char *)GSM_M6312_MALLOC(GSM_6312_SMALL_REQUEST_SIZE);
- cmd.response = (char *)GSM_M6312_MALLOC(GSM_6312_LARGE_RESPONSE_SIZE);
+ /*查询接收到的数量*/
+ at_cmd = "AT+CMRD?\r\n";
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
  
- if(cmd.request == NULL ||cmd.response == NULL){
- log_debug("malloc fail.\r\n");
- recv_rc = -1;
- goto err_handler;
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
-
- memset(cmd.request,0,GSM_6312_SMALL_REQUEST_SIZE);
- memset(cmd.response,0,GSM_6312_LARGE_RESPONSE_SIZE );
  
- cmd.response_status_pos = AT_CMD_RESPONSE_STATUS_POS_IN_TAIL;
- cmd.response_max = GSM_6312_LARGE_RESPONSE_SIZE - 1;
- strcpy(cmd.request,GSM_M6312_RECV_AT_STR);
-
- snprintf(cmd.request + strlen(cmd.request),2,"%d",conn_id);
- strcat(cmd.request,AT_CMD_BREAK_STR);
- if(size <= 0 || size >  4096 || size > GSM_6312_LARGE_RESPONSE_SIZE - 20){
- log_warning("recv size:%d is too large.use smaller size.\r\n",size);
- goto err_handler;
+ rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_GET_RECV_BUFFER_SIZE_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
  }
- snprintf(cmd.request + strlen(cmd.request),5,"%d",size);
- strcat(cmd.request,AT_CMD_EOF_STR);
+ snprintf(conn_id_str,20,"+CMRD: %1d",conn_id); 
+ /*找到对应的conn id*/
+ recv_buffer_size_str = strstr(rsp,conn_id_str);
+ if(recv_buffer_size_str == NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit;
+ }
  
- cmd.request_size = strlen(cmd.request);
- cmd.response_ok = GSM_M6312_RECV_RESPONSE_OK_AT_STR; 
- cmd.response_err = GSM_M6312_RECV_RESPONSE_ERR_AT_STR; 
- cmd.timeout = GSM_M6312_RECV_TIMEOUT; 
-
- at_rc = at_cmd_execute(gsm_m6312_serial_handle,&cmd);
- if(at_rc != 0 ){
- recv_rc = -1;
- goto err_handler;
+ for(uint8_t i = 0;i < 2; i ++){
+ tolon_str = strstr(recv_buffer_size_str,",");
+ recv_buffer_size_str = tolon_str + 1;
+ if(recv_buffer_size_str == NULL){
+ rc = GSM_ERR_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ } 
  }
- recv_rc = gsm_m6312_dump_recv_data(data,cmd.response,size);
-err_handler:
- if(recv_rc >= 0){
- log_debug("gsm m6312 recv ok.\r\n");
- }else{
- log_error("gsm m6312 recv err.\r\n");  
  }
- GSM_M6312_FREE(cmd.request);
- GSM_M6312_FREE(cmd.response);
+ recv_buffer_size = atoi( recv_buffer_size_str);                            
+ if(recv_buffer_size == 0){
+ rc = 0;
+ goto err_exit; 
+ }
+ memset(at_cmd,0,30);
+ memset(rsp,0,GSM_M6312_GET_RECV_BUFFER_SIZE_RSP_SIZE);
+ 
+ size = recv_buffer_size > size ? size : recv_buffer_size;
+ /*读取对应的数据量*/
+ snprintf(at_cmd,30,"AT+CMRD=%1d,%d\r\n",conn_id,size);
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),10);
+ 
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ rc = gsm_m6312_at_cmd_recv(rsp,size,GSM_M6312_GET_RECV_BUFFER_SIZE_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ 
+ if(strstr(rsp,"ERROR")){
+ rc = GSM_ERR_CMD_ERR;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ if(strstr(rsp,"OK") == NULL){
+ rc = GSM_ERR_CMD_UNKNOW;
+ gsm_m6312_print_err_info(rc);
+ goto err_exit; 
+ }
+ memcpy(buffer,rsp,size);
+ rc = GSM_ERR_OK;
+ 
+err_exit:
  osMutexRelease(gsm_mutex);
- return recv_rc;
+ GSM_M6312_FREE(rsp
+ return rc;  
 }

@@ -20,19 +20,11 @@
 
 typedef enum
 {
-TCP_CONNECT_STATUS_INIT,
-TCP_CONNECT_STATUS_CONNECTED,
-TCP_CONNECT_STATUS_DISCONNECTED
-}tcp_connect_status_t;
-
-typedef struct
-{
-int conn_id;
-tcp_connect_status_t status;
-}tcp;
-
-
-
+GSM_M6312_SOCKET_INIT,
+GSM_M6312_SOCKET_CONNECT,
+GSM_M6312_SOCKET_CLOSE,
+GSM_M6312_SOCKET_BIND
+}gsm_m6312_socket_status_t;
 
 typedef enum
 {
@@ -50,24 +42,22 @@ GSM_M6312_REPORT_OFF
 
 typedef enum
 {
-GSM_GPRS_APN_CMNET,
-GSM_GPRS_APN_UNINET,
-GSM_GPRS_APN_UNKNOW
-}gsm_gprs_apn_t;
+GSM_M6312_APN_CMNET,
+GSM_M6312_APN_UNINET,
+GSM_M6312_APN_UNKNOW
+}gsm_m6312_apn_t;
 
 typedef enum
 {
-GSM_GPRS_ACTIVE_UNKNOW,
-GSM_GPRS_ACTIVE ,
-GSM_GPRS_INACTIVE
-}gsm_gprs_active_status_t;
+GSM_M6312_ACTIVE ,
+GSM_M6312_INACTIVE
+}gsm_m6312_active_status_t;
 
 typedef enum
 {
-GSM_GPRS_ATTACH_UNKNOW,
-GSM_GPRS_ATTACH,
-GSM_GPRS_NOT_ATTACH
-}gsm_gprs_attach_status_t;
+GSM_M6312_ATTACH,
+GSM_M6312_NOT_ATTACH
+}gsm_m6312_attach_status_t;
 
 typedef enum
 {
@@ -78,7 +68,6 @@ SIM_CARD_STATUS_LOCKED
 
 typedef enum
 {
-OPERATOR_UNKNOW,
 OPERATOR_CHINA_MOBILE,
 OPERATOR_CHINA_UNICOM,
 OPERATOR_CHINA_TELECOM
@@ -93,9 +82,9 @@ OPERATOR_LOGOUT_MODE
 
 typedef enum
 {
-GSM_M6312_GPRS_CONNECT_MODE_SINGLE,
-GSM_M6312_GPRS_CONNECT_MODE_MULTIPLE
-}gsm_m6312_gprs_connect_mode_t;
+GSM_M6312_CONNECT_MODE_SINGLE,
+GSM_M6312_CONNECT_MODE_MULTIPLE
+}gsm_m6312_connect_mode_t;
 
 typedef enum
 {
