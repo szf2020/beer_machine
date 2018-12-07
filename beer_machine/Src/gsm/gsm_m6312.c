@@ -1,6 +1,5 @@
 #include "beer_machine.h"
 #include "serial.h"
-#include "at_cmd.h"
 #include "gsm_m6312.h"
 #include "cmsis_os.h"
 #include "log.h"
@@ -26,10 +25,10 @@ static osMutexId gsm_mutex;
 */
 int gsm_m6312_pwr_on(void)
 {
-int rc = -1;
+int rc = GSM_ERR_HAL_GPIO;
 uint32_t timeout = 0;
 if(bsp_get_gsm_pwr_status() == BSP_GSM_STATUS_PWR_ON){
-return 0;
+return GSM_ERR_OK;
 }
 
 bsp_gsm_pwr_key_press();
@@ -53,20 +52,20 @@ return rc;
 
 int gsm_m6312_pwr_off(void)
 {
-int rc = -1;
+int rc = GSM_ERR_HAL_GPIO;
 uint32_t timeout = 0;
 
 if(bsp_get_gsm_pwr_status() == BSP_GSM_STATUS_PWR_OFF){
-return 0;
+return GSM_ERR_OK;
 }
 bsp_gsm_pwr_key_press();
 while(timeout < GSM_M6312_PWR_OFF_DELAY){
-osDelay(100);
-timeout +=100;
-if(bsp_get_gsm_pwr_status() == BSP_GSM_STATUS_PWR_OFF){
-rc = 0;
-break;
-}
+ osDelay(100);
+ timeout +=100;
+ if(bsp_get_gsm_pwr_status() == BSP_GSM_STATUS_PWR_OFF){
+ rc = 0;
+ break;
+ }
 }
 bsp_gsm_pwr_key_release();  
 return rc; 
@@ -80,60 +79,60 @@ return rc;
 */
 int gsm_m6312_serial_hal_init(void)
 {
-int rc;
+int rc ;
 rc = serial_create(&gsm_m6312_serial_handle,GSM_M6312_BUFFER_SIZE,GSM_M6312_BUFFER_SIZE);
 if(rc != 0){
 log_error("m6312 create serial hal err.\r\n");
-return -1;
+rc = GSM_ERR_HAL_INIT;
+goto err_exit;
 }
 log_debug("m6312 create serial hal ok.\r\n");
 rc = serial_register_hal_driver(gsm_m6312_serial_handle,&gsm_m6312_serial_driver);
 if(rc != 0){
 log_error("m6312 register serial hal driver err.\r\n");
-return -1;
+rc = GSM_ERR_HAL_INIT;
+goto err_exit;
 }
 log_debug("m6312 register serial hal driver ok.\r\n");
 
 rc = serial_open(gsm_m6312_serial_handle,GSM_M6312_SERIAL_PORT,GSM_M6312_SERIAL_BAUDRATES,GSM_M6312_SERIAL_DATA_BITS,GSM_M6312_SERIAL_STOP_BITS);
 if(rc != 0){
 log_error("m6312 open serial hal err.\r\n");
-return -1;
+rc = GSM_ERR_HAL_INIT;
+goto err_exit;
 }
+
 osMutexDef(gsm_mutex);
 gsm_mutex = osMutexCreate(osMutex(gsm_mutex));
 if(gsm_mutex == NULL){
 log_error("create gsm mutex err.\r\n");
-return -1;
+rc = GSM_ERR_HAL_INIT;
+goto err_exit;
 }
 osMutexRelease(gsm_mutex);
 log_debug("create gsm mutex ok.\r\n");
 
 log_debug("m6312 open serial hal ok.\r\n");
-return 0; 
+return rc; 
 }
 
-
-enum
+/* 函数名：gsm_m6312_print_err_info
+*  功能：  打印错误信息
+*  参数：  err_code 错误码 
+*  返回：  无
+*/
+static void gsm_m6312_print_err_info(const char *info,const int err_code)
 {
- GSM_ERR_OK,
- GSM_ERR_NO_MEM  = -1,
- GSM_ERR_CMD_ERR = -2,
- GSM_ERR_CMD_TIMEOUT = -3,
- GSM_ERR_RSP_TIMEOUT = -4,
- GSM_ERR_SERIAL_SEND = -5,
- GSM_ERR_SERIAL_RECV = -6,
- GSM_ERR_RECV_NO_SPACE = -7,
-};
-
-static void gsm_m6312_print_err(const int err_code)
-{
+  if(info){
+  log_debug("%s\r\n",info);
+  }
   switch(err_code)
   {
   case  GSM_ERR_OK:
-  log_debug("GSM ERR CODE:%d OK.\r\n",err_code);
+  log_debug("GSM ERR CODE:%d cmd OK.\r\n",err_code);
   break;
 
-  case  GSM_ERR_NO_MEM:
+  case  GSM_ERR_MALLOC_FAIL:
   log_error("GSM ERR CODE:%d malloc fail.\r\n",err_code);
   break;
     
@@ -150,27 +149,49 @@ static void gsm_m6312_print_err(const int err_code)
   break;
   
   case  GSM_ERR_SERIAL_SEND:
-  log_error("GSM ERR CODE:%d cmd send serial err .\r\n",err_code);   
+  log_error("GSM ERR CODE:%d serial send err.\r\n",err_code);   
   break;
   
   case  GSM_ERR_SERIAL_RECV:
-  log_error("GSM ERR CODE:%d cmd recv serial err .\r\n",err_code);   
+  log_error("GSM ERR CODE:%d serial recv err.\r\n",err_code);   
+  break;
+ 
+  case  GSM_ERR_RECV_NO_SPACE:
+  log_error("GSM ERR CODE:%d serial recv no space.\r\n",err_code);   
   break;
   
-  case  GSM_ERR_RECV_NO_SPACE:
-  log_error("GSM ERR CODE:%d cmd recv no space err .\r\n",err_code);   
+  case  GSM_ERR_SOCKET_ALREADY_CONNECT:
+  log_error("GSM ERR CODE:%d socket alread connect.\r\n",err_code);   
   break;
+  
+  case  GSM_ERR_CONNECT_FAIL:
+  log_error("GSM ERR CODE:%d socket connect fail.\r\n",err_code);   
+  break;
+  
+  case  GSM_ERR_SOCKET_SEND_FAIL:
+  log_error("GSM ERR CODE:%d socket send fail.\r\n",err_code);   
+  break;
+  
+  case  GSM_ERR_SOCKET_DISCONNECT:
+  log_error("GSM ERR CODE:%d socket disconnect err .\r\n",err_code);   
+  break;
+  
+  case  GSM_ERR_HAL_GPIO:
+  log_error("GSM ERR CODE:%d hal gpio err.\r\n",err_code);   
+  break;
+  
+  case  GSM_ERR_HAL_INIT:
+  log_error("GSM ERR CODE:%d hal init err.\r\n",err_code);   
+  break;
+  
+  case  GSM_ERR_UNKNOW:
+  log_error("GSM ERR CODE:%d unknow err.\r\n",err_code);   
+  break;
+  
   default:
-  log_error("GSM ERR CODE:%d unknowed.\r\n",err_code);   
+  log_error("GSM ERR CODE:%d invalid err code.\r\n",err_code);   
   }
 }
-
-
-typedef enum
-{
-GSM_M6312_STATUS_READY,
-GSM_M6312_STATUS_NOT_READY
-}gsm_m6312_status_t;
 
 
 static int gsm_m6312_at_cmd_build(char *buffer,const uint16_t size,const char *format,...)
@@ -183,7 +204,7 @@ static int gsm_m6312_at_cmd_send(const char *send,const uint16_t size,const uint
 {
   
   
-return GSM_ERR_NO_MEM;
+return 0;
 }
 
 static int gsm_m6312_at_cmd_recv(char *recv,const uint16_t size,const uint32_t timeout)
@@ -194,42 +215,46 @@ static int gsm_m6312_at_cmd_recv(char *recv,const uint16_t size,const uint32_t t
   
 }
 
-#define  GSM_M6312_GET_SIM_CARD_STATUS_SEND_TIMEOUT      10
-#define  GSM_M6312_GET_SIM_CARD_STATUS_RECV_TIMEOUT      1000
 
 /* 函数名：gsm_m6312_get_sim_card_status
 *  功能：  获取 sim card 状态
-*  参数：  无 
+*  参数：  status 状态指针 
 *  返回：  0：ready 其他：失败
 */
-int gsm_m6312_get_sim_card_status(sim_card_status_t *status)
+int gsm_m6312_get_sim_card_id(char *sim_id)
 {
  int rc;
- char rsp[20];
+ char rsp[20] = { 0 };
  const char *at_cmd = "AT+CPIN?\r\n";
  
  osMutexWait(gsm_mutex,osWaitForever);
  rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),GSM_M6312_GET_SIM_CARD_STATUS_SEND_TIMEOUT);
- GSM_M6312_CHECK_ERR_CODE(rc);
- 
- memset(rsp,0,20);
- rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_GET_SIM_CARD_STATUS_RECV_TIMEOUT);
- GSM_M6312_CHECK_ERR_CODE(rc);
- 
- if(strstr(rsp,"+CPIN: ERROR") != NULL){ 
- return GSM_ERR_CMD_ERR;  
+ if(rc != GSM_ERR_OK){
+ goto err_exit;
  }
  
- if(strstr(rsp,"+CPIN: READY\r\n") != NULL){
+ rc = gsm_m6312_at_cmd_recv(rsp,20,GSM_M6312_GET_SIM_CARD_STATUS_RECV_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ goto err_exit;
+ }
+ 
+ if(strstr(rsp,"+CPIN: ERROR") != NULL){ 
+ rc = GSM_ERR_CMD_ERR;  
+ goto err_exit;
+ }
+ 
+ if(strstr(rsp,"+CPIN: READY\r\n")){
  *status = SIM_CARD_STATUS_READY;
- }else if(strstr(rsp,"+CPIN: NO SIM\r\n") != NULL){
+ }else if(strstr(rsp,"+CPIN: NO SIM\r\n")){
  *status = SIM_CARD_STATUS_NO_SIM_CARD;
- }else if(strstr(rsp,"+CPIN: BLOCK\r\n") != NULL){
+ }else if(strstr(rsp,"+CPIN: BLOCK\r\n")){
  *status = SIM_CARD_STATUS_BLOCK;
  }else{
  *status = SIM_CARD_STATUS_UNKNOW;  
  }
  
+err_exit:
+ gsm_m6312_print_err_info(at_cmd,rc);
  return GSM_ERR_OK;  
  }
  
@@ -237,40 +262,47 @@ int gsm_m6312_get_sim_card_status(sim_card_status_t *status)
 #define  GSM_M6312_SET_ECHO_RSP_TIMEOUT      1000
 /* 函数名：gsm_m6312_set_echo
 *  功能：  设置是否回显输入的命令
-*  参数：  echo回显设置 
+*  参数：  echo 回显设置 
 *  返回：  0：成功 其他：失败
 */
 int gsm_m6312_set_echo(gsm_m6312_echo_t echo)
 {
  int rc;
- char rsp[10];
- char *at_str;
+ char rsp[10] = { 0 };
+ char *at_cmd;
  
  osMutexWait(gsm_mutex,osWaitForever);
  
  if(echo == GSM_M6312_ECHO_ON){
- at_str = "ATE1\r\n";
+ at_cmd = "ATE1\r\n";
  }else{
- at_str = "ATE0\r\n";
+ at_cmd = "ATE0\r\n";
  }
- rc = gsm_m6312_at_cmd_send(at_str,strlen(at_str),5);
- GSM_M6312_CHECK_ERR_CODE(rc);
- 
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),5);
+ if(rc != GSM_ERR_OK){
+ goto err_exit;
+ }
  rc = gsm_m6312_at_cmd_recv(rsp,10,GSM_M6312_SET_ECHO_RSP_TIMEOUT);
- GSM_M6312_CHECK_ERR_CODE(rc);
- 
- if(strstr(rsp,"ERROR") != NULL){
- return GSM_ERR_CMD_ERR;
+ if(rc != GSM_ERR_OK){
+ goto err_exit;
  }
  
- if(strstr(rsp,"OK") != NULL){
- return GSM_ERR_OK;
+ if(strstr(rsp,"ERROR")){
+ rc = GSM_ERR_CMD_ERR;
+ goto err_exit;
  }
  
- return GSM_ERR_UNKNOW;
+ if(strstr(rsp,"OK") == NULL){
+ rc = GSM_ERR_UNKNOW;
+ }
+ rc = GSM_ERR_OK;
+ 
+err_exit:
+ gsm_m6312_print_err_info(at_cmd,rc);
+ return rc;   
 } 
 
-
+#define  GSM_M6312_GET_IMEI_SEND_TIMEOUT     5
 #define  GSM_M6312_GET_IMEI_RSP_TIMEOUT      1000
 /* 函数名：gsm_m6312_get_imei
 *  功能：  获取设备IMEI串号
@@ -281,29 +313,40 @@ int gsm_m6312_get_imei(char *imei)
 {
  int rc;
  const char *at_cmd = "AT+CGSN\r\n";
- char rsp[30];
- char *p;
+ char rsp[30] = { 0 };
+ char *p = NULL;
  
  osMutexWait(gsm_mutex,osWaitForever);
  
- rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),5);
- GSM_M6312_CHECK_ERR_CODE(rc);
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),GSM_M6312_GET_IMEI_SEND_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ goto err_exit;
+ }
  
  rc = gsm_m6312_at_cmd_recv(rsp,30,GSM_M6312_GET_IMEI_RSP_TIMEOUT);
- GSM_M6312_CHECK_ERR_CODE(rc); 
- 
- if(strstr(rsp,"ERROR") != NULL){
- return GSM_ERR_CMD_ERR;
+ if(rc != GSM_ERR_OK){
+ goto err_exit;
  }
  
- p = strst(rsp,"+CGSN: ");
- if(p){
+ if(strstr(rsp,"ERROR")){
+ rc = GSM_ERR_CMD_ERR;
+ goto err_exit;
+ }
+ /*找到开始标志*/
+ p = strstr(rsp,"+CGSN: ");
+ if(p == NULL){
+ rc = GSM_ERR_UNKNOW;
+ goto err_exit;
+ }
+ /*imei 15位*/
  memcpy(imei,p + strlen("+CGSN: "),15);
  imei[15] = '\0';
- return GSM_ERR_OK;
- }
- 
-return GSM_ERR_UNKNOW; 
+ rc = GSM_ERR_OK;
+  
+err_exit:
+ gsm_m6312_print_err_info(at_cmd,rc);
+ osMutexRelease(gsm_mutex);
+ return rc;
 }
 
 
