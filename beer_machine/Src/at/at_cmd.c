@@ -94,8 +94,7 @@ int at_cmd_execute(int handle,at_cmd_t *cmd)
  cmd->err_code = 0;
  write_len_total = 0;
  write_remain = cmd->request_size;
- /*清空serial buffer*/
- serial_flush(handle);
+
  
  do{
  osDelay(1);

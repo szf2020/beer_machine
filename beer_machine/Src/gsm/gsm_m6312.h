@@ -18,11 +18,6 @@
 #define  GSM_M6312_IMEI_LEN                      15
 #define  GSM_M6312_SN_LEN                        20
 
-#define  GSM_M6312_GET_SIM_CARD_STATUS_SEND_TIMEOUT      10
-#define  GSM_M6312_GET_SIM_CARD_STATUS_RECV_TIMEOUT      1000
-
-
-
 enum
 {
  GSM_ERR_OK,
@@ -37,9 +32,10 @@ enum
  GSM_ERR_CONNECT_FAIL = -9,
  GSM_ERR_SOCKET_SEND_FAIL = -10,
  GSM_ERR_SOCKET_DISCONNECT = -11,
- GSM_ERR_HAL_GPIO = -12,
- GSM_ERR_HAL_INIT = -13,
- GSM_ERR_UNKNOW = -200,
+ GSM_ERR_NULL_POINTER = -12,
+ GSM_ERR_HAL_GPIO = -13,
+ GSM_ERR_HAL_INIT = -14,
+ GSM_ERR_UNKNOW = -200
 };
 
 
@@ -48,6 +44,7 @@ typedef enum
 {
 GSM_M6312_SOCKET_INIT,
 GSM_M6312_SOCKET_CONNECT,
+GSM_M6312_SOCKET_CONNECTTING,
 GSM_M6312_SOCKET_CLOSE,
 GSM_M6312_SOCKET_BIND
 }gsm_m6312_socket_status_t;
@@ -161,12 +158,7 @@ int gsm_m6312_pwr_off(void);
 *  返回：  0：成功 其他：失败
 */
 int gsm_m6312_serial_hal_init(void);
-/* 函数名：gsm_m6312_is_ready
-*  功能：  gsm_m6312模块是否就绪
-*  参数：  无 
-*  返回：  0：ready 其他：失败
-*/
-int gsm_m6312_is_ready();
+
 /* 函数名：gsm_m6312_set_echo
 *  功能：  设置是否回显输入的命令
 *  参数：  echo回显设置 
@@ -197,46 +189,46 @@ int gsm_m6312_get_sn(char *sn);
 *  参数：  apn 网络APN 
 *  返回：  0：成功 其他：失败
 */
-int gsm_m6312_gprs_set_apn(int cid,gsm_gprs_apn_t apn);
+int gsm_m6312_gprs_set_apn(gsm_m6312_apn_t apn);
 /* 函数名：gsm_m6312_gprs_get_apn
 *  功能：  获取指定cid的gprs的apn
 *  参数：  cid 指定cid 
 *  参数：  apn 指针 
 *  返回：  0：成功 其他：失败
 */
-int gsm_m6312_gprs_get_apn(int cid,gsm_gprs_apn_t *apn);
+int gsm_m6312_gprs_get_apn(gsm_m6312_apn_t *apn);
 /* 函数名：gsm_m6312_gprs_set_active_status
 *  功能：  激活或者去激活指定cid的GPRS功能
 *  参数：  cid gprs cid 
 *  参数：  active 状态 
 *  返回：  0：成功 其他：失败
 */
-int gsm_m6312_gprs_set_active_status(int cid,gsm_gprs_active_status_t active);
+int gsm_m6312_gprs_set_active_status(gsm_m6312_active_status_t active);
 /* 函数名：gsm_m6312_gprs_get_active_status
 *  功能：  获取对应cid的GPRS激活状态
 *  参数：  cid   gprs的id 
 *  参数：  active gprs状态指针 
 *  返回：  0：成功 其他：失败
 */
-int gsm_m6312_gprs_get_active_status(int cid,gsm_gprs_active_status_t *active);
+int gsm_m6312_gprs_get_active_status(gsm_m6312_active_status_t *active);
 /* 函数名：gsm_m6312_gprs_set_attach_status
 *  功能：  设置GPRS网络附着状态
 *  参数：  attach GPRS附着状态 
 *  返回：  0：成功 其他：失败
 */
-int gsm_m6312_gprs_set_attach_status(gsm_gprs_attach_status_t attach);
+int gsm_m6312_gprs_set_attach_status(gsm_m6312_attach_status_t attach);
 /* 函数名：gsm_m6312_gprs_get_attach_status
 *  功能：  获取GPRS的附着状态
 *  参数：  attach GPRS附着状态指针
 *  返回：  0：成功 其他：失败
 */
-int gsm_m6312_gprs_get_attach_status(gsm_gprs_attach_status_t *attach);
+int gsm_m6312_gprs_get_attach_status(gsm_m6312_attach_status_t *attach);
 /* 函数名：gsm_m6312_gprs_set_connect_mode
 *  功能：  设置连接模式指令
 *  参数：  mode 单路或者多路 
 *  返回：  0：成功 其他：失败
 */
-int gsm_m6312_gprs_set_connect_mode(gsm_m6312_gprs_connect_mode_t mode);
+int gsm_m6312_gprs_set_connect_mode(gsm_m6312_connect_mode_t mode);
 /* 函数名：gsm_m6312_get_operator
 *  功能：  查询运营商
 *  参数：  operator_name 运营商指针
@@ -283,7 +275,7 @@ int gsm_m6312_close_client(int conn_id);
 *  参数：  status连接状态指针
 *  返回：  0：成功 其他：失败
 */
-int gsm_m6312_get_connect_status(const int conn_id,tcp_connect_status_t *status);
+int gsm_m6312_get_connect_status(const int conn_id,gsm_m6312_socket_status_t *status);
 /* 函数名：gsm_m6312_send
 *  功能：  发送数据
 *  参数：  conn_id 连接ID
