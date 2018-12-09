@@ -101,12 +101,13 @@ void connection_manage_task(void const *argument)
  connection_manage_task_msg_q_id = osMessageCreate(osMessageQ(connection_manage_task_msg_q),connection_manage_task_handle);
  log_assert(connection_manage_task_msg_q_id);
 
+ /*网络连接初始化*/
+ connection_init();
  /*等待任务同步*/
  xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_NET_MANAGE_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
  log_debug("net manage task sync ok.\r\n");
  
- /*网络连接初始化*/
- connection_init();
+
  
  wifi_query_timer_init();
  gsm_query_timer_init();

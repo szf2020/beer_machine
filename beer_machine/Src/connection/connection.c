@@ -110,21 +110,26 @@ static int connection_gsm_init(void)
 {
  int rc;
  operator_name_t operator_name;
- gsm_gprs_apn_t apn;
-  
- /*去除附着网络*/
- rc = gsm_m6312_gprs_set_attach_status(GSM_GPRS_NOT_ATTACH); 
- if(rc != 0){
- goto err_handler;
- }
+ gsm_m6312_apn_t apn;
+ 
  /*关闭回显*/
  rc = gsm_m6312_set_echo(GSM_M6312_ECHO_OFF); 
  if(rc != 0){
  goto err_handler;
  }
+ rc = gsm_m6312_set_report(GSM_M6312_REPORT_OFF);
+ if(rc != 0){
+ goto err_handler;
+ }
+ /*去除附着网络*/
+ rc = gsm_m6312_set_attach_status(GSM_M6312_NOT_ATTACH); 
+ if(rc != 0){
+ goto err_handler;
+ }
+
  
  /*设置多连接*/
- rc = gsm_m6312_gprs_set_connect_mode(GSM_M6312_GPRS_CONNECT_MODE_MULTIPLE); 
+ rc = gsm_m6312_set_connect_mode(GSM_M6312_CONNECT_MODE_MULTIPLE); 
  if(rc != 0){
  goto err_handler;
  }
@@ -142,22 +147,22 @@ static int connection_gsm_init(void)
  }
  /*赋值apn值*/
  if(operator_name == OPERATOR_CHINA_MOBILE){
- apn =  GSM_GPRS_APN_CMNET;
+ apn =  GSM_M6312_APN_CMNET;
  }else{
- apn = GSM_GPRS_APN_UNINET;
+ apn = GSM_M6312_APN_UNINET;
  }
  /*设置apn*/
- rc = gsm_m6312_gprs_set_apn(1,apn); 
+ rc = gsm_m6312_set_apn(apn); 
  if(rc != 0){
  goto err_handler;
  }
  /*附着网络*/
- rc = gsm_m6312_gprs_set_attach_status(GSM_GPRS_ATTACH); 
+ rc = gsm_m6312_set_attach_status(GSM_M6312_ATTACH); 
  if(rc != 0){
  goto err_handler;
  }
  /*激活网络*/
- rc = gsm_m6312_gprs_set_active_status(1,GSM_GPRS_ACTIVE); 
+ rc = gsm_m6312_set_active_status(GSM_M6312_ACTIVE); 
  
 err_handler:
   if(rc == 0){
@@ -179,7 +184,7 @@ int connection_query_gsm_status()
  sim_card_status_t sim_card_status;
 
  /*获取sim卡状态*/
- rc = gsm_m6312_is_sim_card_ready(&sim_card_status);
+ rc = gsm_m6312_get_sim_card_status(&sim_card_status);
  if(rc == 0){
  /*sim卡是否就位*/
  if(sim_card_status == SIM_CARD_STATUS_READY){
@@ -413,7 +418,6 @@ int connection_send(int connection_handle,const char *buffer,int length)
 int connection_recv(int connection_handle,char *buffer,int buffer_size)
 {
  int rc;
- int recv_size;
  
  if(buffer_size == 0){
  return 0;
@@ -424,15 +428,7 @@ int connection_recv(int connection_handle,char *buffer,int buffer_size)
  if(connection_handle >= CONNECTION_GSM_CONNECT_HANDLE_BASE){
  if(connection_manage.gsm.status == CONNECTION_STATUS_READY){
  connection_handle -=CONNECTION_GSM_CONNECT_HANDLE_BASE;
- rc = gsm_m6312_get_recv_buffer_size(connection_handle);
- if(rc < 0){
- return -1;
- }
- if(rc == 0){
- return 0;
- }
- recv_size = rc <= buffer_size ? rc : buffer_size;
- rc = gsm_m6312_recv(connection_handle,buffer,recv_size);
+ rc = gsm_m6312_recv(connection_handle,buffer,buffer_size);
  }
  }else{
  /*此连接handle是WIFI网络*/

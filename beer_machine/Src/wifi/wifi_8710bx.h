@@ -138,65 +138,66 @@ int wifi_8710bx_hal_init();
 /* 函数名：wifi_8710bx_reset
 *  功能：  wifi软件复位 
 *  参数：  无
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int wifi_8710bx_reset(void);
 
 /* 函数名：wifi_8710bx_set_mode
 *  功能：  设置作模式 
 *  参数：  mode 模式 station or ap
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int wifi_8710bx_set_mode(const wifi_8710bx_mode_t mode);
 /* 函数名：wifi_8710bx_set_echo
 *  功能：  设置回显模式 
 *  参数：  echo 回显值 打开或者关闭
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int wifi_8710bx_set_echo(const wifi_8710bx_echo_t echo);
 /* 函数名：wifi_8710bx_config_ap
 *  功能：  配置AP参数 
 *  参数：  ap参数指针
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int wifi_8710bx_config_ap(const wifi_8710bx_ap_config_t *ap);
 /* 函数名：wifi_8710bx_get_ap_rssi
 *  功能：  扫描出指定ap的rssi值 
 *  参数：  ssid ap的ssid名称
 *  参数：  rssi ap的rssi的指针
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int wifi_8710bx_get_ap_rssi(const char *ssid,int *rssi);
 /* 函数名：wifi_8710bx_connect_ap
 *  功能：  连接指定的ap
 *  参数：  ssid ap的ssid名称
 *  参数：  passwd ap的passwd
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int wifi_8710bx_connect_ap(const char *ssid,const char *passwd);
 /* 函数名：wifi_8710bx_disconnect_ap
 *  功能：  断开指定的ap连接
 *  参数：  无
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int wifi_8710bx_disconnect_ap(void);
 /* 函数名：wifi_8710bx_get_wifi_device
 *  功能：  获取wifi设备信息
 *  参数：  wifi_device 设备指针
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int wifi_8710bx_get_wifi_device(wifi_8710bx_device_t *wifi_device);
+
 /* 函数名：wifi_8710bx_get_connection
 *  功能：  获取连接信息
 *  参数：  connection_list 连接列表指针
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int wifi_8710bx_get_connection(wifi_8710bx_connection_list_t *connection_list);
 /* 函数名：wifi_8710bx_open_server
 *  功能：  创建服务端
 *  参数：  port 服务端本地端口
 *  参数：  protocol   服务端网络协议类型
-*  返回：  连接句柄，大于0：成功 其他：失败
+*  返回：  连接句柄，大于WIFI_ERR_OK：成功 其他：失败
 */
 int wifi_8710bx_open_server(const uint16_t port,const wifi_8710bx_net_protocol_t protocol);
 /* 函数名：wifi_8710bx_open_client
@@ -205,13 +206,13 @@ int wifi_8710bx_open_server(const uint16_t port,const wifi_8710bx_net_protocol_t
 *  参数：  remote_port 服务端端口
 *  参数：  local_port  本地端口
 *  参数：  protocol    网络协议类型
-*  返回：  连接句柄，大于0：成功 其他：失败
+*  返回：  连接句柄，大于WIFI_ERR_OK：成功 其他：失败
 */
 int wifi_8710bx_open_client(const char *host,const uint16_t remote_port,const uint16_t local_port,const wifi_8710bx_net_protocol_t protocol);
 /* 函数名：wifi_8710bx_close
 *  功能：  关闭客户或者服务端域      
 *  参数：  conn_id     连接句柄
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int wifi_8710bx_close(const int conn_id);
 /* 函数名：wifi_8710bx_send
@@ -219,7 +220,7 @@ int wifi_8710bx_close(const int conn_id);
 *  参数：  conn_id 连接句柄
 *  参数：  data    数据buffer
 *  参数：  size    需要发送的数量
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int wifi_8710bx_send(int conn_id,const char *data,const int size);
 /* 函数名：wifi_8710bx_recv

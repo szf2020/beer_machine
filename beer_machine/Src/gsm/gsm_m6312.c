@@ -21,7 +21,7 @@ static osMutexId gsm_mutex;
 /* 函数名：gsm_m6312_pwr_on
 *  功能：  m6312 2g模块开机
 *  参数：  无 
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_pwr_on(void)
 {
@@ -46,7 +46,7 @@ int gsm_m6312_pwr_on(void)
 /* 函数名：gsm_m6312_pwr_off
 *  功能：  m6312 2g模块关机
 *  参数：  无 
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 
 int gsm_m6312_pwr_off(void)
@@ -75,7 +75,7 @@ int gsm_m6312_pwr_off(void)
 /* 函数名：gsm_m6312_serial_hal_init
 *  功能：  m6312 2g模块执行硬件和串口初始化
 *  参数：  无 
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_serial_hal_init(void)
 {
@@ -220,7 +220,7 @@ static int gsm_m6312_at_cmd_send(const char *send,const uint16_t size,const uint
  return GSM_ERR_OK;
 }
 
-#define  GSM_M6312_SELECT_TIMEOUT          5
+#define  GSM_M6312_SELECT_TIMEOUT          10
 static int gsm_m6312_at_cmd_recv(char *recv,const uint16_t size,const uint32_t timeout)
 {
  int select_size;
@@ -251,17 +251,64 @@ static int gsm_m6312_at_cmd_recv(char *recv,const uint16_t size,const uint32_t t
  } 
  }while(select_size != 0);
  
+ recv[read_total] = '\0';
  return GSM_ERR_OK;
  }
 
-  
+#define  GSM_M6312_GET_SIM_CARD_STATUS_SEND_TIMEOUT         5
+#define  GSM_M6312_GET_SIM_CARD_STATUS_RSP_TIMEOUT          1000
+/* 函数名：gsm_m6312_get_sim_card_status
+*  功能：  获取设备sim卡状态
+*  参数：  sim_status sim状态指针
+*  返回：  GSM_ERR_OK：成功 其他：失败
+*/
+int gsm_m6312_get_sim_card_status(sim_card_status_t *sim_status)
+{
+ int rc;
+ const char *at_cmd = "AT+CPIN?\r\n";
+ char rsp[30] = { 0 };
+ 
+ osMutexWait(gsm_mutex,osWaitForever);
+ 
+ rc = gsm_m6312_at_cmd_send(at_cmd,strlen(at_cmd),GSM_M6312_GET_SIM_CARD_STATUS_SEND_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ goto err_exit;
+ }
+ 
+ rc = gsm_m6312_at_cmd_recv(rsp,30,GSM_M6312_GET_SIM_CARD_STATUS_RSP_TIMEOUT);
+ if(rc != GSM_ERR_OK){
+ goto err_exit;
+ }
+ 
+ if(strstr(rsp,"ERROR")){
+ rc = GSM_ERR_CMD_ERR;
+ goto err_exit;
+ }
+ if(strstr(rsp,"READY")){
+ *sim_status = SIM_CARD_STATUS_READY;
+ }else if(strstr(rsp,"NO SIM")){
+ *sim_status = SIM_CARD_STATUS_NO_SIM_CARD;
+ }else if(strstr(rsp,"BLOCK")){
+ *sim_status = SIM_CARD_STATUS_BLOCK;
+ }else{
+ rc = GSM_ERR_UNKNOW;
+ goto err_exit;  
+ }
+ rc = GSM_ERR_OK;
+ 
+err_exit:
+ gsm_m6312_print_err_info(at_cmd,rc);
+ osMutexRelease(gsm_mutex);
+ return rc;
+}
+
 #define  GSM_M6312_GET_SIM_ID_SEND_TIMEOUT         5
 #define  GSM_M6312_GET_SIM_ID_RSP_TIMEOUT          1000
 
 /* 函数名：gsm_m6312_get_sim_card_id
 *  功能：  获取 sim card id
 *  参数：  sim_id 指针 
-*  返回：  0：ready 其他：失败
+*  返回：  GSM_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_get_sim_card_id(char *sim_id)
 {
@@ -307,7 +354,7 @@ err_exit:
 /* 函数名：gsm_m6312_set_echo
 *  功能：  设置是否回显输入的命令
 *  参数：  echo 回显设置 
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_set_echo(gsm_m6312_echo_t echo)
 {
@@ -456,7 +503,7 @@ err_exit:
 /* 函数名：gsm_m6312_gprs_set_apn
 *  功能：  设置指定cid的gprs的APN
 *  参数：  apn 网络APN 
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_set_apn(gsm_m6312_apn_t apn)
 {
@@ -507,7 +554,7 @@ err_exit:
 /* 函数名：gsm_m6312_gprs_get_apn
 *  功能：  获取apn
 *  参数：  apn 指针 
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_get_apn(gsm_m6312_apn_t *apn)
 {
@@ -562,7 +609,7 @@ err_exit:
 /* 函数名：gsm_m6312_gprs_set_active_status
 *  功能：  激活或者去激活GPRS功能
 *  参数：  active 状态 
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_set_active_status(gsm_m6312_active_status_t active)
 {
@@ -609,7 +656,7 @@ err_exit:
 /* 函数名：gsm_m6312_get_active_status
 *  功能：  获取激活状态
 *  参数：  active 状态指针 
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_get_active_status(gsm_m6312_active_status_t *active)
 {
@@ -659,7 +706,7 @@ err_exit:
 /* 函数名：gsm_m6312_set_attach_status
 *  功能：  设置GPRS网络附着状态
 *  参数：  attach GPRS附着状态 
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_set_attach_status(gsm_m6312_attach_status_t attach)
 {
@@ -706,7 +753,7 @@ err_exit:
 /* 函数名：gsm_m6312_get_attach_status
 *  功能：  获取附着状态
 *  参数：  attach 附着状态指针
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_get_attach_status(gsm_m6312_attach_status_t *attach)
 {
@@ -759,7 +806,7 @@ err_exit:
 /* 函数名：gsm_m6312_set_connect_mode
 *  功能：  设置连接模式指令
 *  参数：  mode 单路或者多路 
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_set_connect_mode(gsm_m6312_connect_mode_t mode)
 {
@@ -806,7 +853,7 @@ err_exit:
 /* 函数名：gsm_m6312_get_operator
 *  功能：  查询运营商
 *  参数：  operator_name 运营商指针
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_get_operator(operator_name_t *operator_name)
 {
@@ -858,7 +905,7 @@ err_exit:
 /* 函数名：gsm_m6312_set_auto_operator_format
 *  功能：  设置自动运营商选择和运营商格式
 *  参数：  operator_format 运营商格式
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_set_auto_operator_format(gsm_m6312_operator_format_t operator_format)
 {
@@ -908,7 +955,7 @@ err_exit:
 /* 函数名：gsm_m6312_set_set_prompt
 *  功能：  设置发送提示
 *  参数：  prompt 设置的发送提示
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_set_send_prompt(gsm_m6312_send_prompt_t prompt)
 {
@@ -956,7 +1003,7 @@ err_exit:
 /* 函数名：gsm_m6312_set_transparent
 *  功能：  设置透传模式
 *  参数：  transparent 连接ID
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_set_transparent(gsm_m6312_transparent_t transparent)
 {
@@ -1003,7 +1050,7 @@ err_exit:
 /* 函数名：gsm_m6312_set_report
 *  功能：  关闭信息上报
 *  参数：  无
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_set_report(gsm_m6312_report_t report)
 {
@@ -1054,7 +1101,7 @@ err_exit:
 *  参数：  protocol协议类型<TCP或者UDP>
 *  参数：  host 主机IP后者域名
 *  参数：  port 主机端口号
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_open_client(int conn_id,gsm_m6312_net_protocol_t protocol,const char *host,uint16_t port)
 {
@@ -1116,7 +1163,7 @@ err_exit:
 /* 函数名：gsm_m6312_close_client
 *  功能：  关闭连接
 *  参数：  conn_id 连接ID
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_close_client(int conn_id)
 {
@@ -1157,7 +1204,7 @@ err_exit:
 *  功能：  获取连接的状态
 *  参数：  conn_id 连接ID
 *  参数：  status连接状态指针
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_get_connect_status(const int conn_id,gsm_m6312_socket_status_t *status)
 {
@@ -1234,7 +1281,7 @@ err_exit:
 *  参数：  conn_id 连接ID
 *  参数：  data 数据buffer
 *  参数：  size 发送的数据数量
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_send(int conn_id,const char *data,const int size)
 {
@@ -1304,7 +1351,7 @@ err_exit:
 /* 函数名：gsm_m6312_config_recv_buffer
 *  功能：  配置数据接收缓存
 *  参数：  buffer 缓存类型
-*  返回：  0：成功 其他：失败
+*  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_config_recv_buffer(gsm_m6312_recv_buffer_t buffer)
 {
@@ -1430,10 +1477,6 @@ int gsm_m6312_recv(int conn_id,char *buffer,const int size)
  goto err_exit; 
  }
  
- if(strstr(rsp,"OK") == NULL){
- rc = GSM_ERR_UNKNOW;
- goto err_exit; 
- }
  memcpy(buffer,rsp,recv_buffer_size);
  rc = recv_buffer_size;
  
