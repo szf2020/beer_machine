@@ -22,6 +22,29 @@
 
 #define  WIFI_8710BX_CONNECTION_CNT_MAX   5
 
+#define  WIFI_8710BX_SEND_BUFFER_SIZE      2000
+#define  WIFI_8710BX_RECV_BUFFER_SIZE      2000
+
+typedef struct 
+{
+    char *str;
+    int code;
+    void *next;
+}wifi_8710bx_err_code_t;
+
+
+typedef struct
+{
+    char send[WIFI_8710BX_SEND_BUFFER_SIZE];
+    char recv[WIFI_8710BX_RECV_BUFFER_SIZE];
+    uint16_t send_size;
+    uint16_t recv_size;
+    uint16_t send_timeout;
+    uint32_t recv_timeout;
+    wifi_8710bx_err_code_t *err_head;
+    bool complete;
+}wifi_8710bx_at_cmd_t;
+
 enum   {
  WIFI_ERR_OK,
  WIFI_ERR_MALLOC_FAIL = -1,
@@ -31,13 +54,14 @@ enum   {
  WIFI_ERR_SERIAL_SEND = -5,
  WIFI_ERR_SERIAL_RECV = -6,
  WIFI_ERR_RECV_NO_SPACE = -7,
- WIFI_ERR_SOCKET_ALREADY_CONNECT = -8,
- WIFI_ERR_CONNECT_FAIL = -9,
- WIFI_ERR_SOCKET_SEND_FAIL = -10,
- WIFI_ERR_SOCKET_DISCONNECT = -11,
- WIFI_ERR_NULL_POINTER = -12,
- WIFI_ERR_HAL_GPIO = -13,
- WIFI_ERR_HAL_INIT = -14,
+ WIFI_ERR_SEND_NO_SPACE = -8,
+ WIFI_ERR_SOCKET_ALREADY_CONNECT = -9,
+ WIFI_ERR_CONNECT_FAIL = -10,
+ WIFI_ERR_SOCKET_SEND_FAIL = -11,
+ WIFI_ERR_SOCKET_DISCONNECT = -12,
+ WIFI_ERR_NULL_POINTER = -13,
+ WIFI_ERR_HAL_GPIO = -14,
+ WIFI_ERR_HAL_INIT = -15,
  WIFI_ERR_UNKNOW = -200
 };
 
