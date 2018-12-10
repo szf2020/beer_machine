@@ -4,7 +4,7 @@
 
 void bsp_board_init(void)
 {
-  
+bsp_gsm_pwr_key_release();  
  
 }
 

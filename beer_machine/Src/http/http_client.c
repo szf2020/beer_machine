@@ -276,8 +276,8 @@ static int http_client_request(const char *method,const char *url,http_client_re
  http_connection.handle = rc;
  http_connection.connected = true;
  /*http 发送*/
- rc = connection_send(http_connection.handle,http_buffer,req_len);
- if(rc != 0){
+ rc = connection_send(http_connection.handle,http_buffer,req_len,1000);
+ if(rc != req_len){
  log_error("http send err.\r\n");
  goto err_handler;
  }
@@ -287,12 +287,10 @@ static int http_client_request(const char *method,const char *url,http_client_re
  /*循环接收数据*/
  start_time = osKernelSysTick();
  do{
- rc = connection_recv(http_connection.handle,http_buffer,HTTP_BUFFER_SIZE);
+ rc = connection_recv(http_connection.handle,http_buffer,HTTP_BUFFER_SIZE,10);
  if(rc < 0){
  log_error("http recv err.\r\n");
  goto err_handler;
- }else if(rc == 0){
- osDelay(10);
  }else if(rc > 0){
  /*解析数据*/
  rc = http_client_parse_response(http_buffer,res);

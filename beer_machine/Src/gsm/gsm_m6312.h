@@ -18,6 +18,28 @@
 #define  GSM_M6312_IMEI_LEN                      15
 #define  GSM_M6312_SN_LEN                        20
 
+#define  GSM_M6312_SEND_BUFFER_SIZE              2000
+#define  GSM_M6312_RECV_BUFFER_SIZE              2000
+typedef struct 
+{
+    char *str;
+    int code;
+    void *next;
+}gsm_m6312_err_code_t;
+
+
+typedef struct
+{
+    char send[GSM_M6312_SEND_BUFFER_SIZE];
+    char recv[GSM_M6312_RECV_BUFFER_SIZE];
+    uint16_t send_size;
+    uint16_t recv_size;
+    uint16_t send_timeout;
+    uint32_t recv_timeout;
+    gsm_m6312_err_code_t *err_head;
+    bool complete;
+}gsm_m6312_at_cmd_t;
+
 enum
 {
  GSM_ERR_OK,
@@ -25,16 +47,18 @@ enum
  GSM_ERR_CMD_ERR = -2,
  GSM_ERR_CMD_TIMEOUT = -3,
  GSM_ERR_RSP_TIMEOUT = -4,
- GSM_ERR_SERIAL_SEND = -5,
- GSM_ERR_SERIAL_RECV = -6,
- GSM_ERR_RECV_NO_SPACE = -7,
- GSM_ERR_SOCKET_ALREADY_CONNECT = -8,
- GSM_ERR_CONNECT_FAIL = -9,
- GSM_ERR_SOCKET_SEND_FAIL = -10,
- GSM_ERR_SOCKET_DISCONNECT = -11,
- GSM_ERR_NULL_POINTER = -12,
- GSM_ERR_HAL_GPIO = -13,
- GSM_ERR_HAL_INIT = -14,
+ GSM_ERR_SEND_TIMEOUT = -5,
+ GSM_ERR_SERIAL_SEND = -6,
+ GSM_ERR_SERIAL_RECV = -7,
+ GSM_ERR_RECV_NO_SPACE = -8,
+ GSM_ERR_SEND_NO_SPACE = -9,
+ GSM_ERR_SOCKET_ALREADY_CONNECT = -10,
+ GSM_ERR_CONNECT_FAIL = -11,
+ GSM_ERR_SOCKET_SEND_FAIL = -12,
+ GSM_ERR_SOCKET_DISCONNECT = -13,
+ GSM_ERR_NULL_POINTER = -14,
+ GSM_ERR_HAL_GPIO = -15,
+ GSM_ERR_HAL_INIT = -16,
  GSM_ERR_UNKNOW = -200
 };
 

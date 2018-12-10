@@ -50,9 +50,15 @@ int connection_init()
  if(wifi_8710bx_hal_init() !=0 || gsm_m6312_serial_hal_init() != 0){
  return -1;
  }
+ 
+ if( connection_wifi_reset() != 0){
+ return -1;
+ }
+ 
  if(connection_gsm_reset() != 0){
  return -1;
  }
+ 
  connection_manage.wifi.config = false;
  connection_manage.wifi.initialized = false;
  connection_manage.wifi.status = CONNECTION_STATUS_NOT_READY;
@@ -194,9 +200,10 @@ int connection_query_gsm_status()
  connection_manage.gsm.initialized = true;
  connection_manage.gsm.status = CONNECTION_STATUS_READY;
  }
- }else{
+ }
+ } else{
+ connection_manage.gsm.initialized = false;
  connection_manage.gsm.status = CONNECTION_STATUS_NOT_READY;
- } 
  } 
  }
  return rc;   
@@ -295,9 +302,11 @@ int connection_wifi_reset()
 int connection_gsm_reset()
 {
  if(gsm_m6312_pwr_off() != 0){
+ log_error("gsm pwr off err.\r\n");
  return -1;
  }
  if(gsm_m6312_pwr_on() != 0){
+ log_error("gsm pwr on err.\r\n");
  return -1;
  }
  return 0; 
@@ -381,31 +390,41 @@ int connection_disconnect(int connection_handle)
 *  参数：  connection_handle 连接句柄
 *  参数：  buffer 发送缓存
 *  参数：  length 缓存长度
-*  返回：  0：成功 其他：失败
+*  参数    timeout 发送超时
+*  返回：  >=0 成功发送的数据 其他：失败
 */ 
-int connection_send(int connection_handle,const char *buffer,int length)
+int connection_send(int connection_handle,const char *buffer,int length,uint32_t timeout)
 {
- int rc = -1;
-
+ int send_total = 0,send_size = 0,send_left = length;
+ uint32_t start_time,cur_time;
+ 
+ start_time = osKernelSysTick();
+ cur_time = start_time;
  /*此连接handle是GSM网络*/
+ while(send_left > 0 && cur_time - start_time < timeout){
+   
  if(connection_handle >= CONNECTION_GSM_CONNECT_HANDLE_BASE ){
  if(connection_manage.gsm.status == CONNECTION_STATUS_READY){
  connection_handle -=CONNECTION_GSM_CONNECT_HANDLE_BASE;
- rc = gsm_m6312_send(connection_handle,buffer,length); 
+ send_size = gsm_m6312_send(connection_handle,buffer + send_total,send_left); 
  }
  }else{ 
  /*此连接handle是WIFI网络*/
  if(connection_manage.wifi.status == CONNECTION_STATUS_READY){
- rc = wifi_8710bx_send(connection_handle,buffer,length);
+ send_size = wifi_8710bx_send(connection_handle,buffer + send_total,length);
  }
  }
  
- if(rc == 0){
- log_debug("connection send ok.\r\n");
+ if(send_size >= 0){
+ send_total +=send_size;
+ send_left -=send_size;
  }else{
- log_error("connection send err.\r\n");
+ return -1;  
  }
- return rc;
+ cur_time = osKernelSysTick();
+ }
+ 
+ return send_total;
 }
 
 /* 函数名：connection_recv
@@ -413,35 +432,41 @@ int connection_send(int connection_handle,const char *buffer,int length)
 *  参数：  connection_handle 连接句柄
 *  参数：  buffer 接收缓存
 *  参数：  buffer_size 缓存长度
+*  参数：  timeout 接收超时
 *  返回：  >=0:成功接收的长度 其他：失败
 */ 
-int connection_recv(int connection_handle,char *buffer,int buffer_size)
+int connection_recv(int connection_handle,char *buffer,int buffer_size,uint32_t timeout)
 {
- int rc;
+ int recv_total = 0,recv_size = 0,recv_left = buffer_size;
+ uint32_t start_time,cur_time;
  
  if(buffer_size == 0){
  return 0;
  }
-
-  rc = -1;
+ start_time = osKernelSysTick();
+ cur_time = start_time;
+ while(recv_left > 0 && cur_time - start_time < timeout){
  /*此连接handle是GSM网络*/
  if(connection_handle >= CONNECTION_GSM_CONNECT_HANDLE_BASE){
  if(connection_manage.gsm.status == CONNECTION_STATUS_READY){
  connection_handle -=CONNECTION_GSM_CONNECT_HANDLE_BASE;
- rc = gsm_m6312_recv(connection_handle,buffer,buffer_size);
+ recv_size = gsm_m6312_recv(connection_handle,buffer + recv_total,recv_left);
  }
  }else{
  /*此连接handle是WIFI网络*/
  if(connection_manage.wifi.status == CONNECTION_STATUS_READY){
- rc = wifi_8710bx_recv(connection_handle,buffer,buffer_size);
+ recv_size = wifi_8710bx_recv(connection_handle,buffer + recv_total,recv_left);
  }
  }
  
- if(rc >= 0){
- log_debug("connection recv ok.\r\n");
+ if(recv_size >= 0){
+ recv_total += recv_size;
+ recv_left -= recv_size;
  }else{
- log_error("connection recv err.\r\n");   
+ return -1;  
  }
- 
- return rc;
+ cur_time = osKernelSysTick();
+ }
+
+ return recv_total;
 }

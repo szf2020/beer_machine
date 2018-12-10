@@ -85,19 +85,19 @@ static uint32_t get_r(uint16_t adc)
  return (uint32_t)t_sensor_r;
 }
 
-int8_t get_t(uint16_t adc)
+int16_t get_t(uint16_t adc)
 {
  uint8_t idx;
  uint32_t r; 
  if(adc == ADC_TASK_ADC_ERR_VALUE){
- return (int8_t)TEMPERATURE_ERR_VALUE_SENSOR;
+ return TEMPERATURE_ERR_VALUE_SENSOR;
  }
  r=get_r(adc);
  idx = seek_idex(r);
  if(idx == TR_MAP_IDX_OVER_HIGH_ERR){
- return (int8_t)TEMPERATURE_ERR_VALUE_OVER_HIGH;
+ return TEMPERATURE_ERR_VALUE_OVER_HIGH;
  }else if(idx == TR_MAP_IDX_OVER_LOW_ERR){
- return (int8_t)TEMPERATURE_ERR_VALUE_OVER_LOW;
+ return TEMPERATURE_ERR_VALUE_OVER_LOW;
  }
  /*返回带有温度补偿值的温度*/
  return t_r_map[idx][0] + TEMPERATURE_COMPENSATION_VALUE;
@@ -106,7 +106,7 @@ int8_t get_t(uint16_t adc)
 void temperature_task(void const *argument)
 {
   uint16_t bypass_r_adc;
-  int8_t   t;
+  int16_t   t;
   
   osEvent  os_msg;
   osStatus status;
@@ -133,6 +133,9 @@ void temperature_task(void const *argument)
   if(msg.type == TEMPERATURE_TASK_MSG_ADC_COMPLETED){
    bypass_r_adc = msg.value;
    t = get_t(bypass_r_adc);  
+   if(t == temperature.value){
+   continue;  
+   }
    if(t == TEMPERATURE_ERR_VALUE_SENSOR    ||\
       t == TEMPERATURE_ERR_VALUE_OVER_HIGH ||\
       t == TEMPERATURE_ERR_VALUE_OVER_LOW ){

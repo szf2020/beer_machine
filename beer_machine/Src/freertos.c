@@ -56,6 +56,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */     
+#include "beer_machine.h"
 #include "tasks_init.h"
 #include "adc_task.h"
 #include "temperature_task.h"
@@ -155,6 +156,7 @@ __weak void vApplicationMallocFailedHook(void)
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
+  bsp_board_init();
   log_init();
   tasks_init();
   /* USER CODE END Init */

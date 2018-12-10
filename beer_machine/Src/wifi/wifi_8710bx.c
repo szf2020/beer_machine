@@ -14,6 +14,7 @@ static osMutexId wifi_mutex;
 #define  WIFI_8710BX_MALLOC(x)      pvPortMalloc((x))
 #define  WIFI_8710BX_FREE(x)        vPortFree((x))
 
+static wifi_8710bx_at_cmd_t wifi_cmd;
 
 /* 函数名：wifi_8710bx_hal_init
 *  功能：  串口驱动初始化
@@ -66,6 +67,10 @@ static void wifi_8710bx_print_err_info(const char *info,const int err_code)
   if(info){
   log_debug("%s\r\n",info);
   }
+  if(err_code > 0){
+  log_debug("size:%d.\r\n",err_code);
+  return;
+  }
   switch(err_code)
   {
   case  WIFI_ERR_OK:
@@ -86,6 +91,10 @@ static void wifi_8710bx_print_err_info(const char *info,const int err_code)
   
   case  WIFI_ERR_RSP_TIMEOUT:
   log_error("WIFI ERR CODE:%d cmd rsp timeout.\r\n",err_code);   
+  break;
+  
+  case  WIFI_ERR_SEND_TIMEOUT:
+  log_error("WIFI ERR CODE:%d cmd send timeout.\r\n",err_code);   
   break;
   
   case  WIFI_ERR_SERIAL_SEND:
@@ -168,6 +177,7 @@ static void wifi_8710bx_err_code_add(wifi_8710bx_err_code_t **err_head,wifi_8710
 */
 static int wifi_8710bx_at_cmd_send(const char *send,const uint16_t size,const uint16_t timeout)
 {
+ int rc;
  uint16_t write_total = 0;
  uint16_t remain_total = size;
  uint16_t write_timeout = timeout;
@@ -187,12 +197,18 @@ static int wifi_8710bx_at_cmd_send(const char *send,const uint16_t size,const ui
  }while(remain_total > 0 && write_timeout > 0);  
   
  if(remain_total > 0){
- return WIFI_ERR_SERIAL_SEND;
+ return WIFI_ERR_SEND_TIMEOUT;
  }
 
- if (serial_complete(wifi_8710bx_serial_handle,write_timeout) != 0){
- return WIFI_ERR_SERIAL_SEND;  ;
+ rc = serial_complete(wifi_8710bx_serial_handle,write_timeout) ;
+ if (rc > 0){
+ return WIFI_ERR_SEND_TIMEOUT;
  }
+ 
+ if (rc < 0){
+ return WIFI_ERR_SERIAL_SEND;
+ }
+ 
  return WIFI_ERR_OK;
 }
 
@@ -247,7 +263,7 @@ static int wifi_8710bx_at_cmd_recv(char *recv,const uint16_t size,const uint32_t
 static int wifi_8710bx_cmd_check_response(const char *rsp,wifi_8710bx_err_code_t *err_head,bool *complete)
 {
     wifi_8710bx_err_code_t *err_node;
-    
+    log_warning("*\r\n");
     err_node = err_head;
     while(err_node){
         if (strstr(rsp,err_node->str)){
@@ -267,6 +283,7 @@ static int wifi_8710bx_cmd_check_response(const char *rsp,wifi_8710bx_err_code_t
 static int wifi_8710bx_at_cmd_excute(wifi_8710bx_at_cmd_t *at_cmd)
 {
     int rc;
+    int recv_size;
     uint32_t start_time,cur_time,time_left;
     
     rc = wifi_8710bx_at_cmd_send(at_cmd->send,at_cmd->send_size,at_cmd->send_timeout);
@@ -277,12 +294,13 @@ static int wifi_8710bx_at_cmd_excute(wifi_8710bx_at_cmd_t *at_cmd)
     start_time = osKernelSysTick();
     time_left = at_cmd->recv_timeout;
     while (time_left){
-    rc = wifi_8710bx_at_cmd_recv(at_cmd->recv + at_cmd->recv_size,WIFI_8710BX_RECV_BUFFER_SIZE - at_cmd->recv_size,time_left);
-    if (rc < 0){
-    return rc; 
+    recv_size = wifi_8710bx_at_cmd_recv(at_cmd->recv + at_cmd->recv_size,WIFI_8710BX_RECV_BUFFER_SIZE - at_cmd->recv_size,time_left);
+    if (recv_size < 0){
+    return recv_size; 
     }
-    at_cmd->recv_size += rc;
-    rc = wifi_8710bx_cmd_check_response(at_cmd->recv,at_cmd->err_head,&at_cmd->complete);
+    
+    rc = wifi_8710bx_cmd_check_response(at_cmd->recv + at_cmd->recv_size,at_cmd->err_head,&at_cmd->complete);
+    at_cmd->recv_size += recv_size;
     if(at_cmd->complete){
     return rc;
     }
@@ -293,7 +311,6 @@ static int wifi_8710bx_at_cmd_excute(wifi_8710bx_at_cmd_t *at_cmd)
     return WIFI_ERR_UNKNOW;
 }
 
-static wifi_8710bx_at_cmd_t wifi_cmd;
 
 /* 函数名：wifi_8710bx_reset
 *  功能：  wifi软件复位 
@@ -448,7 +465,7 @@ int wifi_8710bx_get_ap_rssi(const char *ssid,int *rssi)
  osMutexWait(wifi_mutex,osWaitForever);
  
  memset(&wifi_cmd,0,sizeof(wifi_cmd));
- strcpy(wifi_cmd.send,"ATWS?\r\n");
+ strcpy(wifi_cmd.send,"ATWS\r\n");
  wifi_cmd.send_size = strlen(wifi_cmd.send);
  wifi_cmd.send_timeout = 5;
  wifi_cmd.recv_timeout = 10000;
@@ -647,7 +664,7 @@ static int wifi_8710bx_dump_wifi_device_info(const char *buffer,wifi_8710bx_devi
  size = pos - buffer > WIFI_8710BX_IP_STR_LEN ? WIFI_8710BX_IP_STR_LEN : pos - buffer;
  memcpy(wifi_device->device.gateway,buffer,size);
  wifi_device->device.gateway[size]= '\0';
- log_debug("dump wifi infi ok.\r\n");
+ log_debug("dump wifi info ok.\r\n");
  return WIFI_ERR_OK;    
 }
 
@@ -831,7 +848,7 @@ static int wifi_8710bx_dump_conn_id(const char *buffer)
 char *pos;
 int  conn_id;
 
-pos = strstr(buffer,"conn_id=") + strlen("conn_id=");
+pos = strstr(buffer,"con_id=") + strlen("con_id=");
 if(pos == NULL){
 return WIFI_ERR_UNKNOW;
 }
@@ -894,7 +911,7 @@ int wifi_8710bx_open_client(const char *host,const uint16_t remote_port,const ui
  osMutexWait(wifi_mutex,osWaitForever);
  
  memset(&wifi_cmd,0,sizeof(wifi_cmd));
- snprintf(wifi_cmd.send,WIFI_8710BX_SEND_BUFFER_SIZE,"ATPC=%s,%s,%d,%d\r\n",protocol == WIFI_8710BX_NET_PROTOCOL_TCP ? "0" : "1",host,remote_port,local_port);
+ snprintf(wifi_cmd.send,WIFI_8710BX_SEND_BUFFER_SIZE,"ATPC=%s,%s,%d\r\n",protocol == WIFI_8710BX_NET_PROTOCOL_TCP ? "0" : "1",host,remote_port);
  wifi_cmd.send_size = strlen(wifi_cmd.send);
  wifi_cmd.send_timeout = 5;
  wifi_cmd.recv_timeout = 10000;
@@ -957,29 +974,26 @@ int wifi_8710bx_close(const int conn_id)
 *  参数：  conn_id 连接句柄
 *  参数：  data    数据buffer
 *  参数：  size    需要发送的数量
-*  返回：  WIFI_ERR_OK：成功 其他：失败
+*  返回：  >=0：成功发送的数据 其他：失败
 */
 int wifi_8710bx_send(int conn_id,const char *data,const int size)
 {
  int rc;
- int used_size,space_size;
+ int used_size,space_size,send_size;
  
  wifi_8710bx_err_code_t ok,err;
  
  osMutexWait(wifi_mutex,osWaitForever);
  
  memset(&wifi_cmd,0,sizeof(wifi_cmd));
- snprintf(wifi_cmd.send,WIFI_8710BX_SEND_BUFFER_SIZE,"ATPD=%d,%d:",size,conn_id);
+ snprintf(wifi_cmd.send,WIFI_8710BX_SEND_BUFFER_SIZE,"ATPT=%d,%d:",size,conn_id);
  used_size = strlen(wifi_cmd.send);
  space_size = WIFI_8710BX_SEND_BUFFER_SIZE - used_size;
- if(space_size < size ){
- rc = WIFI_ERR_SEND_NO_SPACE;
- goto err_exit;
- }
- memcpy(wifi_cmd.send + used_size,data,size);
- wifi_cmd.send_size = used_size + size;
- wifi_cmd.send_timeout = 5;
- wifi_cmd.recv_timeout = 2000;
+ send_size = space_size < size ? space_size :size;
+ memcpy(wifi_cmd.send + used_size,data,send_size);
+ wifi_cmd.send_size = used_size + send_size;
+ wifi_cmd.send_timeout = send_size / 8 + 10;
+ wifi_cmd.recv_timeout = 10000;
  ok.str = "[ATPT] OK";
  ok.code = WIFI_ERR_OK;
  ok.next = NULL;
@@ -991,8 +1005,10 @@ int wifi_8710bx_send(int conn_id,const char *data,const int size)
  wifi_8710bx_err_code_add(&wifi_cmd.err_head,&err);
  
  rc = wifi_8710bx_at_cmd_excute(&wifi_cmd);
+ if(rc == WIFI_ERR_OK){
+ rc = send_size;
+ }
 
-err_exit:
  wifi_8710bx_print_err_info(wifi_cmd.send,rc);
  osMutexRelease(wifi_mutex);
  return rc;

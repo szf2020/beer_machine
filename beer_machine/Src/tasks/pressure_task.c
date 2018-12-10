@@ -68,6 +68,9 @@ void pressure_task(void const *argument)
   if(msg.type == PRESSURE_TASK_MSG_ADC_COMPLETED){
   adc = msg.value;
   p = get_pressure(adc); 
+  if(p == pressure.value){
+  continue;  
+  }
   if(p == PRESSURE_ERR_VALUE_SENSOR){   
   pressure.dir = 0;
   pressure.value = PRESSURE_ERR_VALUE_SENSOR;

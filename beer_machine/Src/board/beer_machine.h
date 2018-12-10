@@ -37,8 +37,8 @@ BSP_GSM_STATUS_PWR_ON,
 BSP_GSM_STATUS_PWR_OFF
 }bsp_gsm_pwr_status_t;
 
-/*外部清除压力按键*/
-uint8_t bsp_is_alarm_sw_press();
+/*板级初始化*/
+void bsp_board_init(void);
 
 /*压缩机控制*/
 void bsp_compressor_ctrl_on(void);

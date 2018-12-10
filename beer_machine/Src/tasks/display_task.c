@@ -159,12 +159,6 @@ void display_task(void const *argument)
   led_display_compressor_icon(LED_DISPLAY_ON,LED_DISPLAY_ON);
   display.is_update = true;
   }
-  /*更新上述消息内容到芯片*/
-  if(display.is_update == true){
-  display.is_update = false;  
-  /*刷新到芯片RAM*/
-  led_display_refresh(); 
-  }
   
   /*闪烁消息*/
   if(msg.type == DISPLAY_TASK_MSG_BLINK){
@@ -174,23 +168,28 @@ void display_task(void const *argument)
   
   if(display.temperature.blink == true){
   led_display_temperature(LED_NULL_VALUE);
+  display.is_update = true;
   }
   
   if(display.pressure.blink == true){
   led_display_pressure(LED_NULL_VALUE);
+  display.is_update = true;
   }
   
   if(display.capacity.blink == true){
   led_display_capacity(LED_NULL_VALUE);
   led_display_capacity_icon_level(LED_DISPLAY_OFF);  
+  display.is_update = true;
   }
   
   if(display.wifi.blink == true){
   led_display_wifi_icon(LED_DISPLAY_OFF);
+  display.is_update = true;
   }
   
   if(display.compressor.blink == true){
   led_display_compressor_icon(LED_DISPLAY_OFF,LED_DISPLAY_OFF);
+  display.is_update = true;
   }
 
   }else{
@@ -199,30 +198,39 @@ void display_task(void const *argument)
   
   if(display.temperature.blink == true){
   led_display_temperature(display.temperature.value);
+  display.is_update = true;
   }
   
   if(display.pressure.blink == true){
   led_display_pressure(display.pressure.value);
+  display.is_update = true;
   }
   
   if(display.capacity.blink == true){
   led_display_capacity(display.capacity.value);
   led_display_capacity_icon_level(display.capacity.value / 4);
+  display.is_update = true;
   }
   
   if(display.wifi.blink == true){
   led_display_wifi_icon(display.wifi.value);
+  display.is_update = true;
   }
   
   if(display.compressor.blink == true){
-  led_display_compressor_icon(LED_DISPLAY_ON,LED_DISPLAY_ON);       
+  led_display_compressor_icon(LED_DISPLAY_ON,LED_DISPLAY_ON);  
+  display.is_update = true;
   }
   }
-  /*刷新到芯片RAM*/
-  led_display_refresh(); 
   } 
   
-   
+  /*更新上述消息内容到芯片*/
+  if(display.is_update == true){
+  display.is_update = false;  
+  /*刷新到芯片RAM*/
+  led_display_refresh(); 
+  
+  } 
   }
   }
 }

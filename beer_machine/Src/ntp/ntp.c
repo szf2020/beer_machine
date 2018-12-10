@@ -101,7 +101,7 @@ int ntp_sync_time(uint32_t *new_time)
   packet.origTm_s = big_little_swap32(t0);
   
  // Send it the NTP packet it wants. If n == -1, it failed.
-  n = connection_send(sockfd, ( char* ) &packet, sizeof( ntp_packet ) );
+  n = connection_send(sockfd, ( char* ) &packet, sizeof( ntp_packet ) ,1);
   if( n < 0 ){
   log_error( "ERROR writing to socket" );
   /*关闭socket*/
@@ -112,7 +112,7 @@ int ntp_sync_time(uint32_t *new_time)
   start_time = osKernelSysTick();
   do{
   // Wait and receive the packet back from the server. If n == -1, it failed.
-  n = connection_recv(sockfd, ( char* ) &packet, sizeof( ntp_packet ) );
+  n = connection_recv(sockfd, ( char* ) &packet, sizeof( ntp_packet ) ,1);
   if ( n < 0 ){
   log_error( "ERROR reading from socket" );
   return -1;

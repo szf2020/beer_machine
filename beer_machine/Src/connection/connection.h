@@ -22,7 +22,7 @@ typedef struct
 
 typedef enum
 {
- CONNECTION_STATUS_READY,
+ CONNECTION_STATUS_READY = 1,
  CONNECTION_STATUS_NOT_READY
 }connection_status_t;
 
@@ -94,19 +94,21 @@ int connection_connect(int handle,const char *host,uint16_t remote_port,uint16_t
 int connection_disconnect(int conenction_handle);
 /* 函数名：connection_send
 *  功能：  网络发送
-*  参数：  conenction_handle 连接句柄
+*  参数：  connection_handle 连接句柄
 *  参数：  buffer 发送缓存
 *  参数：  length 缓存长度
-*  返回：  0：成功 其他：失败
+*  参数    timeout 发送超时
+*  返回：  >=0 成功发送的数据 其他：失败
 */ 
-int connection_send(int conenction_handle,const char *buffer,int length);
+int connection_send(int connection_handle,const char *buffer,int length,uint32_t timeout);
 
 /* 函数名：connection_recv
 *  功能：  网络接收
-*  参数：  conenction_handle 连接句柄
+*  参数：  connection_handle 连接句柄
 *  参数：  buffer 接收缓存
-*  参数：  length 缓存长度
+*  参数：  buffer_size 缓存长度
+*  参数：  timeout 接收超时
 *  返回：  >=0:成功接收的长度 其他：失败
 */ 
-int connection_recv(int conenction_handle,char *buffer,int buffer_size);
+int connection_recv(int connection_handle,char *buffer,int buffer_size,uint32_t timeout);
 #endif
