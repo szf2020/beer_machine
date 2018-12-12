@@ -197,6 +197,9 @@ void led_display_pressure_icon(uint8_t on_off)
 /*压力小数点*/
 void led_display_pressure_point(uint8_t on_off)
 {
+ if(on_off == LED_NULL_VALUE){
+ on_off = 0; 
+ }
  if(on_off > 0 ){
   tm1629a_buffer_update(LED_P_DP_POS,point_code,LED_P_DP_BITS); 
  }else{
@@ -237,7 +240,9 @@ void led_display_capacity_icon_frame(uint8_t on_off)
 void led_display_capacity_icon_level(uint8_t level)
 {
  uint8_t bit5,bit4l,bit4r,bits31;
-
+ if(level == LED_NULL_VALUE){
+ level = 0; 
+ }
  switch(level)
  {
  case 0:
@@ -312,6 +317,9 @@ tm1629a_buffer_update(LED_C_LO_POS,dis[1],LED_ABCDEFG_BITS);
 void led_display_wifi_icon(uint8_t level)
 {
   uint8_t bits;
+  if(level == LED_NULL_VALUE){
+  level = 0;
+  }
   switch(level)
   {
   case 0:

@@ -1,6 +1,8 @@
 #include "string.h"
 #include "stdint.h"
-#include "tool.h"
+#include "utils.h"
+
+
 /*字节转换成HEX字符串*/
  void bytes_to_hex_str(const char *src,char *dest,uint16_t src_len)
  {

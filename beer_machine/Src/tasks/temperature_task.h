@@ -21,8 +21,7 @@ void temperature_task(void const *argument);
 
 
 
-#define  TEMPERATURE_TASK_TEMPERATURE_CHANGE_CNT             2
-#define  TEMPERATURE_TASK_TEMPERATURE_CHANGE_NEAGTIVE_CNT   -2
+#define  TEMPERATURE_TASK_TEMPERATURE_CHANGE_CNT   2 /*连续保持的次数*/
 
 #define  TEMPERATURE_SENSOR_ADC_VALUE_MAX          4095/*温度AD转换最大数值*/      
 #define  TEMPERATURE_SENSOR_BYPASS_RES_VALUE       2000/*温度AD转换旁路电阻值*/  

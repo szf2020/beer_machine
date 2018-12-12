@@ -122,7 +122,7 @@ void temperature_task(void const *argument)
   /*等待任务同步*/
   xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_TEMPERATURE_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
   log_debug("temperature task sync ok.\r\n");
-  
+  temperature.value = 88;
   while(1){
   os_msg = osMessageGet(temperature_task_msg_q_id,TEMPERATURE_TASK_MSG_WAIT_TIMEOUT);
   if(os_msg.status == osEventMessage){
@@ -153,7 +153,7 @@ void temperature_task(void const *argument)
    }
    /*当满足条件时 接受数据变化*/
    if(temperature.dir > TEMPERATURE_TASK_TEMPERATURE_CHANGE_CNT ||
-      temperature.dir < TEMPERATURE_TASK_TEMPERATURE_CHANGE_NEAGTIVE_CNT){
+      temperature.dir < -TEMPERATURE_TASK_TEMPERATURE_CHANGE_CNT){
    temperature.dir = 0;
    temperature.value = t;
    temperature.change = true;

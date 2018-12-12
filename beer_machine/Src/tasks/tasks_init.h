@@ -20,22 +20,8 @@ int tasks_init(void);
 #define  TASKS_SYNC_EVENT_PRESSURE_TASK_RDY             (1<<5)
 #define  TASKS_SYNC_EVENT_DISPLAY_TASK_RDY              (1<<6)
 #define  TASKS_SYNC_EVENT_COMPRESSOR_TASK_RDY           (1<<7)
-#define  TASKS_SYNC_EVENT_NTP_TASK_RDY                  (1<<7)
-#define  TASKS_SYNC_EVENT_ALL_TASKS_RDY                 ((1<<8)-1)
-
-
-typedef struct
-{
-uint16_t type;
-uint16_t value;
-}task_short_msg_t;
-
-typedef struct
-{
-uint16_t type;
-void *value;
-}task_long_msg_t;
-
+#define  TASKS_SYNC_EVENT_CAPACITY_TASK_RDY             (1<<8)
+#define  TASKS_SYNC_EVENT_ALL_TASKS_RDY                 ((1<<9)-1)
 
 
 #endif

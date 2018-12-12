@@ -222,11 +222,13 @@ st_wifi_8710bx_serial_isr();
 void USART3_IRQHandler(void)
 {
   /* USER CODE BEGIN USART3_IRQn 0 */
-
+void st_capacity_serial_isr(void);
+st_capacity_serial_isr();
+#if 0
   /* USER CODE END USART3_IRQn 0 */
   HAL_UART_IRQHandler(&huart3);
   /* USER CODE BEGIN USART3_IRQn 1 */
-
+#endif
   /* USER CODE END USART3_IRQn 1 */
 }
 

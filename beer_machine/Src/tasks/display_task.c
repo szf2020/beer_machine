@@ -20,7 +20,9 @@ typedef struct
 {
 display_unit_t temperature;
 display_unit_t pressure;
+display_unit_t pressure_point;
 display_unit_t capacity;
+display_unit_t capacity_level;
 display_unit_t wifi;
 display_unit_t compressor;
 bool is_turn_on;
@@ -83,13 +85,10 @@ void display_task(void const *argument)
  led_display_pressure_icon(LED_DISPLAY_ON);
  led_display_capacity_icon_frame(LED_DISPLAY_ON);
  
- led_display_pressure_point(LED_DISPLAY_ON);
- led_display_capacity_icon_level(5);
- 
-
  led_display_wifi_icon(LED_DISPLAY_ON);
  led_display_compressor_icon(LED_DISPLAY_ON,LED_DISPLAY_ON);
  led_display_brand_icon(LED_DISPLAY_ON);
+  
  
  /*依次显示 8-7....0.*/
  for(int8_t dis=88;dis >=0 ;dis-=11){
@@ -128,15 +127,19 @@ void display_task(void const *argument)
   if(msg.type == DISPLAY_TASK_MSG_PRESSURE){
   display.pressure.value = msg.value;   
   display.pressure.blink = msg.blink;
-  /*闪烁的时候把小数点去掉*/
-  if(display.pressure.blink == true){
-  led_display_pressure_point(LED_DISPLAY_OFF);
-  }else{
-  led_display_pressure_point(LED_DISPLAY_ON);  
-  }
+  
   led_display_pressure(display.pressure.value);
   display.is_update = true;
   }
+ 
+  /*压力小数点消息*/
+  if(msg.type == DISPLAY_TASK_MSG_PRESSURE_POINT){ 
+  display.pressure_point.value = msg.value;
+  display.pressure_point.blink = msg.blink;
+  led_display_pressure_point(display.pressure_point.value);  
+  display.is_update = true;
+  }
+  
   /*容量消息*/
   if(msg.type == DISPLAY_TASK_MSG_CAPACITY){
   display.capacity.value = msg.value;
@@ -145,6 +148,16 @@ void display_task(void const *argument)
   led_display_capacity_icon_level(display.capacity.value / 4);
   display.is_update = true;
   }
+  
+  /*容量level消息*/
+  if(msg.type == DISPLAY_TASK_MSG_CAPACITY_LEVEL){
+  display.capacity_level.value = msg.value;
+  display.capacity_level.blink = msg.blink; 
+  led_display_capacity_icon_level(display.capacity_level.value);
+  display.is_update = true;
+  }
+  
+  
   /*wifi消息*/
   if(msg.type == DISPLAY_TASK_MSG_WIFI){
   display.wifi.value = msg.value; 
@@ -176,14 +189,24 @@ void display_task(void const *argument)
   display.is_update = true;
   }
   
+    
+  if(display.pressure_point.blink == true){
+  led_display_pressure_point(LED_NULL_VALUE);
+  display.is_update = true;
+  }
+  
   if(display.capacity.blink == true){
-  led_display_capacity(LED_NULL_VALUE);
-  led_display_capacity_icon_level(LED_DISPLAY_OFF);  
+  led_display_capacity(LED_NULL_VALUE); 
+  display.is_update = true;
+  }
+  
+  if(display.capacity_level.blink == true){
+  led_display_capacity_icon_level(LED_NULL_VALUE);  
   display.is_update = true;
   }
   
   if(display.wifi.blink == true){
-  led_display_wifi_icon(LED_DISPLAY_OFF);
+  led_display_wifi_icon(LED_NULL_VALUE);
   display.is_update = true;
   }
   
@@ -206,9 +229,18 @@ void display_task(void const *argument)
   display.is_update = true;
   }
   
+  if(display.pressure_point.blink == true){
+  led_display_pressure_point(display.pressure_point.value);
+  display.is_update = true;
+  }
+  
   if(display.capacity.blink == true){
   led_display_capacity(display.capacity.value);
-  led_display_capacity_icon_level(display.capacity.value / 4);
+  display.is_update = true;
+  }
+  
+  if(display.capacity_level.blink == true){
+  led_display_capacity_icon_level(display.capacity_level.value);
   display.is_update = true;
   }
   

@@ -3,7 +3,7 @@
 #include "usart.h"
 #include "log.h"
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[st_gsm_m6312_serial]"
+#define  LOG_MODULE_NAME     "[st_gsm_serial]"
 
 int st_gsm_m6312_serial_init(uint8_t port,uint32_t bauds,uint8_t data_bit,uint8_t stop_bit);
 int st_gsm_m6312_serial_deinit(uint8_t port);
