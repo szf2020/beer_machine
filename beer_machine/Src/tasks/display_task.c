@@ -8,7 +8,7 @@
 #include "temperature_task.h"
 #include "display_task.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
+#define  LOG_MODULE_LEVEL    LOG_LEVEL_ERROR
 #define  LOG_MODULE_NAME     "[display]"
 
 osThreadId   display_task_handle;
@@ -30,22 +30,28 @@ bool is_update;
 }display_t;
 
 static display_t display = {
-.wifi.value = 1,
+.wifi.value = 3,
 .wifi.blink = true
 };
+
+typedef enum
+{
+DISPLAY_STATUS_ON,
+DISPLAY_STATUS_OFF
+}display_status_t;
 
 static void display_timer_expired(void const *argument);
 
 static void display_timer_init()
 {
  osTimerDef(display_timer,display_timer_expired);
- display_timer_id=osTimerCreate(osTimer(display_timer),osTimerPeriodic,0);
+ display_timer_id=osTimerCreate(osTimer(display_timer),osTimerOnce,0);
  log_assert(display_timer_id);
 }
 
-static void display_timer_start(void)
+static void display_timer_start(uint16_t timeout)
 {
- osTimerStart(display_timer_id,DISPLAY_TASK_BLINK_TIMER_TIMEOUT);  
+ osTimerStart(display_timer_id,timeout);  
  log_debug("显示定时器开始.\r\n");
 }
 /*
@@ -58,8 +64,16 @@ static void display_timer_stop(void)
 static void display_timer_expired(void const *argument)
 {
  osStatus status;
+ static display_status_t display_status = DISPLAY_STATUS_ON;
  display_task_msg_t blink_msg;
- blink_msg.type = DISPLAY_TASK_MSG_BLINK;
+ /*点亮超时，就发送熄灭消息*/
+ if(display_status == DISPLAY_STATUS_ON){
+ blink_msg.type = DISPLAY_TASK_MSG_BLINK_OFF;
+ display_status = DISPLAY_STATUS_OFF;
+ }else{
+ blink_msg.type = DISPLAY_TASK_MSG_BLINK_ON;
+ display_status = DISPLAY_STATUS_ON;
+ }
  status = osMessagePut(display_task_msg_q_id,*(uint32_t*)&blink_msg,DISPLAY_TASK_PUT_MSG_TIMEOUT);
  if(status !=osOK){
  log_error("put blink msg error:%d\r\n",status); 
@@ -110,7 +124,7 @@ void display_task(void const *argument)
   xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_DISPLAY_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
   log_debug("display task sync ok.\r\n");
   display_timer_init();
-  display_timer_start();
+  display_timer_start(DISPLAY_TASK_BLINK_ON_TIMER_TIMEOUT);
   
   while(1){
   os_msg = osMessageGet(display_task_msg_q_id,DISPLAY_TASK_MSG_WAIT_TIMEOUT);
@@ -169,16 +183,13 @@ void display_task(void const *argument)
   /*压缩机消息*/
   if(msg.type == DISPLAY_TASK_MSG_COMPRESSOR){
   display.compressor.blink = msg.blink; 
-  led_display_compressor_icon(LED_DISPLAY_ON,LED_DISPLAY_ON);
+  //led_display_compressor_icon(LED_DISPLAY_ON,LED_DISPLAY_ON);
   display.is_update = true;
   }
   
-  /*闪烁消息*/
-  if(msg.type == DISPLAY_TASK_MSG_BLINK){
-  if(display.is_turn_on == true){
-  /*闪烁进入灯关闭阶段*/
-  display.is_turn_on = false;
-  
+  /*闪烁关闭消息*/
+  if(msg.type == DISPLAY_TASK_MSG_BLINK_OFF){
+
   if(display.temperature.blink == true){
   led_display_temperature(LED_NULL_VALUE);
   display.is_update = true;
@@ -214,10 +225,11 @@ void display_task(void const *argument)
   led_display_compressor_icon(LED_DISPLAY_OFF,LED_DISPLAY_OFF);
   display.is_update = true;
   }
-
-  }else{
-  /*闪烁进入灯打开阶段*/
-  display.is_turn_on = true;
+  display_timer_start(DISPLAY_TASK_BLINK_OFF_TIMER_TIMEOUT);
+  }
+  
+  /*闪烁打开消息*/
+  if(msg.type == DISPLAY_TASK_MSG_BLINK_ON){
   
   if(display.temperature.blink == true){
   led_display_temperature(display.temperature.value);
@@ -253,16 +265,17 @@ void display_task(void const *argument)
   led_display_compressor_icon(LED_DISPLAY_ON,LED_DISPLAY_ON);  
   display.is_update = true;
   }
+  display_timer_start(DISPLAY_TASK_BLINK_ON_TIMER_TIMEOUT);
   }
-  } 
+ 
   
   /*更新上述消息内容到芯片*/
   if(display.is_update == true){
   display.is_update = false;  
   /*刷新到芯片RAM*/
-  led_display_refresh(); 
+  led_display_refresh();  
+  }
   
-  } 
   }
   }
 }

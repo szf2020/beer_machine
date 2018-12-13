@@ -128,18 +128,25 @@ static int connection_gsm_init(void)
  goto err_handler;
  }
  /*去除附着网络*/
+ /*
  rc = gsm_m6312_set_attach_status(GSM_M6312_NOT_ATTACH); 
  if(rc != 0){
  goto err_handler;
  }
-
+ */
  
  /*设置多连接*/
  rc = gsm_m6312_set_connect_mode(GSM_M6312_CONNECT_MODE_MULTIPLE); 
  if(rc != 0){
  goto err_handler;
  }
- 
+ /*设置运营商格式*/
+ /*
+ rc = gsm_m6312_set_auto_operator_format(GSM_M6312_OPERATOR_FORMAT_SHORT_NAME);
+ if(rc != 0){
+ goto err_handler;
+ }
+*/
  /*设置接收缓存*/
  rc = gsm_m6312_config_recv_buffer(GSM_M6312_RECV_BUFFERE); 
  if(rc != 0){
@@ -147,28 +154,34 @@ static int connection_gsm_init(void)
  }
  
  /*获取运营商*/
+ /*
  rc = gsm_m6312_get_operator(&operator_name);
  if(rc != 0){
  goto err_handler;
  }
+*/
  /*赋值apn值*/
+ /*
  if(operator_name == OPERATOR_CHINA_MOBILE){
  apn =  GSM_M6312_APN_CMNET;
  }else{
  apn = GSM_M6312_APN_UNINET;
  }
+*/
  /*设置apn*/
- rc = gsm_m6312_set_apn(apn); 
+ rc = gsm_m6312_set_apn(GSM_M6312_APN_CMNET); 
  if(rc != 0){
  goto err_handler;
  }
+
+  /*激活网络*/
+ rc = gsm_m6312_set_active_status(GSM_M6312_ACTIVE); 
+ if(rc != 0){
+ goto err_handler;
+ }
+
  /*附着网络*/
  rc = gsm_m6312_set_attach_status(GSM_M6312_ATTACH); 
- if(rc != 0){
- goto err_handler;
- }
- /*激活网络*/
- rc = gsm_m6312_set_active_status(GSM_M6312_ACTIVE); 
  
 err_handler:
   if(rc == 0){
@@ -342,13 +355,18 @@ int connection_connect(int handle,const char *host,uint16_t remote_port,uint16_t
  rc = wifi_8710bx_open_client(host,remote_port,local_port,wifi_net_protocol);
  }
  /*wifi连接失败，选择gsm*/
- if(rc <= 0){
+ if(rc < 0){
  if(connection_manage.gsm.status == CONNECTION_STATUS_READY){
  rc = gsm_m6312_open_client(handle,gsm_net_protocol,host,remote_port);
+ if(rc < 0){
+ gsm_m6312_close_client(handle);  
+ }else{
+ rc =  handle + CONNECTION_GSM_CONNECT_HANDLE_BASE;
+ }
  }
  }
  
- if(rc >= 0){
+ if(rc > 0){
  log_debug("connection connect ok.\r\n");  
  }else{
  log_error("connection connect err.\r\n");    

@@ -15,16 +15,15 @@ void capacity_task(void const *argument);
 
 
 
-#define       R         130.0  /*mm*/   
-#define       S         53093.0 /*mm2*/
+#define       R         130.0   /*mm 啤酒桶半径*/   
+#define       S         53093.0 /*mm2 啤酒桶横截面积*/
 
-#define  CAPACITY_TASK_DIR_CHANGE_CNT          5
-#define  CAPACITY_TASK_ERR_CNT                 5
+#define  CAPACITY_TASK_DIR_CHANGE_CNT          2 /*容量值确认次数*/
+#define  CAPACITY_TASK_ERR_CNT                 3 /*故障确认次数*/
+#define  CAPACITY_TASK_CAPACITY_BLINK_VALUE    5 /*5升*/       
+#define  CAPACITY_TASK_PUT_MSG_TIMEOUT         5 
+
 #define  CAPACITY_TASK_ERR_VALUE               (0xe * 10 + 6) /*液位传感器故障*/
-#define  CAPACITY_TASK_CAPACITY_WARNING_VALUE  5        
-#define  CAPACITY_TASK_PUT_MSG_TIMEOUT         5
-
-
 
 
 

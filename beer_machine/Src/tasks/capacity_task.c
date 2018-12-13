@@ -69,14 +69,17 @@ static uint16_t capacity_task_get_high(void)
   char buffer[4];
   uint16_t high;
   
-  /*默认工作时间间隔2S 设置4s超时*/
-  select_size = serial_select(capacity_serial_handle,4000);
-  
+  /*传感器数据传输间隔2S 设置3s超时*/
+  select_size = serial_select(capacity_serial_handle,3000);
   if(select_size <= 0){
   return CAPACITY_TASK_SENSOR_ERR_VALUE;
   }
   /*读到数据处理*/
   do{
+  /*数据量异常处理*/
+  if(select_size + read_total > 4){
+  return CAPACITY_TASK_SENSOR_ERR_VALUE;    
+  }
   read_size = serial_read(capacity_serial_handle,(uint8_t *) buffer + read_total,select_size); 
   if(read_size < 0){
   return CAPACITY_TASK_SENSOR_ERR_VALUE;
@@ -93,13 +96,8 @@ static uint16_t capacity_task_get_high(void)
   log_error("液位传感器协议数据错误.\r\n");
   return CAPACITY_TASK_SENSOR_ERR_VALUE;  
   }
-  /*故障清除*/
-  beer_capacity.err_cnt = 0;  
+  /*计算液位*/
   high = (buffer[1] * 256 + buffer[2]) & 0xFFFF;
-  if(high == 0){
-  log_warning("液位传感器没检测到液位.\r\n");
-  }  
-  
   log_debug("当前液位：%d mm.\r\n",high);
   return high;
 }
@@ -110,7 +108,7 @@ void capacity_task(void const *argument)
 {
   osStatus status;
   uint16_t high;
-  pressure_task_msg_t pressure_msg;
+
   display_task_msg_t  display_msg;
   alarm_task_msg_t    alarm_msg; 
 
@@ -149,10 +147,10 @@ void capacity_task(void const *argument)
   beer_capacity.high = high;
   beer_capacity.value = beer_capacity.high * S / 1000000.0 ;/*单位L*/   
   /*如果低于警告值就打开闪烁*/
-  if((uint8_t)beer_capacity.value <= CAPACITY_TASK_CAPACITY_WARNING_VALUE && beer_capacity.blink == false){
+  if((uint8_t)beer_capacity.value <= CAPACITY_TASK_CAPACITY_BLINK_VALUE ){
   beer_capacity.blink = true;
   /*如果高于警告值就关闭闪烁*/
-  }else if((uint8_t)beer_capacity.value > CAPACITY_TASK_CAPACITY_WARNING_VALUE && beer_capacity.blink == true){
+  }else {
   beer_capacity.blink = false;
   }
   }
@@ -189,15 +187,7 @@ void capacity_task(void const *argument)
   if(status != osOK){
   log_error("capacity put alarm task msg err:%d.\r\n",status);
   } 
-  
-  /*发送压力消息*/  
-  pressure_msg.type = PRESSURE_TASK_MSG_CAPACITY;
-  pressure_msg.value = (uint16_t)beer_capacity.value;  
-  status = osMessagePut(pressure_task_msg_q_id,*(uint32_t*)&pressure_msg,CAPACITY_TASK_PUT_MSG_TIMEOUT);
-  if(status != osOK){
-  log_error("capacity put pressure task msg err:%d.\r\n",status);
-  } 
-  
+
   }  
   }
   

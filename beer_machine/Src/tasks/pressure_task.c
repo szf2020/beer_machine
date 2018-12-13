@@ -77,11 +77,11 @@ void pressure_task(void const *argument)
   if(os_msg.status == osEventMessage){
   msg = *(pressure_task_msg_t*)&os_msg.value.v;
   
-   /*压力ADC完成消息处理*/
+  /*压力ADC完成消息处理*/
   if(msg.type == PRESSURE_TASK_MSG_ADC_COMPLETED){
   adc = msg.value;
   p = get_pressure(adc); 
-  /*如果压力值无变化 继续*/
+  /*如果压力值无变化继续*/
   if(p == pressure.value){
   continue;  
   }
@@ -110,24 +110,17 @@ void pressure_task(void const *argument)
   /*压力正常范围不报警，显示小数点*/
   pressure.point = true;
   pressure.alarm = false;
-  /*压力低于报警值 同时桶内有酒闪烁*/
-  if( pressure.value <= PRESSURE_VALUE_IN_KG_CM2_WARNING_MIN || pressure.value >= PRESSURE_VALUE_IN_KG_CM2_WARNING_MAX){
+  /*压力低于闪烁值 */
+  if( pressure.value < PRESSURE_VALUE_IN_KG_CM2_BLINK_MIN || pressure.value > PRESSURE_VALUE_IN_KG_CM2_BLINK_MAX){
   pressure.blink = true;
   /*恢复正常 解除报警*/
-  }else if (pressure.value > PRESSURE_VALUE_IN_KG_CM2_WARNING_MIN && pressure.value < PRESSURE_VALUE_IN_KG_CM2_WARNING_MAX){
+  }else {
   pressure.blink = false;
   }
   }
   }
-  }
-      
-  /*容量变化消息处理*/
-  if(msg.type == PRESSURE_TASK_MSG_CAPACITY){
-  pressure.capacity = (uint8_t)msg.value;  
-  }    
-  
-      
-  /*所有消息引起的状态变化处理*/
+     
+  /*状态变化处理*/
   if(pressure.change == true){
   log_debug("pressure change. dir :%d  value:%d kg/cm2.\r\n" ,pressure.dir,p);  
   pressure.change = false;
@@ -146,8 +139,7 @@ void pressure_task(void const *argument)
   status = osMessagePut(display_task_msg_q_id,*(uint32_t*)&display_msg,PRESSURE_TASK_PUT_MSG_TIMEOUT);  
   if(status !=osOK){
   log_error("put display point msg error:%d\r\n",status); 
-  }
-  
+  } 
   /*报警消息*/
   alarm_msg.type = ALARM_TASK_MSG_PRESSURE;
   alarm_msg.alarm = pressure.alarm;
@@ -157,7 +149,7 @@ void pressure_task(void const *argument)
   } 
   }
     
-  
+ }
  }
  }
 }

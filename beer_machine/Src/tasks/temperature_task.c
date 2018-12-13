@@ -35,6 +35,7 @@ int16_t value;
 int8_t  dir;
 bool    change;
 bool    alarm;
+bool    blink;
 }temperature_t;
 
 
@@ -50,7 +51,7 @@ static uint8_t seek_idex(uint32_t r)
  if(r < t_r_map[TR_MAP_IDX_MAX][1]){
  log_error("NTC 阻值超过最高温度范围！r=%d\r\n",r); 
  return TR_MAP_IDX_OVER_HIGH_ERR;
- }else if(r > t_r_map[TR_MAP_IDX_MIN][1]){
+ }else if(r >= t_r_map[TR_MAP_IDX_MIN][1]){
  log_error("NTC 阻值超过最低温度范围！r=%d\r\n",r); 
  return TR_MAP_IDX_OVER_LOW_ERR;
  }
@@ -143,6 +144,7 @@ void temperature_task(void const *argument)
    temperature.value = t;
    temperature.change = true;
    temperature.alarm = true;
+   temperature.blink = true;
    log_error("temperature err.code:0x%2x.\r\n",temperature.value);
    }else {    
    /*正常温度值*/
@@ -158,16 +160,21 @@ void temperature_task(void const *argument)
    temperature.value = t;
    temperature.change = true;
    temperature.alarm = false;
+   /*当温度大于闪烁上限或者低于闪烁下限*/
+   if(temperature.value > TEMPERATURE_BLINK_VALUE_MAX || temperature.value < TEMPERATURE_BLINK_VALUE_MIN){
+   temperature.blink = true;
+   }else{
+   temperature.blink = false;      
    }
    }
-   
+   }
    if(temperature.change == true){
    log_debug("teperature changed dir:%d value:%d C.\r\n",temperature.dir,temperature.value);
    temperature.change = false;  
    /*显示消息*/
    display_msg.type = DISPLAY_TASK_MSG_TEMPERATURE;
    display_msg.value = temperature.value;
-   display_msg.blink = temperature.alarm;
+   display_msg.blink = temperature.blink;
    status = osMessagePut(display_task_msg_q_id,*(uint32_t*)&display_msg,TEMPERATURE_TASK_PUT_MSG_TIMEOUT);
    if(status !=osOK){
    log_error("put display t msg error:%d\r\n",status); 

@@ -40,6 +40,7 @@ int16_t temperature;
 int16_t temperature_setting;
 int16_t temperature_tolerance;
 compressor_lock_t lock;
+bool    status_change;
 }compressor_t;
 
 static compressor_t compressor;
@@ -182,6 +183,7 @@ void compressor_task(void const *argument)
   osEvent  os_msg;
   osStatus status;
   
+  display_task_msg_t display_msg;
   compressor_task_msg_t msg;
   compressor_task_msg_t temperature_msg;
   
@@ -206,25 +208,41 @@ void compressor_task(void const *argument)
   if(os_msg.status == osEventMessage){    
     
   msg = *(compressor_task_msg_t*)&os_msg.value.v;
+  
   /*如果压缩机被锁定了 就只处理UNLOCK消息*/
   if(compressor.lock == COMPRESSOR_LOCK){  
   if(msg.type == COMPRESSOR_TASK_MSG_UNLOCK){
   compressor.lock = COMPRESSOR_UNLOCK;   
   /*存入nv*/
+  
+  /*构建温度消息*/
+  temperature_msg.type = COMPRESSOR_TASK_MSG_TEMPERATURE;
+  temperature_msg.value = compressor.temperature;
+  status = osMessagePut(compressor_task_msg_q_id,*(uint32_t*)&temperature_msg,COMPRESSOR_TASK_PUT_MSG_TIMEOUT);
+  if(status !=osOK){
+  log_error("put compressor temperature msg error:%d\r\n",status);
+  } 
   }else{
-  /*其他消息不处理*/
+  /*其他消息只处理温度信息*/
+  /*温度消息处理*/
+  if(msg.type == COMPRESSOR_TASK_MSG_TEMPERATURE){ 
+  /*缓存温度值*/
+  compressor.temperature = msg.value; 
   continue;  
   }
   }
+  }
+  
   /*如果压缩机LOCK消息*/
   if(msg.type == COMPRESSOR_TASK_MSG_LOCK){
   if(compressor.lock !=  COMPRESSOR_LOCK ){
   compressor.lock = COMPRESSOR_LOCK;
   /*存入nv*/
   log_debug("LOCK.....关压缩机.\r\n");
-  compressor.status = COMPRESSOR_STATUS_WAIT;
+  compressor.status = COMPRESSOR_STATUS_RDY;
   /*关闭压缩机*/
   compressor_pwr_turn_off();  
+  compressor.status_change = true;
   /*关闭所有定时器*/ 
   compressor_work_timer_stop();  
   compressor_wait_timer_stop();  
@@ -246,6 +264,7 @@ void compressor_task(void const *argument)
   compressor.status = COMPRESSOR_STATUS_WAIT;
   /*关闭压缩机*/
   compressor_pwr_turn_off();  
+  compressor.status_change = true;
   /*打开等待定时器*/ 
   compressor_wait_timer_start();
   }
@@ -255,13 +274,15 @@ void compressor_task(void const *argument)
   /*打开压缩机和工作定时器*/
   compressor.status = COMPRESSOR_STATUS_WORK;
   compressor_pwr_turn_on();
+  compressor.status_change = true;
   compressor_work_timer_start(); 
   }else if(compressor.temperature <= compressor.temperature_setting - compressor.temperature_tolerance && compressor.status == COMPRESSOR_STATUS_WORK){
   log_debug("温度:%d 低于关机温度.\r\n",compressor.temperature);
   log_debug("关压缩机.\r\n");
   compressor.status = COMPRESSOR_STATUS_WAIT;
   /*关闭压缩机和工作定时器*/
-  compressor_pwr_turn_off();  
+  compressor_pwr_turn_off(); 
+  compressor.status_change = true;
   compressor_work_timer_stop();
   /*打开等待定时器*/ 
   compressor_wait_timer_start(); 
@@ -275,6 +296,7 @@ void compressor_task(void const *argument)
   compressor.status = COMPRESSOR_STATUS_REST;
   /*关闭压缩机和工作定时器*/
   compressor_pwr_turn_off();  
+  compressor.status_change = true;
   /*打开休息定时器*/ 
   compressor_rest_timer_start(); 
   }else{
@@ -291,7 +313,7 @@ void compressor_task(void const *argument)
   temperature_msg.value = compressor.temperature;
   status = osMessagePut(compressor_task_msg_q_id,*(uint32_t*)&temperature_msg,COMPRESSOR_TASK_PUT_MSG_TIMEOUT);
   if(status !=osOK){
-  log_error("put compressor compressor.temperature msg error:%d\r\n",status);
+  log_error("put compressor temperature msg error:%d\r\n",status);
   }   
   }else{
   log_warning("压缩机状态:%d 无需处理.\r\n",compressor.status);     
@@ -307,13 +329,27 @@ void compressor_task(void const *argument)
   temperature_msg.value = compressor.temperature;
   status = osMessagePut(compressor_task_msg_q_id,*(uint32_t*)&temperature_msg,COMPRESSOR_TASK_PUT_MSG_TIMEOUT);
   if(status !=osOK){
-  log_error("put compressor compressor.temperature msg error:%d\r\n",status);
+  log_error("put compressor temperature msg error:%d\r\n",status);
   }   
   }else{
   log_warning("压缩机状态:%d 无需处理.\r\n",compressor.status);     
   }
  }
  
+ /*处理状态变化显示*/
+  if(compressor.status_change == true ){
+  compressor.status_change = false;
+  display_msg.type =  DISPLAY_TASK_MSG_COMPRESSOR;
+  if(compressor.status == COMPRESSOR_STATUS_WORK){ 
+  display_msg.blink = true;
+  }else{
+  display_msg.blink = false;  
+  }
+  status = osMessagePut(display_task_msg_q_id,*(uint32_t*)&display_msg,COMPRESSOR_TASK_PUT_MSG_TIMEOUT);
+  if(status !=osOK){
+  log_error("put compress display msg error:%d\r\n",status);
+  }    
+  }
  
  }
  }
