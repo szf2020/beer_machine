@@ -255,9 +255,7 @@ void compressor_task(void const *argument)
   /*缓存温度值*/
   compressor.temperature = msg.value; 
   
-  if(compressor.temperature == TEMPERATURE_ERR_VALUE_SENSOR    ||\
-     compressor.temperature == TEMPERATURE_ERR_VALUE_OVER_HIGH ||\
-     compressor.temperature == TEMPERATURE_ERR_VALUE_OVER_LOW){ 
+  if(compressor.temperature == TEMPERATURE_ERR_VALUE_SENSOR ){ 
   log_error("温度错误.code:%d.\r\n",compressor.temperature);
   if(compressor.status == COMPRESSOR_STATUS_WORK){
   log_debug("关压缩机.\r\n");

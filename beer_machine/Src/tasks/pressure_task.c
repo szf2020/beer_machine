@@ -6,7 +6,7 @@
 #include "display_task.h"
 #include "capacity_task.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
+#define  LOG_MODULE_LEVEL    LOG_LEVEL_ERROR
 #define  LOG_MODULE_NAME     "[pressure]"
 
 osThreadId   pressure_task_handle;
@@ -37,14 +37,14 @@ static uint8_t get_pressure(uint16_t adc)
  p= (v - PRESSURE_SENSOR_OUTPUT_VOLTAGE_MIN) * (PRESSURE_SENSOR_INPUT_PA_MAX - PRESSURE_SENSOR_INPUT_PA_MIN)/(PRESSURE_SENSOR_OUTPUT_VOLTAGE_MAX - PRESSURE_SENSOR_OUTPUT_VOLTAGE_MIN) + PRESSURE_SENSOR_INPUT_PA_MIN;
  p= (p / PA_VALUE_PER_1KG_CM2) * 10;
 
- log_one_line("v:%d mv p:%d.%d kg/cm2.",(uint16_t)(v*1000),(uint8_t)p / 10,(uint8_t)p % 10);
+ log_debug("v:%d mv p:%d.%d kg/cm2.\r\n",(uint16_t)(v*1000),(uint8_t)p / 10,(uint8_t)p % 10);
  /*减去外部大气压*/
- if(p >= PRESSURE_VALUE_IN_KG_CM2_ERR_MAX ){
- return PRESSURE_ERR_VALUE_OVER_HIGH;  
+ if(p > PRESSURE_VALUE_IN_KG_CM2_ERR_MAX ){
+ return PRESSURE_ERR_VALUE_SENSOR;  
  }
  
- if(p <= PRESSURE_VALUE_IN_KG_CM2_ERR_MIN ){
- return PRESSURE_ERR_VALUE_OVER_LOW;  
+ if(p < PRESSURE_VALUE_IN_KG_CM2_ERR_MIN ){
+ return PRESSURE_ERR_VALUE_SENSOR;  
  }
  
  p = p < PRESSURE_VALUE_STANDARD_ATM ? 0 : p - PRESSURE_VALUE_STANDARD_ATM;
@@ -86,7 +86,7 @@ void pressure_task(void const *argument)
   continue;  
   }
   /*如果压力值有变化处理下面步骤*/
-  if(p == PRESSURE_ERR_VALUE_SENSOR || p == PRESSURE_ERR_VALUE_OVER_LOW || p == PRESSURE_ERR_VALUE_OVER_HIGH){   
+  if(p == PRESSURE_ERR_VALUE_SENSOR ){   
   pressure.dir = 0;
   pressure.value = p;
   pressure.change = true;

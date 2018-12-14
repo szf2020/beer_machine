@@ -128,12 +128,11 @@ static int connection_gsm_init(void)
  goto err_handler;
  }
  /*去除附着网络*/
- /*
+ 
  rc = gsm_m6312_set_attach_status(GSM_M6312_NOT_ATTACH); 
  if(rc != 0){
  goto err_handler;
  }
- */
  
  /*设置多连接*/
  rc = gsm_m6312_set_connect_mode(GSM_M6312_CONNECT_MODE_MULTIPLE); 
@@ -154,35 +153,33 @@ static int connection_gsm_init(void)
  }
  
  /*获取运营商*/
- /*
  rc = gsm_m6312_get_operator(&operator_name);
  if(rc != 0){
  goto err_handler;
  }
-*/
+ 
  /*赋值apn值*/
- /*
  if(operator_name == OPERATOR_CHINA_MOBILE){
  apn =  GSM_M6312_APN_CMNET;
  }else{
  apn = GSM_M6312_APN_UNINET;
  }
-*/
- /*设置apn*/
- rc = gsm_m6312_set_apn(GSM_M6312_APN_CMNET); 
- if(rc != 0){
- goto err_handler;
- }
 
-  /*激活网络*/
- rc = gsm_m6312_set_active_status(GSM_M6312_ACTIVE); 
+ /*设置apn*/
+ rc = gsm_m6312_set_apn(apn); 
  if(rc != 0){
  goto err_handler;
  }
 
  /*附着网络*/
  rc = gsm_m6312_set_attach_status(GSM_M6312_ATTACH); 
+ if(rc != 0){
+ goto err_handler;
+ }
  
+ /*激活网络*/
+ rc = gsm_m6312_set_active_status(GSM_M6312_ACTIVE); 
+
 err_handler:
   if(rc == 0){
   log_debug("gsm init ok.\r\n");
@@ -335,7 +332,7 @@ int connection_gsm_reset()
 *  参数：  protocol   连接协议
 *  返回：  >=0 成功连接句柄 其他：失败
 */ 
-int connection_connect(int handle,const char *host,uint16_t remote_port,uint16_t local_port,connection_protocol_t protocol)
+int connection_connect(const int handle,const char *host,uint16_t remote_port,uint16_t local_port,connection_protocol_t protocol)
 {
  int rc;
  wifi_8710bx_net_protocol_t wifi_net_protocol;
@@ -355,14 +352,11 @@ int connection_connect(int handle,const char *host,uint16_t remote_port,uint16_t
  rc = wifi_8710bx_open_client(host,remote_port,local_port,wifi_net_protocol);
  }
  /*wifi连接失败，选择gsm*/
- if(rc < 0){
+ if(rc < 1){
  if(connection_manage.gsm.status == CONNECTION_STATUS_READY){
  rc = gsm_m6312_open_client(handle,gsm_net_protocol,host,remote_port);
- if(rc < 0){
- gsm_m6312_close_client(handle);  
- }else{
+ if(rc == 0)
  rc =  handle + CONNECTION_GSM_CONNECT_HANDLE_BASE;
- }
  }
  }
  
@@ -380,14 +374,13 @@ int connection_connect(int handle,const char *host,uint16_t remote_port,uint16_t
 *  参数：  connection_info 连接参数
 *  返回：  0：成功 其他：失败
 */ 
-int connection_disconnect(int connection_handle)
+int connection_disconnect(const int connection_handle)
 {
  int rc ;
 
  /*此连接handle是GSM网络*/
  if(connection_handle >= CONNECTION_GSM_CONNECT_HANDLE_BASE){
- connection_handle -=CONNECTION_GSM_CONNECT_HANDLE_BASE;
- rc = gsm_m6312_close_client(connection_handle);
+ rc = gsm_m6312_close_client(connection_handle - CONNECTION_GSM_CONNECT_HANDLE_BASE);
  }else { 
  /*此连接handle是WIFI网络*/
  rc = wifi_8710bx_close(connection_handle);
@@ -411,7 +404,7 @@ int connection_disconnect(int connection_handle)
 *  参数    timeout 发送超时
 *  返回：  >=0 成功发送的数据 其他：失败
 */ 
-int connection_send(int connection_handle,const char *buffer,int length,uint32_t timeout)
+int connection_send(const int connection_handle,const char *buffer,int length,uint32_t timeout)
 {
  int send_total = 0,send_size = 0,send_left = length;
  uint32_t start_time,cur_time;
@@ -423,8 +416,7 @@ int connection_send(int connection_handle,const char *buffer,int length,uint32_t
    
  if(connection_handle >= CONNECTION_GSM_CONNECT_HANDLE_BASE ){
  if(connection_manage.gsm.status == CONNECTION_STATUS_READY){
- connection_handle -=CONNECTION_GSM_CONNECT_HANDLE_BASE;
- send_size = gsm_m6312_send(connection_handle,buffer + send_total,send_left); 
+ send_size = gsm_m6312_send(connection_handle - CONNECTION_GSM_CONNECT_HANDLE_BASE,buffer + send_total,send_left); 
  }
  }else{ 
  /*此连接handle是WIFI网络*/
@@ -453,7 +445,7 @@ int connection_send(int connection_handle,const char *buffer,int length,uint32_t
 *  参数：  timeout 接收超时
 *  返回：  >=0:成功接收的长度 其他：失败
 */ 
-int connection_recv(int connection_handle,char *buffer,int buffer_size,uint32_t timeout)
+int connection_recv(const int connection_handle,char *buffer,int buffer_size,uint32_t timeout)
 {
  int recv_total = 0,recv_size = 0,recv_left = buffer_size;
  uint32_t start_time,cur_time;
@@ -467,8 +459,7 @@ int connection_recv(int connection_handle,char *buffer,int buffer_size,uint32_t 
  /*此连接handle是GSM网络*/
  if(connection_handle >= CONNECTION_GSM_CONNECT_HANDLE_BASE){
  if(connection_manage.gsm.status == CONNECTION_STATUS_READY){
- connection_handle -=CONNECTION_GSM_CONNECT_HANDLE_BASE;
- recv_size = gsm_m6312_recv(connection_handle,buffer + recv_total,recv_left);
+ recv_size = gsm_m6312_recv(connection_handle - CONNECTION_GSM_CONNECT_HANDLE_BASE,buffer + recv_total,recv_left);
  }
  }else{
  /*此连接handle是WIFI网络*/

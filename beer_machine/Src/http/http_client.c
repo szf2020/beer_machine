@@ -32,12 +32,7 @@ return -1;                                      \
 #define  HEADER_START1_STR                    "HTTP/1.1 "
 #define  HEADER_END_STR                       "\r\n\r\n"
 #define  CHUNKED_SIZE_END_STR                 "\r\n"
-#define  TRANSFER_ENCODE_TYPE_STR             "Transfer-Encoding: "
-#define  TRANSFER_ENCODE_TYPE_END_STR         "\r\n"
-#define  TRANSFER_ENCODE_CHUNKED_STR          "chunked"
-#define  TRANSFER_ENCODE_TYPE_STR_LEN         40
-#define  CONTENT_LENGTH_STR                   "Content-Length: "
-
+#define  TRANSFER_ENCODE_TYPE_STR             "Transfer-Encoding: chunked\r\n"
 
 #define  HTTP_CLIENT_HOST_STR_LEN             50
 #define  HTTP_CLIENT_PATH_STR_LEN             50
@@ -58,103 +53,42 @@ typedef struct
 }http_client_connection_t;
 
 
+
+
+
 /*http回应的数据中找到数据*/
-static int http_client_parse_response(const char *buffer,http_client_response_t *res)
+static int http_client_parse_response_header(const char *header)
 {
-  char *header;
-  char *body;
-  char *pos;
-  char encode_type_str[TRANSFER_ENCODE_TYPE_STR_LEN];
-  char *encode_type;
-  char *content_len;
-  char *data_start;
-  int  header_size;
-  int  encode_type_size;
-  
-  
-  if(res == NULL ||buffer == NULL) {
-  log_error("http buffer is null.\r\n");
-  return -1;
-  }
-  
-  if (buffer == NULL) {
-  log_debug("Buffer shouldn't be NULL\n");
-  return -1;
-  }else if (buffer[0] != '\0') {
-
-  /*计算回应头开始位置*/
-  header = strstr(buffer,HEADER_START0_STR);
-  if(header == NULL ){
-  header = strstr(buffer,HEADER_START1_STR);
-  if(header == NULL){
-  log_debug("not find version in res buffer.\r\n");
-  return -1;
-  }
-  }
-  pos = header + strlen(HEADER_START0_STR);
-  res->status_code = atoi(pos); 
-  
-  /*计算回应头结束位置*/  
-  pos = strstr(buffer,HEADER_END_STR); 
-  if(pos == NULL){
-  log_error("http res no header end str.\r\n");
-  return -1;
-  }
-  body = pos + strlen(HEADER_END_STR);
-  header_size = body - header;
-  header[header_size - 2] = '\0'; 
-  
-  /*是否带有content-lenght*/
-  pos = strstr(header,CONTENT_LENGTH_STR);
-  if(pos != NULL){
-  log_debug("http res has content len.\r\n");
-  content_len = pos + strlen(CONTENT_LENGTH_STR);
-  res->body_size = atoi(content_len);
-  data_start = body;         
+  char *chunk_type;
+  int rc = -1;
+  /*回应头存在*/
+  if((strstr(header,HEADER_START0_STR) || strstr(header,HEADER_START1_STR)) &&  strstr(header,HEADER_END_STR)){
+  log_debug("find header.\r\n"); 
+ /*找到CHUNK编码类型位置*/
+  chunk_type = strstr(header,TRANSFER_ENCODE_TYPE_STR);
+  if(chunk_type){
+  log_debug("---->"TRANSFER_ENCODE_TYPE_STR"\r\n");
+  rc = 0;
   }else{
-  /*不带有长度信息，寻找编码类型*/
-  /*找到编码类型位置*/
-  pos = strstr(header,TRANSFER_ENCODE_TYPE_STR);
-  if(pos == NULL){
-  log_error("http res no TRANSFER_ENCODE_TYPE_STR.\r\n");
-  res->body_size = 0;
-  return -1;
+  log_error("transfer encode not chunked.\r\n");  
+  }
+  }else{
+  log_debug("header is continue...\r\n");   
   } 
-  encode_type = pos + strlen(TRANSFER_ENCODE_TYPE_STR);
-  /*找到这行的EOF*/
-  pos = strstr(encode_type,TRANSFER_ENCODE_TYPE_END_STR);
-  encode_type_size = pos - encode_type > TRANSFER_ENCODE_TYPE_STR_LEN - 1 ? TRANSFER_ENCODE_TYPE_STR_LEN - 1 : pos - encode_type;
-  memcpy(encode_type_str,encode_type,encode_type_size);
-  encode_type_str[encode_type_size] = '\0';
-  /*只解析CHUNKED编码类型*/
-  if(strcmp(encode_type_str,TRANSFER_ENCODE_CHUNKED_STR) != 0){
-  log_error("http encode is not CHUNKED.\r\n");
-  }
-  log_debug("http encode is chunked.\r\n");
-  /*找到chunked size位置*/
-  res->body_size = strtol(body,NULL,16);  
-  pos = strstr(body,CHUNKED_SIZE_END_STR);
-  if(pos == NULL){
-  log_error("http res no CHUNKED_SIZE_END_STR.\r\n");
-  return -1;
-  }    
-  data_start = pos + strlen(CHUNKED_SIZE_END_STR);
-  }
-  
-  /*保证数据大小是可靠的*/
-  if(res->body_size > res->body_buffer_size){
-  log_error("response body size:%d is largeer than buffer size:%d.\r\n",res->body_size,res->body_buffer_size);
-  return -1;
-  }
+  return rc;
+ }
 
-  memcpy(res->body,data_start,res->body_size);
-  res->body[res->body_size] = '\0';
-  }
-  log_debug("http parse res ok.\r\n");
-  return 0;
+#define  CHUNK_SIZE_EOF               "\r\n" 
+
+
+
+
+static int  http_client_parse_response_chunk_size(const char *chunk_str)
+{  
+ return strtol(chunk_str,NULL,16);  
 }
-    
 
+    
 static int http_client_parse_url(const char *url,char *host,uint16_t *port,char *path)
 {
   char *pos;
@@ -234,6 +168,36 @@ static int http_client_build_request(char *buffer,const char *method,const http_
 
 #define  HTTP_CLIENT_CONNECTION_HANDLE         1
 
+
+static int http_client_recv_header(int handle,char *header,const uint32_t timeout)
+{
+ int rc;
+ int recv_total = 0;
+ uint32_t start_time,cur_time;
+ 
+ start_time = osKernelSysTick();
+ /*获取http header*/
+ do{
+ rc = connection_recv(handle,header + recv_total,1,10);
+ if(rc < 0){
+ log_error("http header recv err.\r\n");
+ return -1;
+ }else{
+ recv_total += rc;
+ /*解析数据*/
+ rc = http_client_parse_response_header(header);
+ if(rc == 0){
+ log_debug("http parse header success.header size:%d\r\n",recv_total);
+ return recv_total;
+ }
+ }
+ cur_time = osKernelSysTick();
+ }while(timeout > (cur_time - start_time));
+ /*超时返回*/
+ return -1;
+}
+
+
 /*http 请求*/
 static int http_client_request(const char *method,const char *url,http_client_request_t *req,http_client_response_t *res)
 {
@@ -241,6 +205,7 @@ static int http_client_request(const char *method,const char *url,http_client_re
  int rc;
  int req_len;
  char *http_buffer;
+ int recv_total = 0;
 
  http_client_connection_t http_connection;
  
@@ -284,25 +249,7 @@ static int http_client_request(const char *method,const char *url,http_client_re
  
  /*清空http buffer 等待接收数据*/
  memset(http_buffer,0,HTTP_BUFFER_SIZE);
- /*循环接收数据*/
- start_time = osKernelSysTick();
- do{
- rc = connection_recv(http_connection.handle,http_buffer,HTTP_BUFFER_SIZE,10);
- if(rc < 0){
- log_error("http recv err.\r\n");
- goto err_handler;
- }else if(rc > 0){
- /*解析数据*/
- rc = http_client_parse_response(http_buffer,res);
- if(rc != 0){
- log_error("http parse res err.\r\n");
- goto err_handler;
- }
- log_debug("http parse res success.\r\nstatus code:%d.\r\nbody_size:%d\r\n",res->status_code,res->body_size);
- break; 
- }
- cur_time = osKernelSysTick();
- }while(res->timeout > (cur_time - start_time) );
+
  
 
  /*错误处理*/ 

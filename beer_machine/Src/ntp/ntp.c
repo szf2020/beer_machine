@@ -66,7 +66,6 @@
 
 int ntp_sync_time(uint32_t *new_time)
 {
-  uint32_t start_time,cur_time,timeout = NTP_TIMEOUT;
   uint32_t t0,t1,t2,t3,offset,delay;
   int sockfd, n; // Socket file descriptor and the n return result from writing/reading from the socket.
   int portno = 123; // NTP UDP port number.
@@ -101,7 +100,7 @@ int ntp_sync_time(uint32_t *new_time)
   packet.origTm_s = big_little_swap32(t0);
   
  // Send it the NTP packet it wants. If n == -1, it failed.
-  n = connection_send(sockfd, ( char* ) &packet, sizeof( ntp_packet ) ,1);
+  n = connection_send(sockfd, ( char* ) &packet, sizeof( ntp_packet ) ,NTP_TIMEOUT);
   if( n < 0 ){
   log_error( "ERROR writing to socket" );
   /*关闭socket*/
@@ -109,19 +108,12 @@ int ntp_sync_time(uint32_t *new_time)
   return -1;
   }
   
-  start_time = osKernelSysTick();
-  do{
   // Wait and receive the packet back from the server. If n == -1, it failed.
-  n = connection_recv(sockfd, ( char* ) &packet, sizeof( ntp_packet ) ,1);
+  n = connection_recv(sockfd, ( char* ) &packet, sizeof( ntp_packet ) ,NTP_TIMEOUT);
   if ( n < 0 ){
   log_error( "ERROR reading from socket" );
   return -1;
   }
-  if(n == 0){
-  osDelay(10);
-  }
-  cur_time = osKernelSysTick();
-  } while(n != sizeof( ntp_packet ) && timeout > (cur_time - start_time));
   /*关闭socket*/
   connection_disconnect(sockfd);  
   /*收到了指定的数据 -没有未同步警告，服务器模式*/

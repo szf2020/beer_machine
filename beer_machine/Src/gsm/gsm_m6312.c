@@ -175,7 +175,7 @@ static void gsm_m6312_print_err_info(const char *info,const int err_code)
   log_error("GSM ERR CODE:%d socket alread connect.\r\n",err_code);   
   break;
   
-  case  GSM_ERR_CONNECT_FAIL:
+  case  GSM_ERR_SOCKET_CONNECT_FAIL:
   log_error("GSM ERR CODE:%d socket connect fail.\r\n",err_code);   
   break;
   
@@ -279,7 +279,7 @@ static int gsm_m6312_at_cmd_send(const char *send,const uint16_t size,const uint
 *  参数：  timeout 接收超时 
 *  返回：  读到的一帧数据量 其他：失败
 */
-#define  GSM_M6312_SELECT_TIMEOUT               5
+#define  GSM_M6312_SELECT_TIMEOUT               10
 static int gsm_m6312_at_cmd_recv(char *recv,const uint16_t size,const uint32_t timeout)
 {
  int select_size;
@@ -789,7 +789,7 @@ int gsm_m6312_set_attach_status(gsm_m6312_attach_status_t attach)
  }
  gsm_cmd.send_size = strlen(gsm_cmd.send);
  gsm_cmd.send_timeout = 5;
- gsm_cmd.recv_timeout = 5000;
+ gsm_cmd.recv_timeout = 10000;
  ok.str = "OK\r\n";
  ok.code = GSM_ERR_OK;
  ok.next = NULL;
@@ -901,7 +901,7 @@ int gsm_m6312_get_operator(operator_name_t *operator_name)
  osMutexWait(gsm_mutex,osWaitForever);
  
  memset(&gsm_cmd,0,sizeof(gsm_cmd));
- strcpy(gsm_cmd.send,"AT+COPS?\r\n");
+ strcpy(gsm_cmd.send,"AT+CIMI\r\n");
  gsm_cmd.send_size = strlen(gsm_cmd.send);
  gsm_cmd.send_timeout = 5;
  gsm_cmd.recv_timeout = 1000;
@@ -917,9 +917,9 @@ int gsm_m6312_get_operator(operator_name_t *operator_name)
  
  rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
  if(rc == GSM_ERR_OK){
- if(strstr(gsm_cmd.recv,"46000") ||strstr(gsm_cmd.recv,"CMCC") || strstr(gsm_cmd.recv,"ChinaMobile")){
+ if(strstr(gsm_cmd.recv,"46000")){
  *operator_name = OPERATOR_CHINA_MOBILE;
- }else if(strstr(gsm_cmd.recv,"46001") ||strstr(gsm_cmd.recv,"UNICOM") || strstr(gsm_cmd.recv,"ChinaUnicom")){
+ }else if(strstr(gsm_cmd.recv,"46001")){
  *operator_name = OPERATOR_CHINA_UNICOM;
  }else{
  rc = GSM_ERR_UNKNOW;
@@ -947,7 +947,7 @@ int gsm_m6312_set_auto_operator_format(gsm_m6312_operator_format_t operator_form
  if(operator_format == GSM_M6312_OPERATOR_FORMAT_NUMERIC_NAME){ 
  strcpy(gsm_cmd.send,"AT+COPS=0,2\r\n");
  }else if(operator_format == GSM_M6312_OPERATOR_FORMAT_SHORT_NAME){
- strcpy(gsm_cmd.send,"AT+COPS=0\r\n");
+ strcpy(gsm_cmd.send,"AT+COPS=0,1\r\n");
  }else{
  strcpy(gsm_cmd.send,"AT+COPS=0,0\r\n");
  }
@@ -1096,7 +1096,7 @@ int gsm_m6312_set_report(gsm_m6312_report_t report)
 int gsm_m6312_open_client(int conn_id,gsm_m6312_net_protocol_t protocol,const char *host,uint16_t port)
 {
  int rc;
- gsm_m6312_err_code_t ok,err;
+ gsm_m6312_err_code_t conn_ok,bind_ok,already,conn_fail,bind_fail,timeout,err;
  
  osMutexWait(gsm_mutex,osWaitForever);
  
@@ -1106,24 +1106,43 @@ int gsm_m6312_open_client(int conn_id,gsm_m6312_net_protocol_t protocol,const ch
  gsm_cmd.send_timeout = 10;
  gsm_cmd.recv_timeout = 20000;
  
- ok.str = "OK\r\n";
- ok.code = GSM_ERR_OK;
- ok.next = NULL;
+ conn_ok.str = "CONNECT OK\r\n";
+ conn_ok.code = GSM_ERR_OK;
+ conn_ok.next = NULL;
+ 
+ already.str = "ALREADY CONNECT\r\n";
+ already.code = GSM_ERR_OK;
+ already.next = NULL;
+ 
+ conn_fail.str = "CONNECT FAIL\r\n";
+ conn_fail.code = GSM_ERR_SOCKET_CONNECT_FAIL;
+ conn_fail.next = NULL;
+ 
+ bind_ok.str = "BIND OK\r\n\r\nOK\r\n";
+ bind_ok.code = GSM_ERR_OK;
+ bind_ok.next = NULL;
+ 
+ bind_fail.str = "BIND FAIL\r\n";
+ bind_fail.code = GSM_ERR_SOCKET_CONNECT_FAIL;
+ bind_fail.next = NULL;
+ 
+ timeout.str = "COMMAND TIMEOUT\r\n";
+ timeout.code = GSM_ERR_CMD_TIMEOUT;
+ timeout.next = NULL;
+ 
  err.str = "ERROR";
  err.code = GSM_ERR_CMD_ERR;
  err.next = NULL;
  
- gsm_m6312_err_code_add(&gsm_cmd.err_head,&ok);
+ gsm_m6312_err_code_add(&gsm_cmd.err_head,&conn_ok);
+ gsm_m6312_err_code_add(&gsm_cmd.err_head,&bind_ok);
+ gsm_m6312_err_code_add(&gsm_cmd.err_head,&already);
+ gsm_m6312_err_code_add(&gsm_cmd.err_head,&conn_fail);
+ gsm_m6312_err_code_add(&gsm_cmd.err_head,&bind_fail);
+ gsm_m6312_err_code_add(&gsm_cmd.err_head,&timeout);
  gsm_m6312_err_code_add(&gsm_cmd.err_head,&err);
 
  rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
- if(rc == GSM_ERR_OK){
- /*UDP TCP错误处理*/
- if(strstr(gsm_cmd.recv,"BIND FAIL")|| strstr(gsm_cmd.recv,"CONNECT FAIL"))
- rc =  GSM_ERR_CONNECT_FAIL;   
- }else if(strstr(gsm_cmd.recv,"COMMAND TIMEOUT")){
- rc =  GSM_ERR_CMD_TIMEOUT;      
- }
  
  gsm_m6312_print_err_info(gsm_cmd.send,rc);
  osMutexRelease(gsm_mutex);
@@ -1392,7 +1411,7 @@ int gsm_m6312_recv(int conn_id,char *buffer,const int size)
  snprintf(gsm_cmd.send,GSM_M6312_SEND_BUFFER_SIZE,"AT+CMRD=%1d,%d\r\n",conn_id,buffer_size); 
  gsm_cmd.send_size = strlen(gsm_cmd.send);
  gsm_cmd.send_timeout = 10;
- gsm_cmd.recv_timeout = 1000;
+ gsm_cmd.recv_timeout = 2000;
  ok.str = "OK\r\n";
  ok.code = GSM_ERR_OK;
  ok.next = NULL;

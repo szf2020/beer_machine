@@ -95,7 +95,8 @@ retry_ntp:
  rc = http_client_post(url2,&req,&res);
  if(rc != 0){
  log_error("http post err.5s retry...\r\n");
- }
+ }else{
  log_debug("http post ok.res:%s\r\n",res.body); 
+ }
  } 
 }

@@ -26,8 +26,8 @@ void pressure_task(void const *argument);
 #define  PRESSURE_VALUE_IN_KG_CM2_BLINK_MAX        10    /*最大报警压力 放大10倍 1.0kg/cm2 约0.1Mpa*/
 #define  PRESSURE_VALUE_IN_KG_CM2_BLINK_MIN        1     /*最小报警压力 放大10倍 0.1kg/cm2 约0.01Mpa*/
  
-#define  PRESSURE_VALUE_IN_KG_CM2_ERR_MAX          25    /*最大过载压力 放大10倍 2.5kg/cm2 约0.25Mpa*/
-#define  PRESSURE_VALUE_IN_KG_CM2_ERR_MIN          -10   /*最小低载压力 放大10倍  -1.0kg/cm2 约0.1Mpa*/
+#define  PRESSURE_VALUE_IN_KG_CM2_ERR_MAX          25    /*最大过载压力 放大10倍   2.5kg/cm2 约0.25Mpa*/
+#define  PRESSURE_VALUE_IN_KG_CM2_ERR_MIN          -4    /*最小低载压力 放大10倍  -0.4kg/cm2 约0.04Mpa 比相当于0.6个标准大气压*/
 
 #define  PA_VALUE_PER_1KG_CM2                      98066.5 /*单位换算 1kg/cm2 == 98066.5Pa */
 
@@ -46,9 +46,7 @@ void pressure_task(void const *argument);
 #define  PRESSURE_TASK_MSG_WAIT_TIMEOUT            osWaitForever
 #define  PRESSURE_TASK_PUT_MSG_TIMEOUT             5
 
-#define  PRESSURE_ERR_VALUE_OVER_HIGH              (0xe * 10 + 3)/*压力显示过载错误代码    e3*/
-#define  PRESSURE_ERR_VALUE_OVER_LOW               (0xe * 10 + 4)/*压力显示低载错误代码    e4*/
-#define  PRESSURE_ERR_VALUE_SENSOR                 (0xe * 10 + 5)/*压力显示AD传感器错误代码e5*/
+#define  PRESSURE_ERR_VALUE_SENSOR                 (0xe * 10 + 1)/*压力传感器故障值 代码 E1*/
 
 
 typedef enum
