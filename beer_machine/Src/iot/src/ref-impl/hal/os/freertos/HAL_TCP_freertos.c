@@ -27,7 +27,7 @@ uintptr_t HAL_TCP_Establish(const char *host, uint16_t port)
 {
    int rc;
    hal_info("establish tcp connection with server(host='%s', port=[%u])", host, port);
-   rc = connection_connect(handle,host,port,1234,CONNECTION_PROTOCOL_TCP);
+   rc = connection_connect(host,port,CONNECTION_PROTOCOL_TCP);
    if(rc < 0){
    hal_err("establish tcp connection err.\r\n"); 
    return -1;
@@ -51,7 +51,7 @@ int HAL_TCP_Destroy(uintptr_t fd)
 int32_t HAL_TCP_Write(uintptr_t fd, const char *buf, uint32_t len, uint32_t timeout_ms)
 {
     int ret;
-    ret = connection_send((int)fd,buff,len,timeout);
+    ret = connection_send((int)fd,buf,len,timeout_ms);
     if(ret < 0){
     hal_err("socket send error");   
     }
@@ -62,7 +62,7 @@ int32_t HAL_TCP_Write(uintptr_t fd, const char *buf, uint32_t len, uint32_t time
 int32_t HAL_TCP_Read(uintptr_t fd, char *buf, uint32_t len, uint32_t timeout_ms)
 {
     int ret;
-    ret = connection_recv((int)fd,buff,len,timeout);
+    ret = connection_recv((int)fd,buf,len,timeout_ms);
     if(ret < 0){
     hal_err("socket recv error");   
     }

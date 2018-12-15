@@ -96,7 +96,7 @@ typedef struct internal_hooks {
 
 extern void *HAL_Malloc(uint32_t size);
 extern void HAL_Free(void *ptr);
-static internal_hooks global_hooks = { HAL_Malloc, HAL_Free, realloc };
+static internal_hooks global_hooks = { HAL_Malloc, HAL_Free, NULL };
 
 static unsigned char *cJSON_strdup(const unsigned char *string, const internal_hooks *const hooks)
 {

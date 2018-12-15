@@ -372,7 +372,6 @@
                     <state>$PROJ_DIR$/../Src/at</state>
                     <state>$PROJ_DIR$/../Src/md5</state>
                     <state>$PROJ_DIR$/../Src/ntp</state>
-                    <state>$PROJ_DIR$/../Src/cjson</state>
                     <state>$PROJ_DIR$/../Src/led</state>
                     <state>$PROJ_DIR$/../Src/utils</state>
                     <state>$PROJ_DIR$/../Src/tm1629a</state>
@@ -381,6 +380,11 @@
                     <state>$PROJ_DIR$/../Src/iot/include/exports</state>
                     <state>$PROJ_DIR$/../Src/iot/src/ref-impl/hal</state>
                     <state>$PROJ_DIR$/../Src/iot/src/ref-impl/hal/os</state>
+                    <state>$PROJ_DIR$/../Src/iot/src/infra/log</state>
+                    <state>$PROJ_DIR$/../Src/iot/src/infra/utils</state>
+                    <state>$PROJ_DIR$/../Src/iot/src/infra/utils/digest</state>
+                    <state>$PROJ_DIR$/../Src/iot/src/infra/utils/misc/</state>
+                    <state>$PROJ_DIR$/../Src/iot/src/tools/linkkit_tsl_convert/include</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -1091,12 +1095,6 @@
                 </file>
             </group>
             <group>
-                <name>cjson</name>
-                <file>
-                    <name>$PROJ_DIR$\..\Src\cjson\cJSON.c</name>
-                </file>
-            </group>
-            <group>
                 <name>connection</name>
                 <file>
                     <name>$PROJ_DIR$\..\Src\connection\connection.c</name>
@@ -1145,34 +1143,28 @@
                     <group>
                         <name>hal</name>
                         <file>
+                            <name>$PROJ_DIR$\..\Src\iot\src\ref-impl\hal\os\freertos\HAL_OS_freertos.c</name>
+                        </file>
+                        <file>
                             <name>$PROJ_DIR$\..\Src\iot\src\ref-impl\hal\os\freertos\HAL_TCP_freertos.c</name>
                         </file>
                     </group>
                     <group>
+                        <name>log</name>
+                        <file>
+                            <name>$PROJ_DIR$\..\Src\iot\src\infra\log\iotx_log.c</name>
+                        </file>
+                    </group>
+                    <group>
                         <name>protocol</name>
+                        <file>
+                            <name>$PROJ_DIR$\..\Src\iot\src\protocol\http\iotx_http_api.c</name>
+                        </file>
                     </group>
                     <group>
                         <name>utils</name>
                         <file>
-                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\json_parser.c</name>
-                        </file>
-                        <file>
-                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\json_token.c</name>
-                        </file>
-                        <file>
-                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\lite-cjson.c</name>
-                        </file>
-                        <file>
-                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\mem_stats.c</name>
-                        </file>
-                        <file>
-                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\string_utils.c</name>
-                        </file>
-                        <file>
-                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\utils_epoch_time.c</name>
-                        </file>
-                        <file>
-                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\utils_event.c</name>
+                            <name>$PROJ_DIR$\..\Src\iot\src\tools\linkkit_tsl_convert\src\cJSON.c</name>
                         </file>
                         <file>
                             <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\utils_httpc.c</name>

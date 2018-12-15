@@ -77,14 +77,12 @@ int connection_init();
 
 /* 函数名：connection_connect
 *  功能：  建立网络连接
-*  参数：  handle 连接句柄
 *  参数：  host 主机域名
 *  参数：  remote_port 主机端口
-*  参数：  local_port 本地端口
 *  参数：  protocol   连接协议
 *  返回：  >=0 成功连接句柄 其他：失败
 */ 
-int connection_connect(int handle,const char *host,uint16_t remote_port,uint16_t local_port,connection_protocol_t protocol);
+int connection_connect(const char *host,uint16_t remote_port,connection_protocol_t protocol);
 
 /* 函数名：connection_disconnect
 *  功能：  断开网络连接

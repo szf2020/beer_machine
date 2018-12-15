@@ -12,7 +12,7 @@
 #define  LOG_MODULE_NAME     "[connection]"
 
 
-
+static void connection_handle_init();
 
 typedef struct
 {
@@ -68,7 +68,7 @@ int connection_init()
  
  connection_manage.gsm.initialized = false;
  connection_manage.gsm.status = CONNECTION_STATUS_NOT_READY;
- 
+ connection_handle_init();
  log_debug("connection init ok.\r\n");
 
  return 0;
@@ -362,7 +362,6 @@ static void connection_free_handle(int handle)
 
 /* 函数名：connection_connect
 *  功能：  建立网络连接
-*  参数：  handle 连接句柄
 *  参数：  host 主机域名
 *  参数：  remote_port 主机端口
 *  参数：  local_port 本地端口
@@ -405,6 +404,7 @@ int connection_connect(const char *host,uint16_t remote_port,connection_protocol
  rc =  handle + CONNECTION_GSM_CONNECT_HANDLE_BASE;
  log_debug("gsm connect ok handle:%d.\r\n",rc);    
  }else{
+ connection_free_handle(handle);
  log_error("gsm connect fail.\r\n");    
  }
  }else{
@@ -426,17 +426,18 @@ int connection_disconnect(const int connection_handle)
  /*此连接handle是GSM网络*/
  if(connection_handle >= CONNECTION_GSM_CONNECT_HANDLE_BASE){
  rc = gsm_m6312_close_client(connection_handle - CONNECTION_GSM_CONNECT_HANDLE_BASE);
+ if(rc != 0){
+ log_error("gsm handle:%d disconnect err.\r\n",connection_handle - CONNECTION_GSM_CONNECT_HANDLE_BASE);  
+ }
+ connection_free_handle(connection_handle - CONNECTION_GSM_CONNECT_HANDLE_BASE);
  }else { 
  /*此连接handle是WIFI网络*/
  rc = wifi_8710bx_close(connection_handle);
+ if(rc != 0){
+ log_error("wifi handle:%d disconnect err.\r\n",connection_handle);  
+ }
  }
  
- if(rc == 0){
- log_debug("disconnect ok.\r\n");
- }else{
- log_error("disconnect err.\r\n");  
- }
-
  return rc;
 }
 
@@ -478,7 +479,7 @@ int connection_send(const int connection_handle,const char *buffer,int length,ui
  }
  cur_time = osKernelSysTick();
  }
- 
+ log_debug("send data size:%d .\r\n",send_total);
  return send_total;
 }
 
@@ -521,6 +522,6 @@ int connection_recv(const int connection_handle,char *buffer,int buffer_size,uin
  }
  cur_time = osKernelSysTick();
  }
-
+ log_debug("recv data size:%d .\r\n",recv_total);
  return recv_total;
 }

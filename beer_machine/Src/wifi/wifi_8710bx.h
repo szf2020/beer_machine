@@ -229,11 +229,10 @@ int wifi_8710bx_open_server(const uint16_t port,const wifi_8710bx_net_protocol_t
 *  功能：  创建客户端
 *  参数：  host        服务端域名
 *  参数：  remote_port 服务端端口
-*  参数：  local_port  本地端口
 *  参数：  protocol    网络协议类型
 *  返回：  连接句柄，大于WIFI_ERR_OK：成功 其他：失败
 */
-int wifi_8710bx_open_client(const char *host,const uint16_t remote_port,const uint16_t local_port,const wifi_8710bx_net_protocol_t protocol);
+int wifi_8710bx_open_client(const char *host,const uint16_t remote_port,const wifi_8710bx_net_protocol_t protocol);
 /* 函数名：wifi_8710bx_close
 *  功能：  关闭客户或者服务端域      
 *  参数：  conn_id     连接句柄
