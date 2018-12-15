@@ -57,35 +57,40 @@ typedef struct
 
 
 /*http回应的数据中找到数据*/
-static int http_client_parse_response_header(const char *header)
+static int http_client_parse_response_head(const char *head,int *head_size,int *body_size)
 {
-  char *chunk_type;
-  int rc = -1;
+  char *tmp_ptr,*encode_type;
+  int encode_type_size;
+  
   /*回应头存在*/
-  if((strstr(header,HEADER_START0_STR) || strstr(header,HEADER_START1_STR)) &&  strstr(header,HEADER_END_STR)){
+  if((strstr(head,HEADER_START0_STR) || strstr(head,HEADER_START1_STR)) &&  strstr(head,HEADER_END_STR)){
   log_debug("find header.\r\n"); 
- /*找到CHUNK编码类型位置*/
-  chunk_type = strstr(header,TRANSFER_ENCODE_TYPE_STR);
-  if(chunk_type){
-  log_debug("---->"TRANSFER_ENCODE_TYPE_STR"\r\n");
-  rc = 0;
-  }else{
-  log_error("transfer encode not chunked.\r\n");  
+  *head_size = strstr(head,HEADER_END_STR) + strlen(HEADER_END_STR) - head;
+ /*找到body size*/
+  if (NULL != (tmp_ptr = strstr(head, "Content-Length"))) {
+  *body_size = atoi(tmp_ptr + strlen("Content-Length: "));
+  return 0;
+  }else if (NULL != (tmp_ptr = strstr(head, "Transfer-Encoding"))) {
+  encode_type_size = strlen("Chunked");
+  encode_type =(char *) head + strlen("Transfer-Encoding: ");
+  if ((! memcmp(encode_type, "Chunked", encode_type_size))
+   || (! memcmp(encode_type, "chunked", encode_type_size))) {
+  *body_size = 0;/*this mean data is chunked*/   
+  return 0;
   }
   }else{
+  log_error("header is invalid.\r\n");
+  return -2;/*will stop parse*/
+  }
+  }
+  
   log_debug("header is continue...\r\n");   
-  } 
-  return rc;
+  return -1;
  }
-
-#define  CHUNK_SIZE_EOF               "\r\n" 
-
-
-
 
 static int  http_client_parse_response_chunk_size(const char *chunk_str)
 {  
- return strtol(chunk_str,NULL,16);  
+
 }
 
     
@@ -137,7 +142,7 @@ static int http_client_build_request(char *buffer,const char *method,const http_
   int req_size;
   const char *http_version = "HTTP/1.1";
   
-  snprintf(buffer,size,
+         snprintf(buffer,size,
         /*method-----path--------------------------------------http_version*/
          "%s "  "%ssn=%s&sign=%s&source=%s&timestamp=%s"  " %s\r\n"
 		 "Host: %s:%d\r\n"
@@ -167,52 +172,123 @@ static int http_client_build_request(char *buffer,const char *method,const http_
 }
 
 #define  HTTP_CLIENT_CONNECTION_HANDLE         1
+#define  HTTP_CLIENT_HEADER_RECV_SIZE          32
 
-
-static int http_client_recv_header(int handle,char *header,const uint32_t timeout)
+typedef struct
 {
- int rc;
- int recv_total = 0;
- uint32_t start_time,cur_time;
- 
- start_time = osKernelSysTick();
- /*获取http header*/
- do{
- rc = connection_recv(handle,header + recv_total,1,10);
- if(rc < 0){
- log_error("http header recv err.\r\n");
- return -1;
- }else{
- recv_total += rc;
- /*解析数据*/
- rc = http_client_parse_response_header(header);
- if(rc == 0){
- log_debug("http parse header success.header size:%d\r\n",recv_total);
- return recv_total;
- }
- }
- cur_time = osKernelSysTick();
- }while(timeout > (cur_time - start_time));
- /*超时返回*/
- return -1;
+bool up;
+uint32_t start;
+uint32_t value;
+}http_client_timer_t;
+
+static int http_client_timer_init(http_client_timer_t *timer,uint32_t timeout,bool up)
+{
+if(timer == NULL){
+return -1;
+}
+
+timer->up = up;
+timer->start = osKernelSysTick();  
+timer->value = timeout;  
+
+return 0;
+}
+
+static int http_client_timer_value(http_client_timer_t *timer)
+{
+uint32_t time_elapse;
+
+if(timer == NULL){
+return -1;
+}  
+
+if(timer->up == true){
+time_elapse = osKernelSysTick() - timer->value; 
+return  timer->value > time_elapse ? time_elapse : timer->value;
+}
+
+return  timer->value > time_elapse ? timer->value - time_elapse : 0; 
 }
 
 
+static int http_client_recv_head(int handle,char *header,int *head_size,int *body_size,const uint32_t timeout)
+{
+ int rc;
+ int recv_total = 0;
+ http_client_timer_t timer;
+ 
+ http_client_timer_init(&timer,timeout,false);
+ 
+ /*获取http header*/
+ do{
+ rc = connection_recv(handle,header + recv_total,HTTP_CLIENT_HEADER_RECV_SIZE,http_client_timer_value(&timer));
+ if(rc < 0){
+ log_error("http header recv err.\r\n");
+ return -1;
+ }
+ 
+ if(rc == 0){
+ /*超时返回*/
+ log_error("recv head timeout.\r\n");
+ return -1;  
+ }
+ 
+ if(rc > 0){
+ recv_total += rc;
+ /*尝试解析header*/
+ rc = http_client_parse_response_head(header,head_size,body_size);
+ if(rc == -2){
+ return -1;  
+ }
+ if(rc == 0){
+ log_debug("http parse header success.header size:%d body_size:%d.\r\n",*head_size,*body_size);
+ /*返回已经接收的body size */
+ return recv_total - *head_size;
+ }
+ }
+ 
+ }while(rc > 0);
+ 
+ return -1;
+}
+
+ 
+static int http_client_check_chunk_size(char *buffer)
+{
+ int chunk_size;
+ 
+ /*发现chunk size hex*/
+ if(strstr(buffer,"\r\n")){
+ chunk_size = strtol(buffer,NULL,16);
+ return chunk_size;
+ }
+ /*没有chunk size hex*/
+ log_error("cand not find chun size hex.\r\n");
+ return -1; 
+ }
+ 
 /*http 请求*/
 static int http_client_request(const char *method,const char *url,http_client_request_t *req,http_client_response_t *res)
 {
- int start_time,cur_time;
  int rc;
  int req_len;
+
  char *http_buffer;
  int recv_total = 0;
-
- http_client_connection_t http_connection;
+ int head_size;
+ int body_size,body_size_left;
+ char *body_start,*body_size_str;
+ bool chunked =false;
  
+ http_client_connection_t http_connection;
+ http_client_timer_t      timer;
  http_connection.handle = HTTP_CLIENT_CONNECTION_HANDLE;
  http_connection.connected = false;
  http_connection.successed = false;
  res->status_code = -1;
+ 
+ http_client_timer_init(&timer,res->timeout,false);
+
  
  /*申请http缓存*/
  http_buffer = HTTP_CLIENT_MALLOC(HTTP_BUFFER_SIZE);
@@ -240,16 +316,77 @@ static int http_client_request(const char *method,const char *url,http_client_re
  }
  http_connection.handle = rc;
  http_connection.connected = true;
+ 
  /*http 发送*/
- rc = connection_send(http_connection.handle,http_buffer,req_len,1000);
+ rc = connection_send(http_connection.handle,http_buffer,req_len,http_client_timer_value(&timer));
  if(rc != req_len){
  log_error("http send err.\r\n");
  goto err_handler;
  }
- 
+
+
  /*清空http buffer 等待接收数据*/
  memset(http_buffer,0,HTTP_BUFFER_SIZE);
 
+ rc = http_client_recv_head(http_connection.handle,http_buffer,&head_size,&body_size,http_client_timer_value(&timer));
+ /*解析head失败 返回*/
+ if(rc < 0){
+ goto err_handler;
+ }
+ 
+ body_start = (char *)http_buffer + head_size;
+ /*data is chunked 获取chunk size*/
+ if(body_size == 0){
+ chunk_size_start = body_start;  
+ chunked = true;
+
+/*已经接收的chunk size*/
+ chunk_size_recv = rc;
+/*接收剩余chunk 数据*/
+ do{
+ /*计算全部chunk size*/
+ chunk_data_size = http_client_check_chunk_size(chunk_size_start,&chunk_data_start,&chunk_data_recv);
+ if(chunk_data_size > 0){
+ if(chunk_data_size > chunk_data_recv){
+ chunk_data_left = chunk_data_size - chunk_data_recv);
+ rc = connection_recv(http_connection.handle,chunk_size_start + chunk_size_recv,chunk_data_left,http_client_timer_value(&timer));
+ if(rc < 0){
+ log_error("chunk data recv err.\r\n");
+ goto err_handle;
+ }
+ 
+ if(rc != chunk_size_left){
+ log_error("chunk recv timeout.\r\n");
+ goto err_handle; 
+ }
+ 
+ log_debug("1 chunk recved.\r\n");
+ /*复制回应*/
+ memcpy(res->response + body_size,chunk_data_start);
+ body_size += chunk_size;
+
+ }else if(chunk_size == 0){ 
+ log_debug("recv 1ast chunk.\r\n");   
+ break;
+ }
+ /*接收chunk size hex*/
+ rc = connection_recv(http_connection.handle,body_start + body_size,CHUNK_RECV_SIZE,http_client_timer_value(&timer));
+ if(rc < 0){
+ log_error("chunk size hex recv err.\r\n");
+ goto err_handle;
+ }
+ chunk_size_start = 
+ }while(chunk_size > 0 );
+ 
+ /*data is not chunked 获取剩余body size*/
+ }else{
+ body_size_left = body_size - rc;  
+   
+   
+ }
+ }
+ 
+ 
  
 
  /*错误处理*/ 

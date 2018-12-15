@@ -35,7 +35,7 @@ connection_status_t status;
 }connection_manage_t;
 
 
-#define  CONNECTION_GSM_CONNECT_HANDLE_BASE               11
+#define  CONNECTION_GSM_CONNECT_HANDLE_BASE               10
 static connection_manage_t connection_manage;
 
 
@@ -322,6 +322,43 @@ int connection_gsm_reset()
  return 0; 
 }
 
+typedef struct
+{
+ int value;
+ bool alive;
+}connection_handle_t;
+
+#define  FREERTOS_HANDLE_MAX             5
+
+connection_handle_t connection_handle[FREERTOS_HANDLE_MAX];
+
+static void connection_handle_init()
+{
+ for(uint8_t i = 0;i < FREERTOS_HANDLE_MAX; i++){
+ connection_handle[i].alive = false;
+ connection_handle[i].value = i + 1;      
+ }
+}
+
+static int connection_malloc_handle()
+{
+ for(uint8_t i = 0;i < FREERTOS_HANDLE_MAX; i++){
+ if(connection_handle[i].alive == false){
+ return connection_handle[i].value;      
+ }
+ }
+ 
+return -1; 
+}
+
+static void connection_free_handle(int handle)
+{
+ for(uint8_t i = 0;i < FREERTOS_HANDLE_MAX; i++){
+ if(connection_handle[i].value == handle){
+  connection_handle[i].alive = false;      
+ }
+}
+}
 
 /* 函数名：connection_connect
 *  功能：  建立网络连接
@@ -332,11 +369,20 @@ int connection_gsm_reset()
 *  参数：  protocol   连接协议
 *  返回：  >=0 成功连接句柄 其他：失败
 */ 
-int connection_connect(const int handle,const char *host,uint16_t remote_port,uint16_t local_port,connection_protocol_t protocol)
+int connection_connect(const char *host,uint16_t remote_port,connection_protocol_t protocol)
 {
  int rc;
+ int handle;
+ 
  wifi_8710bx_net_protocol_t wifi_net_protocol;
  gsm_m6312_net_protocol_t  gsm_net_protocol;
+ 
+ handle = connection_malloc_handle();
+
+ if(handle < 0){
+ log_error("has no invalid handle.\r\n");  
+ return -1;    
+ }
  
  if(protocol == CONNECTION_PROTOCOL_TCP){
  wifi_net_protocol = WIFI_8710BX_NET_PROTOCOL_TCP;
@@ -346,26 +392,25 @@ int connection_connect(const int handle,const char *host,uint16_t remote_port,ui
  gsm_net_protocol = GSM_M6312_NET_PROTOCOL_UDP;
  }
  
- rc = -1;
  /*只要wifi连接上了，始终优先*/
  if(connection_manage.wifi.status == CONNECTION_STATUS_READY ){
- rc = wifi_8710bx_open_client(host,remote_port,local_port,wifi_net_protocol);
+ rc = wifi_8710bx_open_client(host,remote_port,wifi_net_protocol);
  }
  /*wifi连接失败，选择gsm*/
- if(rc < 1){
+ if(rc < 0){
+ log_error("wifi connect fail.retry gsm.\r\n");  
  if(connection_manage.gsm.status == CONNECTION_STATUS_READY){
  rc = gsm_m6312_open_client(handle,gsm_net_protocol,host,remote_port);
- if(rc == 0)
+ if(rc == handle)
  rc =  handle + CONNECTION_GSM_CONNECT_HANDLE_BASE;
- }
- }
- 
- if(rc > 0){
- log_debug("connection connect ok.\r\n");  
+ log_debug("gsm connect ok handle:%d.\r\n",rc);    
  }else{
- log_error("connection connect err.\r\n");    
+ log_error("gsm connect fail.\r\n");    
  }
- 
+ }else{
+ log_debug("wifi connect ok handle:%d.\r\n",rc);    
+ }
+
  return rc;  
 }
 
@@ -387,9 +432,9 @@ int connection_disconnect(const int connection_handle)
  }
  
  if(rc == 0){
- log_debug("connection disconnect ok.\r\n");
+ log_debug("disconnect ok.\r\n");
  }else{
- log_error("connection disconnect err.\r\n");  
+ log_error("disconnect err.\r\n");  
  }
 
  return rc;

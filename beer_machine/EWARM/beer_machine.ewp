@@ -376,6 +376,11 @@
                     <state>$PROJ_DIR$/../Src/led</state>
                     <state>$PROJ_DIR$/../Src/utils</state>
                     <state>$PROJ_DIR$/../Src/tm1629a</state>
+                    <state>$PROJ_DIR$/../Src/iot/include</state>
+                    <state>$PROJ_DIR$/../Src/iot/include/imports</state>
+                    <state>$PROJ_DIR$/../Src/iot/include/exports</state>
+                    <state>$PROJ_DIR$/../Src/iot/src/ref-impl/hal</state>
+                    <state>$PROJ_DIR$/../Src/iot/src/ref-impl/hal/os</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -1132,9 +1137,54 @@
             </group>
             <group>
                 <name>http</name>
-                <file>
-                    <name>$PROJ_DIR$\..\Src\http\http_client.c</name>
-                </file>
+            </group>
+            <group>
+                <name>iot</name>
+                <group>
+                    <name>src</name>
+                    <group>
+                        <name>hal</name>
+                        <file>
+                            <name>$PROJ_DIR$\..\Src\iot\src\ref-impl\hal\os\freertos\HAL_TCP_freertos.c</name>
+                        </file>
+                    </group>
+                    <group>
+                        <name>protocol</name>
+                    </group>
+                    <group>
+                        <name>utils</name>
+                        <file>
+                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\json_parser.c</name>
+                        </file>
+                        <file>
+                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\json_token.c</name>
+                        </file>
+                        <file>
+                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\lite-cjson.c</name>
+                        </file>
+                        <file>
+                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\mem_stats.c</name>
+                        </file>
+                        <file>
+                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\string_utils.c</name>
+                        </file>
+                        <file>
+                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\utils_epoch_time.c</name>
+                        </file>
+                        <file>
+                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\utils_event.c</name>
+                        </file>
+                        <file>
+                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\utils_httpc.c</name>
+                        </file>
+                        <file>
+                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\utils_net.c</name>
+                        </file>
+                        <file>
+                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\utils_timer.c</name>
+                        </file>
+                    </group>
+                </group>
             </group>
             <group>
                 <name>led</name>
