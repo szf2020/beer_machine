@@ -1135,45 +1135,9 @@
             </group>
             <group>
                 <name>http</name>
-            </group>
-            <group>
-                <name>iot</name>
-                <group>
-                    <name>src</name>
-                    <group>
-                        <name>hal</name>
-                        <file>
-                            <name>$PROJ_DIR$\..\Src\iot\src\ref-impl\hal\os\freertos\HAL_OS_freertos.c</name>
-                        </file>
-                        <file>
-                            <name>$PROJ_DIR$\..\Src\iot\src\ref-impl\hal\os\freertos\HAL_TCP_freertos.c</name>
-                        </file>
-                    </group>
-                    <group>
-                        <name>log</name>
-                        <file>
-                            <name>$PROJ_DIR$\..\Src\iot\src\infra\log\iotx_log.c</name>
-                        </file>
-                    </group>
-                    <group>
-                        <name>protocol</name>
-                    </group>
-                    <group>
-                        <name>utils</name>
-                        <file>
-                            <name>$PROJ_DIR$\..\Src\iot\src\tools\linkkit_tsl_convert\src\cJSON.c</name>
-                        </file>
-                        <file>
-                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\utils_httpc.c</name>
-                        </file>
-                        <file>
-                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\utils_net.c</name>
-                        </file>
-                        <file>
-                            <name>$PROJ_DIR$\..\Src\iot\src\infra\utils\misc\utils_timer.c</name>
-                        </file>
-                    </group>
-                </group>
+                <file>
+                    <name>$PROJ_DIR$\..\Src\http\http_client.c</name>
+                </file>
             </group>
             <group>
                 <name>led</name>
