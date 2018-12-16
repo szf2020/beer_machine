@@ -40,7 +40,7 @@
 #endif
 
 #ifndef CONFIG_RUNTIME_LOG_LEVEL
-    #define CONFIG_RUNTIME_LOG_LEVEL        (2)
+    #define CONFIG_RUNTIME_LOG_LEVEL        (5)
 #endif
 
 #ifndef CONFIG_BLDTIME_MUTE_DBGLOG

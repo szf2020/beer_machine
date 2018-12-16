@@ -1143,7 +1143,9 @@ int gsm_m6312_open_client(int conn_id,gsm_m6312_net_protocol_t protocol,const ch
  gsm_m6312_err_code_add(&gsm_cmd.err_head,&err);
 
  rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
- 
+ if(rc == GSM_ERR_OK){
+ rc = conn_id;
+ }
  gsm_m6312_print_err_info(gsm_cmd.send,rc);
  osMutexRelease(gsm_mutex);
  return rc;
@@ -1402,8 +1404,9 @@ int gsm_m6312_recv(int conn_id,char *buffer,const int size)
  }
  }else{
  rc = GSM_ERR_UNKNOW;    
+ goto err_exit;
  }
- }
+ 
 
  /*读取对应的数据*/
  memset(&gsm_cmd,0,sizeof(gsm_cmd));
@@ -1426,6 +1429,7 @@ int gsm_m6312_recv(int conn_id,char *buffer,const int size)
  if(rc == GSM_ERR_OK){
  memcpy(buffer,gsm_cmd.recv,buffer_size);
  rc = buffer_size;  
+ }
  }
  
 err_exit: 

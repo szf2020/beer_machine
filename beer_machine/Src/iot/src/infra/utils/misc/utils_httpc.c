@@ -501,7 +501,6 @@ int httpclient_retrieve_content(httpclient_t *client, char *data, int len,
                 client_data->is_more = IOT_FALSE;
                 utils_debug("no more (last chunk)");
             }
-
             if (n != 1) {
                 utils_err("Could not read chunk length");
                 return ERROR_HTTP_UNRESOLVED_DNS;
@@ -682,7 +681,7 @@ int httpclient_response_parse(httpclient_t *client, char *data, int len, uint32_
         client_data->retrieve_len = client_data->response_content_len;
     } else if (NULL != (tmp_ptr = strstr(data, "Transfer-Encoding"))) {
         int len_chunk = strlen("Chunked");
-        char *chunk_value = data + strlen("Transfer-Encoding: ");
+        char *chunk_value = tmp_ptr + strlen("Transfer-Encoding: ");
 
         if ((! memcmp(chunk_value, "Chunked", len_chunk))
             || (! memcmp(chunk_value, "chunked", len_chunk))) {

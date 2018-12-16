@@ -47,6 +47,7 @@ static connection_manage_t connection_manage;
 */
 int connection_init()
 {
+  
  if(wifi_8710bx_hal_init() !=0 || gsm_m6312_serial_hal_init() != 0){
  return -1;
  }
@@ -311,6 +312,7 @@ int connection_wifi_reset()
 */ 
 int connection_gsm_reset()
 {
+ 
  if(gsm_m6312_pwr_off() != 0){
  log_error("gsm pwr off err.\r\n");
  return -1;
@@ -318,7 +320,9 @@ int connection_gsm_reset()
  if(gsm_m6312_pwr_on() != 0){
  log_error("gsm pwr on err.\r\n");
  return -1;
- }
+ 
+}
+
  return 0; 
 }
 
@@ -336,7 +340,7 @@ static void connection_handle_init()
 {
  for(uint8_t i = 0;i < FREERTOS_HANDLE_MAX; i++){
  connection_handle[i].alive = false;
- connection_handle[i].value = i + 1;      
+ connection_handle[i].value = i ;      
  }
 }
 
@@ -370,7 +374,7 @@ static void connection_free_handle(int handle)
 */ 
 int connection_connect(const char *host,uint16_t remote_port,connection_protocol_t protocol)
 {
- int rc;
+ int rc = -1;
  int handle;
  
  wifi_8710bx_net_protocol_t wifi_net_protocol;

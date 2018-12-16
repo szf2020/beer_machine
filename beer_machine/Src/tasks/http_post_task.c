@@ -9,6 +9,7 @@
 #include "tasks_init.h"
 #include "utils.h"
 #include "md5.h"
+#include "utils_httpc.h"
 #include "log.h"
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
 #define  LOG_MODULE_NAME     "[net]"
@@ -21,25 +22,48 @@ osMessageQId http_post_task_msg_q_id;
 
 #define  HTTP_POST_DATA_STR    "wkxboot"
 
-http_client_request_t req;
-http_client_response_t res;
+//http_client_request_t req;
+//http_client_response_t res;
 
- char http_post_src_buffer[100];
- char http_post_src_hex_buffer[100];
- char md5_hex[16];
- char md5_hex_str[33];
+//char http_post_response[100];
+ 
+int http_client_build_url(char *url,const char *url_origin,const char *sn,const uint32_t timestamp,const char *source)
+{ 
+#define  HTTP_CLIENT_URL_SIZE_MAX            200
+ char timestamp_str[12];
+ char _md5[16];
+ char _md5_str[32];
+  
+ /*组合sn + timestamp + source作为MD5的源数据*/  
+ strcpy(url,sn);
+ snprintf(timestamp_str,12,"%d",timestamp);
+ strcat(url,timestamp_str);
+ strcat(url,source); 
+  
+ /*第1次MD5*/
+ md5(url,strlen(url),_md5);
+ /*把字节装换成HEX字符串*/
+ bytes_to_hex_str(_md5,_md5_str,16);
+ /*第2次MD5*/
+ md5(_md5_str,32,_md5);
+ bytes_to_hex_str(_md5,_md5_str,16);
+ 
+ snprintf(url,HTTP_CLIENT_URL_SIZE_MAX,"%ssn=%s&sign=%s&source=%s&timestamp=%s",url_origin,sn,_md5_str,source,timestamp_str);
+ return 0;
+}
+ 
  
 void http_post_task(void const *argument)
 {
  int rc;
  uint32_t time;
  char http_post_response[200]={0};
-
- char timestamp_str[12]={0};
+ char url[200];
+ 
  const char *sn = "129DP12399787777";
  const char *source = "coolbeer";
  const char *msg= "{\"yewei\":1.0,\"yali\":200}";
- const char *url2 = "http://mh1597193030.uicp.cn:35787/device/log/submit?";
+ const char *url2 = "http://mh1597193030.uicp.cn/device/log/submit?";//:35787
  
  //osMessageQDef(http_post_task_msg_q,3,uint32_t);
  
@@ -52,7 +76,7 @@ void http_post_task(void const *argument)
 while(1){
 osDelay(5000);
 
-//const char *url = "http://syll-test.mymlsoft.com:8083/common/service.execute.json";
+//const char *url1 = "http://syll-test.mymlsoft.com/common/service.execute.json";//:8083
 
 retry_ntp:
  rc = ntp_sync_time(&time);
@@ -60,43 +84,40 @@ retry_ntp:
  osDelay(1000);
  goto retry_ntp;
  }
-
-
- memset(http_post_src_hex_buffer,0,100);
- memset(http_post_src_buffer,0,100);
  
- strcat(http_post_src_buffer,sn);
- snprintf(timestamp_str,12,"%d",time);
- strcat(http_post_src_buffer,timestamp_str);
- strcat(http_post_src_buffer,source);
+http_client_build_url(url,url2,sn,time,source);
 
- /*第一次MD5*/
- md5(http_post_src_buffer,strlen(http_post_src_buffer),md5_hex);
- /*把字节装换成HEX字符串*/
- bytes_to_hex_str(md5_hex,md5_hex_str,16);
- strcpy(http_post_src_hex_buffer,md5_hex_str);
- md5(md5_hex_str,32,md5_hex);
- bytes_to_hex_str(md5_hex,md5_hex_str,16);
+httpclient_t http_client;
+httpclient_data_t   httpc_data;
 
- 
- req.body = msg;
- req.body_size = strlen(msg);
- req.range.start = 0;
- req.range.size = 199;
- req.param.sn = sn;
- req.param.sign = md5_hex_str;
- req.param.source = source;
- req.param.timestamp = timestamp_str;
- res.body_buffer_size = 199;
- res.body = http_post_response;
- res.timeout = 20000;
+memset(&httpc_data,0,sizeof(httpc_data));
+memset(&http_client,0,sizeof(http_client));
 
+http_client.header = NULL;
+http_client.auth_user = NULL;
+http_client.net.handle = 0;
 
- rc = http_client_post(url2,&req,&res);
+httpc_data.is_more = 1;
+httpc_data.post_content_type = "application/Json";
+httpc_data.post_buf = (char *)msg;
+httpc_data.post_buf_len = strlen(msg);
+httpc_data.response_buf =http_post_response;
+httpc_data.response_buf_len = 200;
+    
+rc = iotx_post(&http_client,url,35787,NULL,&httpc_data);
+
  if(rc != 0){
- log_error("http post err.5s retry...\r\n");
+ log_error("http send err.5s retry...\r\n");
  }else{
- log_debug("http post ok.res:%s\r\n",res.body); 
+ log_debug("http send ok.\r\n");   
+ rc = httpclient_recv_response(&http_client, 5000, &httpc_data);
+ if(rc == 0){
+ log_debug("http recv ok.res:%s\r\n",http_post_response); 
+ }else{
+ log_error("http recv err.:%s\r\n"); 
  }
+ }
+ httpclient_close(&http_client);
+ 
  } 
 }

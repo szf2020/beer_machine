@@ -89,7 +89,7 @@ int ntp_sync_time(uint32_t *new_time)
   // Create a UDP socket, convert the host-name to an IP address, set the port number,
   // connect to the server, send the packet, and then read in the return packet.
 
-  sockfd = connection_connect(NTP_TASK_UDP_SOCKET_HANDLE,host_name,portno,8080,CONNECTION_PROTOCOL_UDP);; // Create a UDP socket.
+  sockfd = connection_connect(host_name,portno,CONNECTION_PROTOCOL_UDP);; // Create a UDP socket.
   if(sockfd < 0 ){
   log_error( "ERROR opening socket" );
   return -1;
