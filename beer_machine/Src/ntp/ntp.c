@@ -2,14 +2,14 @@
 #include "task.h"
 #include "cmsis_os.h"
 #include "string.h"
-#include "connection.h"
+#include "socket.h"
 #include "ntp.h"
 #include "tasks_init.h"
 #include "log.h"
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
 #define  LOG_MODULE_NAME     "[ntp]"
 
-#define  NTP_TASK_UDP_SOCKET_HANDLE       0
+
 #define  NTP_TIMEOUT                      5000
 
 
@@ -89,7 +89,7 @@ int ntp_sync_time(uint32_t *new_time)
   // Create a UDP socket, convert the host-name to an IP address, set the port number,
   // connect to the server, send the packet, and then read in the return packet.
 
-  sockfd = connection_connect(host_name,portno,CONNECTION_PROTOCOL_UDP);; // Create a UDP socket.
+  sockfd = socket_connect(host_name,portno,SOCKET_PROTOCOL_UDP);; // Create a UDP socket.
   if(sockfd < 0 ){
   log_error( "ERROR opening socket" );
   return -1;
@@ -100,24 +100,26 @@ int ntp_sync_time(uint32_t *new_time)
   packet.origTm_s = big_little_swap32(t0);
   
  // Send it the NTP packet it wants. If n == -1, it failed.
-  n = connection_send(sockfd, ( char* ) &packet, sizeof( ntp_packet ) ,NTP_TIMEOUT);
+  n = socket_send(sockfd, ( char* ) &packet, sizeof( ntp_packet ) ,NTP_TIMEOUT);
   if( n < 0 ){
   log_error( "ERROR writing to socket" );
   /*关闭socket*/
-  connection_disconnect(sockfd);
+  socket_disconnect(sockfd);
   return -1;
   }
   
   // Wait and receive the packet back from the server. If n == -1, it failed.
-  n = connection_recv(sockfd, ( char* ) &packet, sizeof( ntp_packet ) ,NTP_TIMEOUT);
+  n = socket_recv(sockfd, ( char* ) &packet, sizeof( ntp_packet ) ,NTP_TIMEOUT);
   if ( n < 0 ){
   log_error( "ERROR reading from socket" );
+  /*关闭socket*/
+  socket_disconnect(sockfd); 
   return -1;
   }
   /*关闭socket*/
-  connection_disconnect(sockfd);  
+  socket_disconnect(sockfd);  
   /*收到了指定的数据 -没有未同步警告，服务器模式*/
-  if(n == sizeof( ntp_packet ) && LI(packet)!= 3 &&  MODE(packet)== 4){
+  if(n == sizeof( ntp_packet ) && LI(packet)!= 3){
   /*收到消息的时间*/
   t3 = osKernelSysTick() / 1000;
   // These two fields contain the time-stamp seconds as the packet left the NTP server.

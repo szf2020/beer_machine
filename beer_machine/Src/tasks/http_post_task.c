@@ -2,7 +2,7 @@
 #include "task.h"
 #include "cmsis_os.h"
 #include "string.h"
-#include "connection.h"
+#include "socket.h"
 #include "http_client.h"
 #include "http_post_task.h"
 #include "ntp.h"
@@ -10,6 +10,7 @@
 #include "utils.h"
 #include "md5.h"
 #include "utils_httpc.h"
+#include "stdarg.h"
 #include "log.h"
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
 #define  LOG_MODULE_NAME     "[net]"
@@ -27,43 +28,68 @@ osMessageQId http_post_task_msg_q_id;
 
 //char http_post_response[100];
  
-int http_client_build_url(char *url,const char *url_origin,const char *sn,const uint32_t timestamp,const char *source)
+int utils_build_sign(char *sign,const int cnt,...)//const char *url_origin,const char *sn,const uint32_t timestamp,const char *source)
 { 
-#define  HTTP_CLIENT_URL_SIZE_MAX            200
- char timestamp_str[12];
- char _md5[16];
- char _md5_str[32];
-  
- /*组合sn + timestamp + source作为MD5的源数据*/  
- strcpy(url,sn);
- snprintf(timestamp_str,12,"%d",timestamp);
- strcat(url,timestamp_str);
- strcat(url,source); 
-  
- /*第1次MD5*/
- md5(url,strlen(url),_md5);
- /*把字节装换成HEX字符串*/
- bytes_to_hex_str(_md5,_md5_str,16);
- /*第2次MD5*/
- md5(_md5_str,32,_md5);
- bytes_to_hex_str(_md5,_md5_str,16);
+#define  SIGN_SRC_BUFFER_SIZE_MAX               300
+ int size = 0;
+ char sign_src[SIGN_SRC_BUFFER_SIZE_MAX] = { 0 };
+ char md5_hex[16];
+ char md5_str[33];
+ va_list ap;
+ char *temp;
+
+ va_start(ap, cnt);
+ /*组合MD5的源数据,根据输入数据*/  
+ for(uint8_t i=0; i < cnt; i++){
+ temp = va_arg(ap,char*);
+ /*保证数据不溢出*/
+ if(size + strlen(temp) >= SIGN_SRC_BUFFER_SIZE_MAX){
+ return -1;
+ }
+ size += strlen(temp);
+ strcat(sign_src,temp);
+ if(i < cnt){
+ strcat(sign_src,"&");
+ }
+ }
  
- snprintf(url,HTTP_CLIENT_URL_SIZE_MAX,"%ssn=%s&sign=%s&source=%s&timestamp=%s",url_origin,sn,_md5_str,source,timestamp_str);
+ /*第1次MD5*/
+ md5(sign_src,strlen(sign_src),md5_hex);
+ /*把字节装换成HEX字符串*/
+ bytes_to_hex_str(md5_hex,md5_str,16);
+ /*第2次MD5*/
+ md5(md5_str,32,md5_hex);
+ bytes_to_hex_str(md5_hex,md5_str,16);
+ strcpy(sign,md5_str);
+ 
  return 0;
 }
+
+static int utils_build_url(char *url,const int size,const char *origin_url,const char *sn,const char *sign,const char *source,const char *timestamp)
+{
+snprintf(url,size,"%s?sn=%s&sign=%s&source=%s&timestamp=%s",origin_url,sn,sign,source,timestamp);
+if(strlen(url) == size - 1){
+log_error("url size:%d too large.\r\n",size - 1); 
+return -1;
+}
+return 0;
+}
  
- 
+
+static http_client_context_t context;
+
 void http_post_task(void const *argument)
 {
  int rc;
  uint32_t time;
  char http_post_response[200]={0};
- char url[200];
- 
+ char url[200] = { 0 };
+ char sign[33];
+ char timestamp[14];
  const char *sn = "129DP12399787777";
  const char *source = "coolbeer";
- const char *msg= "{\"yewei\":1.0,\"yali\":200}";
- const char *url2 = "http://mh1597193030.uicp.cn/device/log/submit?";//:35787
+ const char *msg= "{\"errorCode\":2010,\"errorMsg\":\"null\"}";
+ const char *url2 = "http://mh1597193030.uicp.cn:35787/device/log/submit";//
  
  //osMessageQDef(http_post_task_msg_q,3,uint32_t);
  
@@ -73,6 +99,8 @@ void http_post_task(void const *argument)
   /*等待任务同步*/
  xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_HTTP_POST_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
  log_debug("http post task sync ok.\r\n");
+ 
+
 while(1){
 osDelay(5000);
 
@@ -85,39 +113,29 @@ retry_ntp:
  goto retry_ntp;
  }
  
-http_client_build_url(url,url2,sn,time,source);
+ memset(sign,0,33);
+ memset(url,0,200);
+ memset(timestamp,0,14);
+ snprintf(timestamp,14,"%d",time);
+ 
+ utils_build_sign(sign,5,/*errorCOde*/"2010",/*errorMsg*/"null",sn,source,timestamp);
+ utils_build_url(url,200,url2,sn,sign,source,timestamp);
+ 
+ context.range_size = 200;
+ context.range_start = 0;
+ context.rsp_buffer = http_post_response;
+ context.rsp_buffer_size = 200;
+ context.url = url;
+ context.timeout = 5000;
+ context.user_data = (char *)msg;
+ context.user_data_size = strlen(msg);
 
-httpclient_t http_client;
-httpclient_data_t   httpc_data;
-
-memset(&httpc_data,0,sizeof(httpc_data));
-memset(&http_client,0,sizeof(http_client));
-
-http_client.header = NULL;
-http_client.auth_user = NULL;
-http_client.net.handle = 0;
-
-httpc_data.is_more = 1;
-httpc_data.post_content_type = "application/Json";
-httpc_data.post_buf = (char *)msg;
-httpc_data.post_buf_len = strlen(msg);
-httpc_data.response_buf =http_post_response;
-httpc_data.response_buf_len = 200;
-    
-rc = iotx_post(&http_client,url,35787,NULL,&httpc_data);
+ rc = http_client_post(&context);
 
  if(rc != 0){
  log_error("http send err.5s retry...\r\n");
  }else{
  log_debug("http send ok.\r\n");   
- rc = httpclient_recv_response(&http_client, 5000, &httpc_data);
- if(rc == 0){
- log_debug("http recv ok.res:%s\r\n",http_post_response); 
- }else{
- log_error("http recv err.:%s\r\n"); 
- }
- }
- httpclient_close(&http_client);
- 
  } 
+}
 }

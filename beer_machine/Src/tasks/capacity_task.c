@@ -70,6 +70,7 @@ static uint16_t capacity_task_get_high(void)
   uint16_t high;
   
   /*传感器数据传输间隔2S 设置3s超时*/
+  serial_flush(capacity_serial_handle);
   select_size = serial_select(capacity_serial_handle,3000);
   if(select_size <= 0){
   return CAPACITY_TASK_SENSOR_ERR_VALUE;

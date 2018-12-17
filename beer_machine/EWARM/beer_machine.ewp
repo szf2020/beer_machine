@@ -365,7 +365,7 @@
                     <state>$PROJ_DIR$/../Src/debug/log/SEGGER_RTT_V612j/Syscalls</state>
                     <state>$PROJ_DIR$/../Src/serial</state>
                     <state>$PROJ_DIR$/../Src/http</state>
-                    <state>$PROJ_DIR$/../Src/connection</state>
+                    <state>$PROJ_DIR$/../Src/socket</state>
                     <state>$PROJ_DIR$/../Src/tasks</state>
                     <state>$PROJ_DIR$/../Src/gsm</state>
                     <state>$PROJ_DIR$/../Src/wifi</state>
@@ -1095,9 +1095,9 @@
                 </file>
             </group>
             <group>
-                <name>connection</name>
+                <name>socket</name>
                 <file>
-                    <name>$PROJ_DIR$\..\Src\connection\connection.c</name>
+                    <name>$PROJ_DIR$\..\Src\socket\socket.c</name>
                 </file>
             </group>
             <group>
@@ -1178,9 +1178,6 @@
                     <name>$PROJ_DIR$\..\Src\tasks\compressor_task.c</name>
                 </file>
                 <file>
-                    <name>$PROJ_DIR$\..\Src\tasks\connection_manage_task.c</name>
-                </file>
-                <file>
                     <name>$PROJ_DIR$\..\Src\tasks\display_task.c</name>
                 </file>
                 <file>
@@ -1188,6 +1185,9 @@
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\Src\tasks\pressure_task.c</name>
+                </file>
+                <file>
+                    <name>$PROJ_DIR$\..\Src\tasks\socket_manage_task.c</name>
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\Src\tasks\tasks_init.c</name>

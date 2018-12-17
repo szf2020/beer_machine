@@ -65,7 +65,7 @@
 #include "alarm_task.h"
 #include "display_task.h"
 #include "capacity_task.h"
-#include "connection_manage_task.h"
+#include "socket_manage_task.h"
 #include "http_post_task.h"
 
 #include "log.h"
@@ -203,8 +203,8 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(capacity_task, capacity_task, osPriorityNormal, 0, 128);
   capacity_task_handle = osThreadCreate(osThread(capacity_task), NULL);
   
-  osThreadDef(connection_manage_task, connection_manage_task, osPriorityNormal, 0, 300);
-  connection_manage_task_handle = osThreadCreate(osThread(connection_manage_task), NULL);
+  osThreadDef(socket_manage_task, socket_manage_task, osPriorityNormal, 0, 300);
+  socket_manage_task_handle = osThreadCreate(osThread(socket_manage_task), NULL);
   
   osThreadDef(http_post_task, http_post_task, osPriorityNormal, 0, 1200);
   http_post_task_handle = osThreadCreate(osThread(http_post_task), NULL);
