@@ -13,7 +13,7 @@
 
 
 #define  BUFFER_CNT                           2
-#define  BUFFER_SIZE                          1023
+#define  BUFFER_SIZE                          1024
 #define  SOCKET_GSM_HANDLE_BASE               10
 
 
@@ -294,12 +294,8 @@ int socket_query_wifi_status()
  
  /*现在是断开的状态*/
  socket_manage.wifi.status = SOCKET_STATUS_NOT_READY;
- /*尝试扫描ssid*/
- rc = wifi_8710bx_get_ap_rssi(socket_manage.wifi.connect.ssid,&socket_manage.wifi.rssi);
- if(rc != 0){
- return -1;
- }
- /*扫描到指定的ssid，可以连接*/
+ 
+ /*尝试连接ssid*/
  if(socket_manage.wifi.rssi != 0){
  rc = wifi_8710bx_connect_ap(socket_manage.wifi.connect.ssid,socket_manage.wifi.connect.passwd);  
  /*连接成功*/
@@ -312,6 +308,38 @@ int socket_query_wifi_status()
  return 0;   
 }
 
+#define  SOCKET_LEVEL_1         -90
+#define  SOCKET_LEVEL_2         -80
+#define  SOCKET_LEVEL_3         -60
+/* 函数名：函数名：socket_query_wifi_level
+*  功能：  询问WiFi的level值
+*  参数：  rssi值指针
+*  返回：  0  成功 其他：失败
+*/ 
+int socket_query_wifi_level(int *level)
+{
+ int rc;
+ /*尝试扫描ssid*/
+ rc = wifi_8710bx_get_ap_rssi(socket_manage.wifi.connect.ssid,&socket_manage.wifi.rssi);
+ /*执行失败或者没有扫描到wifi 默认返回 0*/
+ if(rc != 0 || socket_manage.wifi.rssi == 0){
+ *level = 0;
+ return 0;
+ }
+ /*设置wifi信号等级*/
+ /*rssi   - 90 == level 1*/
+ /*rssi   - 80 == level 2*/
+ /*rssi   - 60 == level 3*/
+ if(socket_manage.wifi.rssi >= SOCKET_LEVEL_3){
+ *level = 3; 
+ }else if(socket_manage.wifi.rssi >= SOCKET_LEVEL_2){
+ *level = 2; 
+ }else {
+ *level = 1;  
+ }
+ 
+ return 0; 
+}
 /* 函数名：函数名：socket_wifi_reset
 *  功能：  复位WiFi
 *  返回：  0  成功 其他：失败
@@ -354,6 +382,11 @@ typedef struct
 
 socket_handle_t socket_gsm_handle[GSM_HANDLE_MAX];
 
+/* 函数名：socket_gsm_handle_init
+*  功能：  gsm句柄池初始化
+*  参数：  无 
+*  返回：  无
+*/ 
 static void socket_gsm_handle_init()
 {
  for(uint8_t i = 0;i < GSM_HANDLE_MAX; i++){
@@ -361,7 +394,11 @@ static void socket_gsm_handle_init()
  socket_gsm_handle[i].value = i ;      
  }
 }
-
+/* 函数名：socket_malloc_gsm_handle
+*  功能：  gsm句柄申请
+*  参数：  无 
+*  返回：  返回：  0：成功 其他：失败
+*/ 
 static int socket_malloc_gsm_handle()
 {
  for(uint8_t i = 0;i < GSM_HANDLE_MAX; i++){
@@ -373,7 +410,11 @@ static int socket_malloc_gsm_handle()
  log_error("gsm has no invalid handle.\r\n");   
  return -1; 
 }
-
+/* 函数名：socket_free_gsm_handle
+*  功能：  gsm句柄释放
+*  参数：  无 
+*  返回：  0：成功 其他：失败
+*/ 
 static int socket_free_gsm_handle(int handle)
 {
  for(uint8_t i = 0;i < GSM_HANDLE_MAX; i++){
@@ -384,7 +425,11 @@ static int socket_free_gsm_handle(int handle)
 }
 return -1;
 }
-
+/* 函数名：socket_buffer_init
+*  功能：  socket接收缓存初始化
+*  参数：  无 
+*  返回：  0：成功 其他：失败
+*/ 
 static int socket_buffer_init()
 {
  for(uint8_t i = 0; i< BUFFER_CNT; i++){
@@ -392,7 +437,11 @@ static int socket_buffer_init()
  }
  return 0;
 }
-
+/* 函数名：socket_malloc_buffer
+*  功能：  申请socket接收缓存
+*  参数：  handle： socket句柄 
+*  返回：  0：成功 其他：失败
+*/ 
 static int socket_malloc_buffer(int handle)
 {
   for(uint8_t i = 0; i< BUFFER_CNT; i++){
@@ -405,13 +454,18 @@ static int socket_malloc_buffer(int handle)
   
   return -1;  
 }
-
+/* 函数名：socket_free_buffer
+*  功能：  释放socket接收缓存
+*  参数：  handle： socket句柄 
+*  返回：  0：成功 其他：失败
+*/ 
 static int socket_free_buffer(int handle)
 {
   for(uint8_t i = 0; i< BUFFER_CNT; i++){
     if(socket_manage.buffer[i].socket == handle && socket_manage.buffer[i].valid == true){
     socket_manage.buffer[i].valid = false; 
     socket_manage.buffer[i].socket = 0;
+    socket_manage.buffer[i].read = socket_manage.buffer[i].write;
     return 0; 
     }
   }
@@ -419,17 +473,29 @@ static int socket_free_buffer(int handle)
   return -1;  
 }
 
+
+/* 函数名：socket_seek_buffer_idx
+*  功能：  根据句柄查找接收缓存idx
+*  参数：  handle： socket句柄 
+*  返回：  0：成功 其他：失败
+*/ 
 static int socket_seek_buffer_idx(int handle)
 {
+
   for(uint8_t i = 0; i< BUFFER_CNT; i++){
-    if(socket_manage.buffer[i].socket == handle && socket_manage.buffer[i].valid == true){
-    return i; 
-    }
+  if(socket_manage.buffer[i].socket == handle && socket_manage.buffer[i].valid == true){
+  return i; 
+  }
   }
   log_error("can seek free buffer idx.handle:%d \r\n",handle);
   return -1;  
 }
 
+/* 函数名：socket_get_used_size
+*  功能：  根据句柄获取接收缓存已经接收的数据量
+*  参数：  handle： socket句柄 
+*  返回：  0：成功 其他：失败
+*/ 
 static int socket_get_used_size(int handle)
 {
   int rc;
@@ -440,6 +506,11 @@ static int socket_get_used_size(int handle)
   return socket_manage.buffer[rc].write - socket_manage.buffer[rc].read;    
 }
 
+/* 函数名：socket_get_free_size
+*  功能：  根据句柄获取接收缓存可使用的空间
+*  参数：  handle： socket句柄 
+*  返回：  0：成功 其他：失败
+*/ 
 static int socket_get_free_size(int handle)
 { 
   int rc;
@@ -451,6 +522,13 @@ static int socket_get_free_size(int handle)
  return BUFFER_SIZE - (socket_manage.buffer[rc].write - socket_manage.buffer[rc].read);   
 }
 
+/* 函数名：socket_write_buffer
+*  功能：  根据句柄向对应接收缓存写入数据
+*  参数：  handle： socket句柄 
+*  参数：  buffer： 数据位置 
+*  参数：  size：   数据大小 
+*  返回：  0：成功 其他：失败
+*/
 static int socket_write_buffer(int handle,const char *buffer,const int size)
 {
   int rc ;
@@ -458,11 +536,21 @@ static int socket_write_buffer(int handle,const char *buffer,const int size)
   if(rc < 0){
   return -1;
   }
-  memcpy(socket_manage.buffer[rc].buffer + (socket_manage.buffer[rc].write & BUFFER_SIZE),buffer,size);
-  socket_manage.buffer[rc].write +=size;
+  
+  for(int i= 0; i< size ; i ++){
+  socket_manage.buffer[rc].buffer[socket_manage.buffer[rc].write & (BUFFER_SIZE - 1)] = buffer[i];
+  socket_manage.buffer[rc].write ++;
+  }
   return 0;
  }
-      
+
+/* 函数名：socket_read_buffer
+*  功能：  根据句柄从对应接收缓存读出数据
+*  参数：  handle： socket句柄 
+*  参数：  buffer： 数据位置 
+*  参数：  size：   数据大小 
+*  返回：  0：成功 其他：失败
+*/     
  static int socket_read_buffer(int handle,char *buffer,const int size)
 {
   int rc ;
@@ -470,15 +558,14 @@ static int socket_write_buffer(int handle,const char *buffer,const int size)
   if(rc < 0){
   return -1;
   }
-  memcpy(buffer,socket_manage.buffer[rc].buffer + (socket_manage.buffer[rc].read & BUFFER_SIZE),size);
-  socket_manage.buffer[rc].read += size;
+  
+  for(int i = 0 ; i < size ; i++){
+  buffer[i] = socket_manage.buffer[rc].buffer[socket_manage.buffer[rc].read & (BUFFER_SIZE - 1)];
+  socket_manage.buffer[rc].read ++; 
+  }
   return 0;  
 }
   
-
-
-
-
 
 /* 函数名：socket_connect
 *  功能：  建立网络连接
@@ -650,9 +737,7 @@ int socket_recv(const int socket_handle,char *buffer,int size,uint32_t timeout)
  read_size += buffer_size;
  
  free_size = socket_get_free_size(socket_handle);
- if(free_size < 0 ){
- return -1;
- }
+
  /*再读出硬件所有缓存*/
  /*此连接handle是GSM网络*/
  if(socket_handle >= SOCKET_GSM_HANDLE_BASE){

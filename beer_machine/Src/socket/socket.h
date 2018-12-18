@@ -49,7 +49,12 @@ int socket_get_ap_rssi(const char *ssid,int *rssi);
 *  返回：  0  成功 其他：失败
 */ 
 int socket_query_wifi_status();
-
+/* 函数名：函数名：socket_query_wifi_level
+*  功能：  询问WiFi的level值
+*  参数：  rssi值指针
+*  返回：  0  成功 其他：失败
+*/ 
+int socket_query_wifi_level(int *level);
 /* 函数名：函数名：socket_query_gsm_status
 *  功能：  询问gsm是否就绪
 *  参数：  无

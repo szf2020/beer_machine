@@ -219,7 +219,7 @@ static int wifi_8710bx_at_cmd_send(const char *send,const uint16_t size,const ui
 *  参数：  timeout 接收超时 
 *  返回：  读到的一帧数据量 其他：失败
 */
-#define  GSM_M6312_SELECT_TIMEOUT               10
+#define  GSM_M6312_SELECT_TIMEOUT               5
 static int wifi_8710bx_at_cmd_recv(char *recv,const uint16_t size,const uint32_t timeout)
 {
  int select_size;

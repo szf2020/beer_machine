@@ -12,8 +12,9 @@ extern EventGroupHandle_t tasks_sync_evt_group_hdl;
 int tasks_init(void);
 
 
-#define  TASKS_SYNC_EVENT_NET_MANAGE_TASK_RDY           (1<<0)
-#define  TASKS_SYNC_EVENT_HTTP_POST_TASK_RDY            (1<<1)
+
+#define  TASKS_SYNC_EVENT_HTTP_POST_TASK_RDY            (1<<0)
+#define  TASKS_SYNC_EVENT_NET_MANAGE_TASK_RDY           (1<<1)
 #define  TASKS_SYNC_EVENT_ALARM_TASK_RDY                (1<<2)
 #define  TASKS_SYNC_EVENT_TEMPERATURE_TASK_RDY          (1<<3)
 #define  TASKS_SYNC_EVENT_ADC_TASK_RDY                  (1<<4)
@@ -21,7 +22,7 @@ int tasks_init(void);
 #define  TASKS_SYNC_EVENT_DISPLAY_TASK_RDY              (1<<6)
 #define  TASKS_SYNC_EVENT_COMPRESSOR_TASK_RDY           (1<<7)
 #define  TASKS_SYNC_EVENT_CAPACITY_TASK_RDY             (1<<8)
-#define  TASKS_SYNC_EVENT_ALL_TASKS_RDY                 ((1<<9)-1)
+#define  TASKS_SYNC_EVENT_ALL_TASKS_RDY                 ((1<<2)-1)
 
 
 #endif

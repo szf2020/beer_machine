@@ -97,14 +97,12 @@ void temperature_task(void const *argument)
   display_task_msg_t    display_msg;
   compressor_task_msg_t compressor_msg;
   alarm_task_msg_t      alarm_msg;
-  
-  osMessageQDef(temperature_msg_q,6,uint32_t);
-  temperature_task_msg_q_id = osMessageCreate(osMessageQ(temperature_msg_q),temperature_task_handle);
-  log_assert(temperature_task_msg_q_id);
-  
+   
   /*等待任务同步*/
+  /*
   xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_TEMPERATURE_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
   log_debug("temperature task sync ok.\r\n");
+  */
   temperature.value = 88;
   while(1){
   os_msg = osMessageGet(temperature_task_msg_q_id,TEMPERATURE_TASK_MSG_WAIT_TIMEOUT);

@@ -5,6 +5,7 @@
 #include "socket.h"
 #include "socket_manage_task.h"
 #include "http_post_task.h"
+#include "display_task.h"
 #include "tasks_init.h"
 #include "log.h"
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
@@ -91,22 +92,20 @@ osMessagePut(socket_manage_task_msg_q_id,SOCKET_MANAGE_TASK_MSG_QUERY_GSM_STATUS
 void socket_manage_task(void const *argument)
 {
  int rc;
+ int wifi_level;
+ osEvent  os_event;
+ osStatus status;
  uint8_t wifi_err_cnt;
  uint8_t gsm_err_cnt;
- socket_manage_msg_t msg;
- osEvent  os_event;
- 
- osMessageQDef(socket_manage_task_msg_q,4,uint32_t);
- 
- socket_manage_task_msg_q_id = osMessageCreate(osMessageQ(socket_manage_task_msg_q),socket_manage_task_handle);
- log_assert(socket_manage_task_msg_q_id);
+ socket_manage_task_msg_t msg;
+ display_task_msg_t display_msg;
 
+ 
  /*网络连接初始化*/
  socket_init();
  /*等待任务同步*/
  xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_NET_MANAGE_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
  log_debug("net manage task sync ok.\r\n");
- 
 
  
  wifi_query_timer_init();
@@ -119,7 +118,7 @@ void socket_manage_task(void const *argument)
  while(1){
  os_event = osMessageGet(socket_manage_task_msg_q_id,osWaitForever);
  if(os_event.status == osEventMessage){
- msg = (socket_manage_msg_t)os_event.value.v; 
+ msg = (socket_manage_task_msg_t)os_event.value.v; 
  
  
   /*如果收到检查WIFI网络状态*/
@@ -134,6 +133,21 @@ void socket_manage_task(void const *argument)
   }else{
   wifi_err_cnt = 0;
   }
+ 
+  socket_query_wifi_level(&wifi_level);
+  display_msg.type = DISPLAY_TASK_MSG_WIFI;
+  if(wifi_level == 0){
+  display_msg.value = 3;
+  display_msg.blink = true;    
+  }else{
+  display_msg.value = wifi_level;
+  display_msg.blink = false;         
+  }
+  status = osMessagePut(display_task_msg_q_id,*(uint32_t*)&display_msg,SOCKET_MANAGE_TASK_PUT_MSG_TIMEOUT);
+  if(status !=osOK){
+  log_error("put compress display msg error:%d\r\n",status);
+  } 
+  
  /*重新启动wifi检查定时器*/
   wifi_query_timer_start(); 
  }

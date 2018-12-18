@@ -116,8 +116,10 @@ void capacity_task(void const *argument)
   /*串口驱动初始化*/
   capacity_serial_hal_init();
   /*等待任务同步*/
+  /*
   xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_CAPACITY_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
   log_debug("capacity task sync ok.\r\n");
+  */
   /*上电默认值*/
   beer_capacity.value = 88;
   

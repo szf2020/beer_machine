@@ -37,13 +37,16 @@ typedef struct
 {
 compressor_status_t status;
 int16_t temperature;
-int16_t temperature_setting;
-int16_t temperature_tolerance;
+int16_t temperature_work;
+int16_t temperature_stop;
 compressor_lock_t lock;
 bool    status_change;
 }compressor_t;
 
-static compressor_t compressor;
+static compressor_t compressor ={
+.temperature_stop = COMPRESSOR_STOP_TEMPERATURE,
+.temperature_work = COMPRESSOR_WORK_TEMPERATURE
+};
 
 static void compressor_work_timer_init(void);
 static void compressor_wait_timer_init(void);
@@ -187,15 +190,13 @@ void compressor_task(void const *argument)
   compressor_task_msg_t msg;
   compressor_task_msg_t temperature_msg;
   
-  osMessageQDef(compressor_msg_q,6,uint32_t);
-  compressor_task_msg_q_id = osMessageCreate(osMessageQ(compressor_msg_q),compressor_task_handle);
-  log_assert(compressor_task_msg_q_id);
   /*开机先关闭压缩机*/
   compressor_pwr_turn_off();
   /*等待任务同步*/
+  /*
   xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_COMPRESSOR_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
   log_debug("compressor task sync ok.\r\n");
-  
+  */
   compressor_work_timer_init();
   compressor_wait_timer_init();
   compressor_rest_timer_init();
@@ -266,7 +267,7 @@ void compressor_task(void const *argument)
   /*打开等待定时器*/ 
   compressor_wait_timer_start();
   }
-  }else if(compressor.temperature >= compressor.temperature_setting + compressor.temperature_tolerance && compressor.status == COMPRESSOR_STATUS_RDY){
+  }else if(compressor.temperature >= compressor.temperature_work  && compressor.status == COMPRESSOR_STATUS_RDY){
   log_debug("温度:%d 高于开机温度.\r\n",compressor.temperature);
   log_debug("开压缩机.\r\n");
   /*打开压缩机和工作定时器*/
@@ -274,7 +275,7 @@ void compressor_task(void const *argument)
   compressor_pwr_turn_on();
   compressor.status_change = true;
   compressor_work_timer_start(); 
-  }else if(compressor.temperature <= compressor.temperature_setting - compressor.temperature_tolerance && compressor.status == COMPRESSOR_STATUS_WORK){
+  }else if(compressor.temperature <= compressor.temperature_stop && compressor.status == COMPRESSOR_STATUS_WORK){
   log_debug("温度:%d 低于关机温度.\r\n",compressor.temperature);
   log_debug("关压缩机.\r\n");
   compressor.status = COMPRESSOR_STATUS_WAIT;

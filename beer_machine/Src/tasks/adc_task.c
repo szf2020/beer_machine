@@ -83,8 +83,10 @@ void adc_task(void const * argument)
  int  result;
  
  /*等待任务同步*/
+ /*
  xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_ADC_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
  log_debug("adc task sync ok.\r\n");
+ */
  adc_stop();
  adc_calibration();
  adc_stop();

@@ -83,15 +83,12 @@ void alarm_task(void const *argument)
 {
   osEvent  os_msg;
   alarm_task_msg_t msg;
-  
-  osMessageQDef(alarm_msg_q,6,uint32_t);
-  alarm_task_msg_q_id = osMessageCreate(osMessageQ(alarm_msg_q),alarm_task_handle);
-  log_assert(alarm_task_msg_q_id);
 
   /*等待任务同步*/
+  /*
   xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_ALARM_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
   log_debug("alarm task sync ok.\r\n");
-  
+  */
   alarm_buzzer_pwr_turn_off();
   alarm.is_pwr_on = false;
   
@@ -122,7 +119,7 @@ void alarm_task(void const *argument)
   /*液位报警消息处理*/ 
   if(msg.type == ALARM_TASK_MSG_TIMER_TIMEOUT){
   /*如果有任意一个报警状态存在 就继续操作蜂鸣器*/
-  /*  
+  /*
   if(alarm.temperature.alarm == true || alarm.pressure.alarm == true || alarm.capacity.alarm == true){
   if(alarm.is_pwr_on == true){
   alarm.is_pwr_on = false;
@@ -135,7 +132,7 @@ void alarm_task(void const *argument)
   alarm.is_pwr_on = false;
   alarm_buzzer_pwr_turn_off();     
   }
- */
+*/
   }
 
   }

@@ -22,12 +22,15 @@ typedef struct
 {
 int handle;
 char *url;
+char *content_type;
+char *boundary;
 char host[HTTP_CLIENT_HOST_STR_LEN];
 uint16_t port;
 char path[HTTP_CLIENT_PATH_STR_LEN];
 bool connected;
 bool is_chunked;
 bool is_keep_alive;
+bool is_form_data;
 uint16_t head_size;
 uint32_t content_size;/*总共数据量*/
 uint16_t chunk_size;  /*chunk数据量*/

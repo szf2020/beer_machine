@@ -129,7 +129,7 @@ __weak void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTask
    /* Run time stack overflow checking is performed if
    configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
    called if a stack overflow is detected. */
-   log_error("%s overflow.\r\n",pcTaskName);
+   log_error("%s statck overflow.\r\n",pcTaskName);
    log_assert(0);
 }
 /* USER CODE END 4 */
@@ -178,29 +178,29 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 200);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  osThreadDef(adc_task, adc_task, osPriorityNormal, 0, 128);
+  osThreadDef(adc_task, adc_task, osPriorityNormal, 0, 200);
   adc_task_handle = osThreadCreate(osThread(adc_task), NULL);
   
-  osThreadDef(temperature_task, temperature_task, osPriorityNormal, 0, 128);
+  osThreadDef(temperature_task, temperature_task, osPriorityNormal, 0, 200);
   temperature_task_handle = osThreadCreate(osThread(temperature_task), NULL);
   
-  osThreadDef(pressure_task, pressure_task, osPriorityNormal, 0, 128);
+  osThreadDef(pressure_task, pressure_task, osPriorityNormal, 0, 200);
   pressure_task_handle = osThreadCreate(osThread(pressure_task), NULL);
   
-  osThreadDef(compressor_task, compressor_task, osPriorityNormal, 0, 128);
+  osThreadDef(compressor_task, compressor_task, osPriorityNormal, 0, 200);
   compressor_task_handle = osThreadCreate(osThread(compressor_task), NULL);
   
-  osThreadDef(alarm_task, alarm_task, osPriorityNormal, 0, 128);
+  osThreadDef(alarm_task, alarm_task, osPriorityNormal, 0, 200);
   alarm_task_handle = osThreadCreate(osThread(alarm_task), NULL);
   
-  osThreadDef(display_task, display_task, osPriorityNormal, 0, 128);
+  osThreadDef(display_task, display_task, osPriorityNormal, 0, 200);
   display_task_handle = osThreadCreate(osThread(display_task), NULL);
   
-  osThreadDef(capacity_task, capacity_task, osPriorityNormal, 0, 128);
+  osThreadDef(capacity_task, capacity_task, osPriorityNormal, 0, 200);
   capacity_task_handle = osThreadCreate(osThread(capacity_task), NULL);
   
   osThreadDef(socket_manage_task, socket_manage_task, osPriorityNormal, 0, 300);

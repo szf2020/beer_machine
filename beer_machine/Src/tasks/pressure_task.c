@@ -62,13 +62,11 @@ void pressure_task(void const *argument)
   display_task_msg_t  display_msg;
   alarm_task_msg_t    alarm_msg; 
   
-  osMessageQDef(pressure_msg_q,6,uint32_t);
-  pressure_task_msg_q_id = osMessageCreate(osMessageQ(pressure_msg_q),pressure_task_handle);
-  log_assert(pressure_task_msg_q_id);
-  
   /*等待任务同步*/
+  /*
   xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_PRESSURE_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
   log_debug("pressure task sync ok.\r\n");
+  */
   /*上电默认值*/
   pressure.value = 88;
   

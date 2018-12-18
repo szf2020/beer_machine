@@ -117,12 +117,11 @@ void display_task(void const *argument)
   led_display_capacity(display.capacity.value);
   led_display_capacity_icon_level(display.capacity.value / 4);
  
-  osMessageQDef(display_msg_q,8,uint32_t);
-  display_task_msg_q_id = osMessageCreate(osMessageQ(display_msg_q),display_task_handle);
-  log_assert(display_task_msg_q_id);
   /*等待任务同步*/
+  /*
   xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_DISPLAY_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
   log_debug("display task sync ok.\r\n");
+  */
   display_timer_init();
   display_timer_start(DISPLAY_TASK_BLINK_ON_TIMER_TIMEOUT);
   

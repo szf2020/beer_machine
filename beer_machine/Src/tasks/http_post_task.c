@@ -37,7 +37,7 @@ int utils_build_sign(char *sign,const int cnt,...)//const char *url_origin,const
  char md5_str[33];
  va_list ap;
  char *temp;
-
+ 
  va_start(ap, cnt);
  /*组合MD5的源数据,根据输入数据*/  
  for(uint8_t i=0; i < cnt; i++){
@@ -48,7 +48,7 @@ int utils_build_sign(char *sign,const int cnt,...)//const char *url_origin,const
  }
  size += strlen(temp);
  strcat(sign_src,temp);
- if(i < cnt){
+ if(i < cnt - 1){
  strcat(sign_src,"&");
  }
  }
@@ -75,6 +75,47 @@ return -1;
 return 0;
 }
  
+typedef struct
+{
+const char *name;
+const char *value;
+}form_data_t;
+
+static int utils_build_form_data(char *form_data,const int size,const char *boundary,const int cnt,...)
+{
+ int put_size;
+ int temp_size;  
+ va_list ap;
+ form_data_t *temp;
+
+ put_size = 0;
+ va_start(ap, cnt);
+ 
+ /*组合输入数据*/  
+ for(uint8_t i=0; i < cnt; i++){
+ 
+ temp = va_arg(ap,form_data_t*);
+ /*添加boundary 和 name 和 value*/
+ snprintf(form_data + put_size ,size - put_size,"--%s\r\nContent-Disposition: form-data; name=%s\r\n\r\n%s\r\n",boundary,temp->name,temp->value);
+ temp_size = strlen(form_data);
+ /*保证数据完整*/
+ if(temp_size >= size - 1){
+ log_error("form data size :%d is too large.\r\n",temp_size);
+ return -1;
+ } 
+ put_size = strlen(form_data);
+ }
+ /*添加结束标志*/
+ snprintf(form_data + put_size,size - put_size,"--%s--\r\n",boundary);
+ put_size = strlen(form_data);
+ if(put_size >= size - 1){
+ log_error("form data size :%d is too large.\r\n",temp_size);
+ return -1;  
+ }
+ 
+ return 0; 
+}
+
 
 static http_client_context_t context;
 
@@ -88,9 +129,11 @@ void http_post_task(void const *argument)
  char timestamp[14];
  const char *sn = "129DP12399787777";
  const char *source = "coolbeer";
- const char *msg= "{\"errorCode\":2010,\"errorMsg\":\"null\"}";
- const char *url2 = "http://mh1597193030.uicp.cn:35787/device/log/submit";//
- 
+ char *msg_log= "{\"source\":\"coolbeer\",\"pressure\":\"1.1\",\"capacity\":\"1\",\"temp\":4,\"location\":\"\"}";
+// char *msg_active= "{\"model\":\"jiuji\",\"sn\":\"129DP12399787777\",\"firmware\":\"1.0.1\",\"simId\":\"112233445566\",\"wifiMac\":\"aa:bb:cc:dd:ee:ff\"}";
+ const char *url2 = "http://mh1597193030.uicp.cn:35787/device/log/submit";///info/active";//
+ const char *boundary = "##########wkxboot";
+ const char *key = "meiling-beer";
  //osMessageQDef(http_post_task_msg_q,3,uint32_t);
  
  //http_post_task_msg_q_id = osMessageCreate(osMessageQ(http_post_task_msg_q),http_post_task_handle);
@@ -116,26 +159,46 @@ retry_ntp:
  memset(sign,0,33);
  memset(url,0,200);
  memset(timestamp,0,14);
+ //memset(msg,0,200);
+ memset(http_post_response,0,200);
  snprintf(timestamp,14,"%d",time);
  
- utils_build_sign(sign,5,/*errorCOde*/"2010",/*errorMsg*/"null",sn,source,timestamp);
- utils_build_url(url,200,url2,sn,sign,source,timestamp);
+ //utils_build_sign(sign,5,/*errorCOde*/"2010",/*errorMsg*/"",sn,source,timestamp);
  
+ utils_build_sign(sign,4,key,sn,source,timestamp);
+ utils_build_url(url,200,url2,sn,sign,source,timestamp);
+ /*
+ form_data_t err_code;
+ form_data_t err_msg;
+ 
+ err_code.name = "errorCode";
+ err_code.value = "2010";
+ 
+ err_msg.name = "errorMsg";
+ err_msg.value = "";
+ */
+ 
+ //utils_build_form_data(msg,300,boundary,2,&err_code,&err_msg);
+                       
+                       
  context.range_size = 200;
  context.range_start = 0;
  context.rsp_buffer = http_post_response;
  context.rsp_buffer_size = 200;
  context.url = url;
  context.timeout = 5000;
- context.user_data = (char *)msg;
- context.user_data_size = strlen(msg);
-
+ context.user_data = (char *)msg_log;
+ context.user_data_size = strlen(msg_log);
+ context.boundary = (char*)boundary;
+ context.is_form_data = false;
+ context.content_type = "application/Json";//"multipart/form-data; boundary=";
  rc = http_client_post(&context);
 
  if(rc != 0){
  log_error("http send err.5s retry...\r\n");
  }else{
- log_debug("http send ok.\r\n");   
+ log_debug("http send ok.\r\n");  
+ printf("res:\r\n%s.\r\n",http_post_response);
  } 
 }
 }

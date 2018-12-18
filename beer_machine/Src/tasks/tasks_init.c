@@ -1,6 +1,12 @@
 #include "cmsis_os.h"
 #include "comm_utils.h"
 #include "tasks_init.h"
+#include "alarm_task.h"
+#include "compressor_task.h"
+#include "display_task.h"
+#include "pressure_task.h"
+#include "socket_manage_task.h"
+#include "temperature_task.h"
 #include "log.h"
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
 #define  LOG_MODULE_NAME     "[init]"
@@ -14,8 +20,34 @@ EventGroupHandle_t tasks_sync_evt_group_hdl;
 */
 int tasks_init(void)
 {
+ /*创建同步事件组*/
  tasks_sync_evt_group_hdl=xEventGroupCreate(); 
  log_assert(tasks_sync_evt_group_hdl);
-  
+ /*创建报警消息队列*/
+ osMessageQDef(alarm_msg_q,6,uint32_t);
+ alarm_task_msg_q_id = osMessageCreate(osMessageQ(alarm_msg_q),alarm_task_handle);
+ log_assert(alarm_task_msg_q_id);
+ /*创建压缩机消息队列*/
+ osMessageQDef(compressor_msg_q,6,uint32_t);
+ compressor_task_msg_q_id = osMessageCreate(osMessageQ(compressor_msg_q),compressor_task_handle);
+ log_assert(compressor_task_msg_q_id);
+ /*创建显示消息队列*/
+ osMessageQDef(display_msg_q,8,uint32_t);
+ display_task_msg_q_id = osMessageCreate(osMessageQ(display_msg_q),display_task_handle);
+ log_assert(display_task_msg_q_id);
+ /*创建压力消息队列*/
+ osMessageQDef(pressure_msg_q,6,uint32_t);
+ pressure_task_msg_q_id = osMessageCreate(osMessageQ(pressure_msg_q),pressure_task_handle);
+ log_assert(pressure_task_msg_q_id);
+ /*创建socket管理消息队列*/
+ osMessageQDef(socket_manage_task_msg_q,4,uint32_t);
+ socket_manage_task_msg_q_id = osMessageCreate(osMessageQ(socket_manage_task_msg_q),socket_manage_task_handle);
+ log_assert(socket_manage_task_msg_q_id);
+ /*创建温度消息队列*/
+ osMessageQDef(temperature_msg_q,6,uint32_t);
+ temperature_task_msg_q_id = osMessageCreate(osMessageQ(temperature_msg_q),temperature_task_handle);
+ log_assert(temperature_task_msg_q_id);
+ 
+ 
  return 0;
 }

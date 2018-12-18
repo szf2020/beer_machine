@@ -87,12 +87,15 @@ static int http_client_build_head(char *buffer,const char *method,http_client_co
 		 "Host: %s:%d\r\n"
 		 "Connection: keep-alive\r\n"
 		 "User-Agent: wkxboot-gsm-wifi.\r\n"
-		 "Content-Type: application/Json\r\n"
+         /*content type*/
+		 "Content-Type: %s%s\r\n"
 		 "Content-Length: %d\r\n"
          "Range: bytes=%d-%d\r\n"
 		 "\r\n",
 		 method,context->path,http_version,
          context->host,context->port,
+         context->content_type,
+         context->is_form_data ? context->boundary : "",
          context->user_data_size,
          context->range_start,context->range_start + context->range_size -1);
          head_size = strlen(buffer);
@@ -174,9 +177,9 @@ static int http_client_recv_head(http_client_context_t *context,char *buffer,uin
   context->is_chunked = false;
   log_debug("content not chunk. size is %d.\r\n",context->content_size);  
   return 0;
-  }else if (NULL != (tmp_ptr = strstr(buffer, "Transfer-Encoding"))) {
+  }else if (NULL != (tmp_ptr = strstr(buffer, "Transfer-Encoding: "))) {
   encode_type_size = strlen("Chunked");
-  encode_type =(char *) buffer + strlen("Transfer-Encoding: ");
+  encode_type =(char *) tmp_ptr + strlen("Transfer-Encoding: ");
   if ((! memcmp(encode_type, "Chunked", encode_type_size))
    || (! memcmp(encode_type, "chunked", encode_type_size))) {
   context->content_size = 0;/*this mean data is chunked*/   
@@ -189,7 +192,6 @@ static int http_client_recv_head(http_client_context_t *context,char *buffer,uin
   return -1;/*will stop parse*/
   }
   } 
-  log_debug("head is not finish...\r\n");   
   }while( recv_total < buffer_size - 1);
 
   log_error("recv head buffer is overflow.\r\n");
@@ -225,9 +227,11 @@ static int http_client_recv_chunk_size(http_client_context_t *context,uint32_t t
   chunk_code[recv_total] = '\0';
   
   /*尝试解析chunk code*/
-  if(chunk_code[recv_total - 1] == '\r' && chunk_code[recv_total - 2] == '\n'){
-  context->chunk_size = atoi(chunk_code);
+  if(chunk_code[recv_total - 2] == '\r' && chunk_code[recv_total - 1] == '\n'){
+  /*编码是16进制hex*/
+  context->chunk_size = strtol(chunk_code,NULL,16);
   log_debug("find chunk code:%x.\r\n",context->chunk_size); 
+  return 0;
   }
   }
   }while(recv_total < CHUNK_CODE_SIZE_MAX - 1);
@@ -351,6 +355,9 @@ static int http_client_request(const char *method,http_client_context_t *context
  log_error("http build head err.\r\n");
  goto err_handler;
  }
+ /*组合body*/
+ //strcat(http_buffer,context->user_data);
+ //head_size +=strlen(context->user_data);
  /*http 连接*/
  rc = socket_connect(context->host,context->port,SOCKET_PROTOCOL_TCP);
  if(rc < 0){
@@ -365,13 +372,15 @@ static int http_client_request(const char *method,http_client_context_t *context
  log_error("http head send err.\r\n");
  goto err_handler;
  }
- osDelay(1000);
+
  /*http user data发送*/
+ 
  rc = socket_send(context->handle,context->user_data,context->user_data_size,http_client_timer_value(&timer));
  if(rc != context->user_data_size){
  log_error("http user data send err.\r\n");
  goto err_handler;
  }
+
  
  /*清空http buffer 等待接收数据*/
  memset(http_buffer,0,HTTP_BUFFER_SIZE);
