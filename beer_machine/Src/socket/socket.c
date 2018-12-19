@@ -142,12 +142,18 @@ static int socket_gsm_init(void)
  if(rc != 0){
  goto err_handler;
  }
+ /*关闭信息主动上报*/
  rc = gsm_m6312_set_report(GSM_M6312_REPORT_OFF);
  if(rc != 0){
  goto err_handler;
  }
- /*去除附着网络*/
+  /*打开注册和位置主动上报*/
+ rc = gsm_m6312_set_reg_echo(GSM_M6312_REG_ECHO_ON);
+ if(rc != 0){
+ goto err_handler;
+ }
  
+ /*去除附着网络*/
  rc = gsm_m6312_set_attach_status(GSM_M6312_NOT_ATTACH); 
  if(rc != 0){
  goto err_handler;
@@ -199,6 +205,7 @@ static int socket_gsm_init(void)
  /*激活网络*/
  rc = gsm_m6312_set_active_status(GSM_M6312_ACTIVE); 
 
+
 err_handler:
   if(rc == 0){
   log_debug("gsm init ok.\r\n");
@@ -208,6 +215,7 @@ err_handler:
 
  return rc;
 }
+
 /* 函数名：函数名：socket_query_gsm_status
 *  功能：  询问gsm是否就绪
 *  参数：  无
@@ -272,6 +280,7 @@ int socket_query_wifi_status()
  wifi_8710bx_device_t wifi;
  /*wifi没有配网直接返回*/
  if(socket_manage.wifi.config == false){
+ log_debug("wifi not config.\r\n");
  return 0;
  }
  /*wifi没有初始化*/
@@ -282,16 +291,26 @@ int socket_query_wifi_status()
  }
  socket_manage.wifi.initialized = true;
  }
+ 
+ if(socket_manage.wifi.initialized == false){
+ log_debug("wifi param not init.\r\n");
+ return 0;
+ }
+ 
  rc = wifi_8710bx_get_wifi_device(&wifi);
  if(rc != 0){
  return -1;
  }
+ 
  if(strcmp(socket_manage.wifi.connect.ssid,wifi.ap.ssid)== 0){
  /*现在是连接的状态*/
  socket_manage.wifi.status = SOCKET_STATUS_READY;
  return 0;
  }
- 
+ if(strlen(wifi.ap.ssid) != 0){
+ log_debug("wifi cur connect ap:%s.will disconnect.\r\n", wifi.ap.ssid);
+ wifi_8710bx_disconnect_ap();
+ }
  /*现在是断开的状态*/
  socket_manage.wifi.status = SOCKET_STATUS_NOT_READY;
  

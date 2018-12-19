@@ -111,7 +111,7 @@ void display_task(void const *argument)
  led_display_capacity(dis);
  
  led_display_refresh();
- osDelay(150);
+ osDelay(120);
  }
   /*默认显示容积0L*/
   led_display_capacity(display.capacity.value);
@@ -182,7 +182,7 @@ void display_task(void const *argument)
   /*压缩机消息*/
   if(msg.type == DISPLAY_TASK_MSG_COMPRESSOR){
   display.compressor.blink = msg.blink; 
-  //led_display_compressor_icon(LED_DISPLAY_ON,LED_DISPLAY_ON);
+  led_display_compressor_icon(LED_DISPLAY_ON,LED_DISPLAY_ON);
   display.is_update = true;
   }
   

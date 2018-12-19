@@ -164,6 +164,29 @@ GSM_M6312_TRANPARENT,
 GSM_M6312_NO_TRANPARENT
 }gsm_m6312_transparent_t;
 
+typedef struct
+{
+char lac[7];
+char ci[7];
+}gsm_m6312_location_t;
+
+typedef enum
+{
+GSM_M6312_STATUS_REGISTER,
+GSM_M6312_STATUS_NO_REGISTER
+}gsm_m6312_reg_status_t;
+typedef enum
+{
+ GSM_M6312_REG_ECHO_OFF,
+ GSM_M6312_REG_ECHO_ON
+}gsm_m6312_reg_echo_t;
+
+typedef struct
+{
+ gsm_m6312_location_t location;
+ gsm_m6312_reg_status_t status;
+}gsm_m6312_register_t;
+
 /* 函数名：gsm_m6312_pwr_on
 *  功能：  m6312 2g模块开机
 *  参数：  无 
@@ -189,7 +212,12 @@ int gsm_m6312_serial_hal_init(void);
 *  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_set_echo(gsm_m6312_echo_t echo);
-
+/* 函数名：gsm_m6312_set_reg_echo
+*  功能：  设置网络和基站位置主动回显
+*  参数：  reg_echo
+*  返回：  GSM_ERR_OK：成功 其他：失败
+*/
+int gsm_m6312_set_reg_echo(gsm_m6312_reg_echo_t reg_echo);
 /* 函数名：gsm_m6312_get_sim_card_status
 *  功能：  获取设备sim卡状态
 *  参数：  sim_status sim状态指针
@@ -290,6 +318,13 @@ int gsm_m6312_set_report(gsm_m6312_report_t report);
 *  返回：  WIFI_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_set_transparent(gsm_m6312_transparent_t transparent);
+/* 函数名：gsm_m6312_get_reg_location
+*  功能：  获取注册和基站位置信息
+*  参数：  reg 信息指针
+*  返回：  GSM_ERR_OK：成功 其他：失败
+*/
+int gsm_m6312_get_reg_location(gsm_m6312_register_t *reg);
+
 /* 函数名：gsm_m6312_open_client
 *  功能：  打开连接
 *  参数：  conn_id 连接ID

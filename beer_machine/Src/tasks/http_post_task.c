@@ -122,6 +122,7 @@ static http_client_context_t context;
 void http_post_task(void const *argument)
 {
  int rc;
+ gsm_m6312_register_t reg;
  uint32_t time;
  char http_post_response[200]={0};
  char url[200] = { 0 };
@@ -129,7 +130,7 @@ void http_post_task(void const *argument)
  char timestamp[14];
  const char *sn = "129DP12399787777";
  const char *source = "coolbeer";
- char *msg_log= "{\"source\":\"coolbeer\",\"pressure\":\"1.1\",\"capacity\":\"1\",\"temp\":4,\"location\":\"\"}";
+ char msg_log[200];
 // char *msg_active= "{\"model\":\"jiuji\",\"sn\":\"129DP12399787777\",\"firmware\":\"1.0.1\",\"simId\":\"112233445566\",\"wifiMac\":\"aa:bb:cc:dd:ee:ff\"}";
  const char *url2 = "http://mh1597193030.uicp.cn:35787/device/log/submit";///info/active";//
  const char *boundary = "##########wkxboot";
@@ -149,11 +150,18 @@ osDelay(5000);
 
 //const char *url1 = "http://syll-test.mymlsoft.com/common/service.execute.json";//:8083
 
-retry_ntp:
+retry:
+ rc = gsm_m6312_get_reg_location(&reg);
+ if(rc != 0){
+ osDelay(1000);
+ goto retry;
+ }
+ memset(msg_log,0,200);
+ snprintf(msg_log,200,"{\"source\":\"coolbeer\",\"pressure\":\"1.1\",\"capacity\":\"1\",\"temp\":4,\"location\":{\"lac\":%s,\"ci\":%s}}",reg.location.lac,reg.location.ci);
  rc = ntp_sync_time(&time);
  if(rc != 0){
  osDelay(1000);
- goto retry_ntp;
+ goto retry;
  }
  
  memset(sign,0,33);

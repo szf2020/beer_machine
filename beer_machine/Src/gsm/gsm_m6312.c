@@ -15,7 +15,7 @@ static osMutexId gsm_mutex;
 #define  GSM_M6312_FREE(x)             vPortFree((x))
 
 #define  GSM_M6312_PWR_ON_DELAY        4000
-#define  GSM_M6312_PWR_OFF_DELAY       10000
+#define  GSM_M6312_PWR_OFF_DELAY       12000
 
 static gsm_m6312_at_cmd_t gsm_cmd;
 
@@ -83,21 +83,22 @@ int gsm_m6312_serial_hal_init(void)
 	int rc ;
     rc = serial_create(&gsm_m6312_serial_handle,GSM_M6312_BUFFER_SIZE,GSM_M6312_BUFFER_SIZE);
     if (rc != 0) {
-    	log_error("m6312 create serial hal err.\r\n");
-    	return GSM_ERR_HAL_INIT;
+    log_error("m6312 create serial hal err.\r\n");
+    return GSM_ERR_HAL_INIT;
     }
     log_debug("m6312 create serial hal ok.\r\n");
    
     rc = serial_register_hal_driver(gsm_m6312_serial_handle,&gsm_m6312_serial_driver);
 	if (rc != 0) {
-      log_error("m6312 register serial hal driver err.\r\n");
-      return GSM_ERR_HAL_INIT;
+    log_error("m6312 register serial hal driver err.\r\n");
+    return GSM_ERR_HAL_INIT;
     }
 	log_debug("m6312 register serial hal driver ok.\r\n");
+    
 	rc = serial_open(gsm_m6312_serial_handle,GSM_M6312_SERIAL_PORT,GSM_M6312_SERIAL_BAUDRATES,GSM_M6312_SERIAL_DATA_BITS,GSM_M6312_SERIAL_STOP_BITS);
 	if (rc != 0) {
-    	log_error("m6312 open serial hal err.\r\n");
-    	return GSM_ERR_HAL_INIT;
+    log_error("m6312 open serial hal err.\r\n");
+    return GSM_ERR_HAL_INIT;
   	}
 	log_debug("m6312 open serial hal ok.\r\n");
 	
@@ -118,14 +119,18 @@ int gsm_m6312_serial_hal_init(void)
 *  参数：  err_code 错误码 
 *  返回：  无
 */
-static void gsm_m6312_print_err_info(const char *info,const int err_code)
+static void gsm_m6312_print_err_info(const char *send,const char *recv,const int err_code)
 {
-  if(info){
-  log_debug("%s\r\n",info);
+  if(send){
+  log_debug("send:\r\n%s\r\n",send);
+  }
+  
+  if(recv){
+  log_debug("recv:\r\n%s\r\n",recv);
   }
   
   if(err_code > 0){
-  log_debug("size:%d.\r\n",err_code);
+  log_debug("size:%d\r\n",err_code);
   return;   
   }
   
@@ -242,8 +247,7 @@ static int gsm_m6312_at_cmd_send(const char *send,const uint16_t size,const uint
  uint16_t remain_total = size;
  uint16_t write_timeout = timeout;
  int write_len;
- /*清空serial buffer*/
- serial_flush(gsm_m6312_serial_handle);
+
  do{
  write_len = serial_write(gsm_m6312_serial_handle,(uint8_t *)send + write_total,remain_total);
  if(write_len == -1){
@@ -287,6 +291,7 @@ static int gsm_m6312_at_cmd_recv(char *recv,const uint16_t size,const uint32_t t
  int read_size;
  uint32_t read_timeout = timeout;
 
+ /*等待数据*/
  select_size = serial_select(gsm_m6312_serial_handle,read_timeout);
  if(select_size < 0){
  return GSM_ERR_SERIAL_RECV;
@@ -325,6 +330,7 @@ static int gsm_m6312_cmd_check_response(const char *rsp,uint16_t size,gsm_m6312_
     gsm_m6312_err_code_t *err_node;
     char *check_pos;
     
+    /*接受完一帧数据标志*/
     log_warning("**\r\n");
 
     err_node = err_head;
@@ -359,9 +365,14 @@ static int gsm_m6312_at_cmd_excute(gsm_m6312_at_cmd_t *at_cmd)
     
     rc = gsm_m6312_at_cmd_send(at_cmd->send,at_cmd->send_size,at_cmd->send_timeout);
     if (rc != GSM_ERR_OK){
-        return rc;
+    return rc;
     }
     
+    /*发送完一帧数据的标志*/
+    log_warning("++\r\n");
+    /*清空数据*/
+    serial_flush(gsm_m6312_serial_handle);
+ 
     start_time = osKernelSysTick();
     time_left = at_cmd->recv_timeout;
     while (time_left){
@@ -369,11 +380,16 @@ static int gsm_m6312_at_cmd_excute(gsm_m6312_at_cmd_t *at_cmd)
     if (recv_size < 0){
     return recv_size; 
     }
+    /*判断这帧数据是否是系统输出的无用数据*/
+    if(strstr(at_cmd->recv + at_cmd->recv_size,"CONNECTION CLOSED:")){
+    log_warning("recv sys prompt:%s\r\ndiscard!\r\n",at_cmd->recv + at_cmd->recv_size);  
+    }else{
     at_cmd->recv_size += recv_size;
-    /*输入接收数据的尾端*/
+    /*校验回应数据*/
     rc = gsm_m6312_cmd_check_response(at_cmd->recv,at_cmd->recv_size,at_cmd->err_head,&at_cmd->complete);
     if(at_cmd->complete){
     return rc;
+    }
     }
     cur_time = osKernelSysTick();
     time_left = at_cmd->recv_timeout > cur_time - start_time ? at_cmd->recv_timeout - (cur_time - start_time) : 0;
@@ -423,7 +439,7 @@ int gsm_m6312_get_sim_card_status(sim_card_status_t *sim_status)
  rc = GSM_ERR_UNKNOW;
  } 
  }  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc; 
 }
@@ -468,7 +484,7 @@ int gsm_m6312_get_sim_card_id(char *sim_id)
  rc = GSM_ERR_UNKNOW;   
  }
  }  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -506,7 +522,7 @@ int gsm_m6312_set_echo(gsm_m6312_echo_t echo)
  
  rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
 
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -553,7 +569,7 @@ int gsm_m6312_get_imei(char *imei)
  }
  }
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -599,7 +615,7 @@ int gsm_m6312_get_sn(char *sn)
  }
  }
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -633,7 +649,7 @@ int gsm_m6312_set_apn(gsm_m6312_apn_t apn)
  
  rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -682,7 +698,7 @@ int gsm_m6312_get_apn(gsm_m6312_apn_t *apn)
  }  
  }
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -721,7 +737,7 @@ int gsm_m6312_set_active_status(gsm_m6312_active_status_t active)
  
  rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -764,7 +780,7 @@ int gsm_m6312_get_active_status(gsm_m6312_active_status_t *active)
  }
  }
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -802,7 +818,7 @@ int gsm_m6312_set_attach_status(gsm_m6312_attach_status_t attach)
  
  rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -845,7 +861,7 @@ int gsm_m6312_get_attach_status(gsm_m6312_attach_status_t *attach)
  }
  }
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -883,7 +899,7 @@ int gsm_m6312_set_connect_mode(gsm_m6312_connect_mode_t mode)
  
  rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -926,7 +942,7 @@ int gsm_m6312_get_operator(operator_name_t *operator_name)
  }
  }
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -966,7 +982,7 @@ int gsm_m6312_set_auto_operator_format(gsm_m6312_operator_format_t operator_form
  
  rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -1004,7 +1020,7 @@ int gsm_m6312_set_send_prompt(gsm_m6312_send_prompt_t prompt)
  
  rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -1042,7 +1058,7 @@ int gsm_m6312_set_transparent(gsm_m6312_transparent_t transparent)
  
  rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -1080,7 +1096,130 @@ int gsm_m6312_set_report(gsm_m6312_report_t report)
  
  rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
+ osMutexRelease(gsm_mutex);
+ return rc;
+}
+
+/* 函数名：gsm_m6312_set_reg_echo
+*  功能：  设置网络和基站位置主动回显
+*  参数：  reg_echo
+*  返回：  GSM_ERR_OK：成功 其他：失败
+*/
+int gsm_m6312_set_reg_echo(gsm_m6312_reg_echo_t reg_echo)
+{
+ int rc;
+ gsm_m6312_err_code_t ok,err;
+ 
+ osMutexWait(gsm_mutex,osWaitForever);
+ 
+ memset(&gsm_cmd,0,sizeof(gsm_cmd));
+ if(reg_echo == GSM_M6312_REG_ECHO_ON){
+ strcpy(gsm_cmd.send,"AT+CGREG=2\r\n");
+ }else {
+ strcpy(gsm_cmd.send,"AT+CGREG=0\r\n");
+ }
+ gsm_cmd.send_size = strlen(gsm_cmd.send);
+ gsm_cmd.send_timeout = 5;
+ gsm_cmd.recv_timeout = 1000;
+ ok.str = "OK\r\n";
+ ok.code = GSM_ERR_OK;
+ ok.next = NULL;
+ err.str = "ERROR";
+ err.code = GSM_ERR_CMD_ERR;
+ err.next = NULL;
+ 
+ gsm_m6312_err_code_add(&gsm_cmd.err_head,&ok);
+ gsm_m6312_err_code_add(&gsm_cmd.err_head,&err);
+ 
+ rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
+ 
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
+ osMutexRelease(gsm_mutex);
+ return rc;
+}
+
+/* 函数名：gsm_m6312_get_reg_location
+*  功能：  获取注册和基站位置信息
+*  参数：  reg 信息指针
+*  返回：  GSM_ERR_OK：成功 其他：失败
+*/
+int gsm_m6312_get_reg_location(gsm_m6312_register_t *reg)
+{
+ int rc;
+ char *temp;
+ char *break_str;
+ gsm_m6312_err_code_t ok,err;
+ 
+ osMutexWait(gsm_mutex,osWaitForever);
+ 
+ memset(&gsm_cmd,0,sizeof(gsm_cmd));
+ strcpy(gsm_cmd.send,"AT+CGREG?\r\n");
+
+ gsm_cmd.send_size = strlen(gsm_cmd.send);
+ gsm_cmd.send_timeout = 5;
+ gsm_cmd.recv_timeout = 2000;
+ ok.str = "OK\r\n";
+ ok.code = GSM_ERR_OK;
+ ok.next = NULL;
+ err.str = "ERROR";
+ err.code = GSM_ERR_CMD_ERR;
+ err.next = NULL;
+ 
+ gsm_m6312_err_code_add(&gsm_cmd.err_head,&ok);
+ gsm_m6312_err_code_add(&gsm_cmd.err_head,&err);
+ 
+ rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
+ if(rc == GSM_ERR_OK){
+ rc = -1;
+ temp = strstr(gsm_cmd.recv,"+CGREG: ");
+ if(temp == NULL){
+ goto err_exit;  
+ }
+ temp +=strlen("+CGREG: ");
+ 
+ /*找到第1个，*/
+ break_str = strstr(temp ,",");
+ if(break_str == NULL){
+ goto err_exit; 
+ }
+ temp = break_str + 1;
+ 
+ if(strncmp(temp,"1",1) == 0){
+ reg->status = GSM_M6312_STATUS_REGISTER;  
+ }else {
+ reg->status = GSM_M6312_STATUS_NO_REGISTER;  
+ }
+ 
+ /*找到第2个，*/
+ break_str = strstr(temp,",");
+ if(break_str == NULL){  
+ goto err_exit;    
+ }  
+ temp = break_str + 1;
+ 
+ /*找到第3个，*/
+ break_str = strstr(temp,",");
+ if(break_str == NULL || break_str - temp != 6){
+ log_error("gsm location format err.\r\n");
+ goto err_exit;
+ }
+ memcpy(reg->location.lac,temp,6);
+ reg->location.lac[6] = '\0';
+ /*找到第4个，*/
+ temp = break_str + 1;
+ break_str = strstr(temp,",");
+ if(break_str == NULL || break_str - temp != 6){
+ log_error("gsm location format err.\r\n");
+ goto err_exit;
+ }
+ memcpy(reg->location.ci,temp,6);
+ reg->location.ci[6] = '\0';
+ rc = GSM_ERR_OK;
+ }
+
+err_exit: 
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -1146,7 +1285,7 @@ int gsm_m6312_open_client(int conn_id,gsm_m6312_net_protocol_t protocol,const ch
  if(rc == GSM_ERR_OK){
  rc = conn_id;
  }
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -1180,7 +1319,7 @@ int gsm_m6312_close_client(int conn_id)
  
  rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -1237,7 +1376,7 @@ int gsm_m6312_get_connect_status(const int conn_id,gsm_m6312_socket_status_t *st
  }  
  }
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -1305,7 +1444,7 @@ int gsm_m6312_send(int conn_id,const char *data,const int size)
  }
  }
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -1324,9 +1463,9 @@ int gsm_m6312_config_recv_buffer(gsm_m6312_recv_buffer_t buffer)
  
  memset(&gsm_cmd,0,sizeof(gsm_cmd));
  if(buffer == GSM_M6312_RECV_BUFFERE){
- strcpy(gsm_cmd.send,"AT+CMNDI=1\r\n");
+ strcpy(gsm_cmd.send,"AT+CMNDI=1,0\r\n");
  }else{
- strcpy(gsm_cmd.send,"AT+CMNDI=0\r\n");
+ strcpy(gsm_cmd.send,"AT+CMNDI=0,0\r\n");
  }
  gsm_cmd.send_size = strlen(gsm_cmd.send);
  gsm_cmd.send_timeout = 5;
@@ -1343,7 +1482,7 @@ int gsm_m6312_config_recv_buffer(gsm_m6312_recv_buffer_t buffer)
  
  rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
  
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }
@@ -1433,7 +1572,7 @@ int gsm_m6312_recv(int conn_id,char *buffer,const int size)
  }
  
 err_exit: 
- gsm_m6312_print_err_info(gsm_cmd.send,rc);
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
  osMutexRelease(gsm_mutex);
  return rc;
 }

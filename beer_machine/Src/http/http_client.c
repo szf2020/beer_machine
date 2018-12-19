@@ -199,7 +199,7 @@ static int http_client_recv_head(http_client_context_t *context,char *buffer,uin
  }
  
 
-#define  CHUNK_CODE_SIZE_MAX    5
+#define  CHUNK_CODE_SIZE_MAX    6
 static int http_client_recv_chunk_size(http_client_context_t *context,uint32_t timeout)
 {
   int rc;
@@ -223,14 +223,15 @@ static int http_client_recv_chunk_size(http_client_context_t *context,uint32_t t
   return -1;  
   }
   recv_total += 1;
-  if(recv_total > 2){
+  if(recv_total >= 3){
   chunk_code[recv_total] = '\0';
   
   /*尝试解析chunk code*/
   if(chunk_code[recv_total - 2] == '\r' && chunk_code[recv_total - 1] == '\n'){
   /*编码是16进制hex*/
   context->chunk_size = strtol(chunk_code,NULL,16);
-  log_debug("find chunk code:%x.\r\n",context->chunk_size); 
+  log_debug("find chunk code(HEX):%s",chunk_code); 
+  log_debug("chunk size:%d.\r\n",context->chunk_size); 
   return 0;
   }
   }
