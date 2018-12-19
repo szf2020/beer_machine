@@ -86,7 +86,8 @@ static void gsm_query_timer_expired(void const *argument)
 osMessagePut(socket_manage_task_msg_q_id,SOCKET_MANAGE_TASK_MSG_QUERY_GSM_STATUS,0);
 }
 
-
+char lac[8];
+char ci[8];
 #define  SOCKET_MANAGE_TASK_ERR_CNT_MAX      10
 
 void socket_manage_task(void const *argument)
@@ -123,7 +124,7 @@ void socket_manage_task(void const *argument)
  
   /*如果收到检查WIFI网络状态*/
   if(msg == SOCKET_MANAGE_TASK_MSG_QUERY_WIFI_STATUS){ 
-  rc = socket_query_wifi_status();
+  rc = socket_query_wifi_status(&wifi_level);
   if(rc != 0){
   wifi_err_cnt ++;
   if(wifi_err_cnt > SOCKET_MANAGE_TASK_ERR_CNT_MAX){
@@ -134,7 +135,6 @@ void socket_manage_task(void const *argument)
   wifi_err_cnt = 0;
   }
  
-  socket_query_wifi_level(&wifi_level);
   display_msg.type = DISPLAY_TASK_MSG_WIFI;
   if(wifi_level == 0){
   display_msg.value = 3;
@@ -155,7 +155,7 @@ void socket_manage_task(void const *argument)
   
   /*如果收到检查GSM网络状态*/
   if(msg == SOCKET_MANAGE_TASK_MSG_QUERY_GSM_STATUS){ 
-  rc = socket_query_gsm_status();
+  rc = socket_query_gsm_status(lac,ci);
   if(rc != 0){
   gsm_err_cnt ++;
   if(gsm_err_cnt >= SOCKET_MANAGE_TASK_ERR_CNT_MAX){

@@ -105,24 +105,41 @@ int socket_config_wifi(const char *ssid,const char *passwd)
 }
 
 
-/* 函数名：函数名：socket_get_ap_rssi
-*  功能：  获取AP的rssi值
-*  参数：  rssi ap rssi指针
+#define  SOCKET_LEVEL_1         -90
+#define  SOCKET_LEVEL_2         -80
+#define  SOCKET_LEVEL_3         -60
+/* 函数名：函数名：socket_query_wifi_level
+*  功能：  询问WiFi的level值
+*  参数：  rssi值指针
 *  返回：  0  成功 其他：失败
 */ 
-int socket_get_ap_rssi(const char *ssid,int *rssi)
+static int socket_query_wifi_level(int *level)
 {
  int rc;
-
- /*获取rssi*/
- rc = wifi_8710bx_get_ap_rssi(ssid,rssi);
- if(rc == 0){
- log_debug("socket get rssi:%d ok.\r\n",*rssi);
- }else{
- log_error("socket get rssi err.\r\n");  
+ /*尝试扫描ssid*/
+ rc = wifi_8710bx_get_ap_rssi(socket_manage.wifi.connect.ssid,&socket_manage.wifi.rssi);
+ /*执行失败或者没有扫描到wifi*/
+ if(rc != 0){
+ return -1;
  }
-
- return rc;   
+ /*没有发现ssid*/  
+ if(socket_manage.wifi.rssi == 0){
+ *level = 0;
+ return 0;
+ }
+ /*设置wifi信号等级*/
+ /*rssi   - 90 == level 1*/
+ /*rssi   - 80 == level 2*/
+ /*rssi   - 60 == level 3*/
+ if(socket_manage.wifi.rssi >= SOCKET_LEVEL_3){
+ *level = 3; 
+ }else if(socket_manage.wifi.rssi >= SOCKET_LEVEL_2){
+ *level = 2; 
+ }else {
+ *level = 1;  
+ }
+ 
+ return 0; 
 }
 
 
@@ -144,11 +161,6 @@ static int socket_gsm_init(void)
  }
  /*关闭信息主动上报*/
  rc = gsm_m6312_set_report(GSM_M6312_REPORT_OFF);
- if(rc != 0){
- goto err_handler;
- }
-  /*打开注册和位置主动上报*/
- rc = gsm_m6312_set_reg_echo(GSM_M6312_REG_ECHO_ON);
  if(rc != 0){
  goto err_handler;
  }
@@ -218,36 +230,57 @@ err_handler:
 
 /* 函数名：函数名：socket_query_gsm_status
 *  功能：  询问gsm是否就绪
-*  参数：  无
+*  参数：  lac 基站代码
+*  参数：  ci  小区代码
 *  返回：  0 成功 其他：失败
 */ 
-int socket_query_gsm_status()
+int socket_query_gsm_status(char *lac,char *ci)
 {
  int rc;
  sim_card_status_t sim_card_status;
-
+ gsm_m6312_register_t register_info;
+ 
+ /*默认为空*/
+ lac[0] = '\0';
+ ci[0] = '\0';
  /*获取sim卡状态*/
  rc = gsm_m6312_get_sim_card_status(&sim_card_status);
- if(rc == 0){
+ if(rc != 0){
+ goto err_exit; 
+ }
+ 
  /*sim卡是否就位*/
- if(sim_card_status == SIM_CARD_STATUS_READY){
+ if(sim_card_status == SIM_CARD_STATUS_NO_SIM_CARD){
+ log_debug("SIM card not ready.\r\n");
+ return 0; 
+ }
+ /*SIM卡是否注册*/  
+ rc = gsm_m6312_get_reg_location(&register_info);
+ if(rc != 0){
+ goto err_exit; 
+ }
+ if(register_info.status == GSM_M6312_STATUS_NO_REGISTER){
+ log_debug("sim not register.\r\n");
+ socket_manage.gsm.initialized = false;
+ socket_manage.gsm.status = SOCKET_STATUS_NOT_READY;
+ return 0;
+ }
+ /*gsm模块参数初始化*/  
  if(socket_manage.gsm.initialized == false){
  rc = socket_gsm_init();
- if(rc == 0){
+ if(rc != 0){
+ goto err_exit;
+ }
  socket_manage.gsm.initialized = true;
  socket_manage.gsm.status = SOCKET_STATUS_READY;
  }
- }
- } else{
- socket_manage.gsm.initialized = false;
- socket_manage.gsm.status = SOCKET_STATUS_NOT_READY;
- } 
- }
+ 
+err_exit:
  return rc;   
 }
 
 /* 函数名：socket_wifi_init
-*  功能：  初始化wifi网络
+*  功能：  初始化wifi模块参数
 *  参数：  无
 *  返回：  0 成功 其他：失败
 */ 
@@ -256,109 +289,85 @@ static int socket_wifi_init()
  int rc;
  rc = wifi_8710bx_set_echo(WIFI_8710BX_ECHO_OFF);
  if(rc != 0){
- goto err_handler;
+ goto err_exit;
  }
  rc = wifi_8710bx_set_mode(WIFI_8710BX_STATION_MODE);
-
-err_handler:
-  if(rc == 0){
-  log_debug("socket wifi init ok.\r\n");
-  }else{
+ if(rc != 0){
+ goto err_exit;
+ }
+ log_debug("socket wifi init ok.\r\n");
+ return 0;
+ 
+err_exit:
   log_error("socket wifi init err.\r\n");
-  }
-  
+
   return rc;
 }
 
 /* 函数名：函数名：socket_query_wifi_status
-*  功能：  询问WiFi是否就绪
+*  功能：  询问WiFi状态
+*  参数：  wifi_level wifi强度 
 *  返回：  0  成功 其他：失败
 */ 
-int socket_query_wifi_status()
+int socket_query_wifi_status(int *wifi_level)
 {
  int rc;
  wifi_8710bx_device_t wifi;
- /*wifi没有配网直接返回*/
- if(socket_manage.wifi.config == false){
- log_debug("wifi not config.\r\n");
- return 0;
- }
- /*wifi没有初始化*/
+ 
+ /*如果没有初始化参数*/
  if(socket_manage.wifi.initialized == false){
  rc = socket_wifi_init();
  if(rc != 0){
- return -1;
+ goto err_exit;
  }
  socket_manage.wifi.initialized = true;
  }
  
- if(socket_manage.wifi.initialized == false){
- log_debug("wifi param not init.\r\n");
+ /*wifi没有配网直接返回*/
+ if(socket_manage.wifi.config == false){
+ *wifi_level = 0;/*代表没有发现*/ 
+ log_debug("wifi not config.\r\n");
  return 0;
  }
- 
- rc = wifi_8710bx_get_wifi_device(&wifi);
+ /*扫描是否存在配置的ap ssid并获取强度值*/
+ rc = socket_query_wifi_level(wifi_level); 
  if(rc != 0){
- return -1;
+ goto err_exit;
  }
  
+ /*是否连接上*/ 
+ rc = wifi_8710bx_get_wifi_device(&wifi);
+ if(rc != 0){
+ goto err_exit;
+ }
  if(strcmp(socket_manage.wifi.connect.ssid,wifi.ap.ssid)== 0){
  /*现在是连接的状态*/
  socket_manage.wifi.status = SOCKET_STATUS_READY;
- return 0;
- }
- if(strlen(wifi.ap.ssid) != 0){
- log_debug("wifi cur connect ap:%s.will disconnect.\r\n", wifi.ap.ssid);
- wifi_8710bx_disconnect_ap();
- }
+ }else {
  /*现在是断开的状态*/
  socket_manage.wifi.status = SOCKET_STATUS_NOT_READY;
- 
+ /*连接到了别的网络或者未连接*/
+ rc = wifi_8710bx_disconnect_ap();
+ if(rc != 0){
+ goto err_exit;
+ }
+
+ if(*wifi_level == 0){/*没有发现ssid*/
+ return 0; 
+ }
  /*尝试连接ssid*/
- if(socket_manage.wifi.rssi != 0){
  rc = wifi_8710bx_connect_ap(socket_manage.wifi.connect.ssid,socket_manage.wifi.connect.passwd);  
  /*连接成功*/
  if(rc != 0){
- return -1;
+ goto err_exit;
  }
  socket_manage.wifi.status = SOCKET_STATUS_READY;
  }
-
- return 0;   
-}
-
-#define  SOCKET_LEVEL_1         -90
-#define  SOCKET_LEVEL_2         -80
-#define  SOCKET_LEVEL_3         -60
-/* 函数名：函数名：socket_query_wifi_level
-*  功能：  询问WiFi的level值
-*  参数：  rssi值指针
-*  返回：  0  成功 其他：失败
-*/ 
-int socket_query_wifi_level(int *level)
-{
- int rc;
- /*尝试扫描ssid*/
- rc = wifi_8710bx_get_ap_rssi(socket_manage.wifi.connect.ssid,&socket_manage.wifi.rssi);
- /*执行失败或者没有扫描到wifi 默认返回 0*/
- if(rc != 0 || socket_manage.wifi.rssi == 0){
- *level = 0;
- return 0;
- }
- /*设置wifi信号等级*/
- /*rssi   - 90 == level 1*/
- /*rssi   - 80 == level 2*/
- /*rssi   - 60 == level 3*/
- if(socket_manage.wifi.rssi >= SOCKET_LEVEL_3){
- *level = 3; 
- }else if(socket_manage.wifi.rssi >= SOCKET_LEVEL_2){
- *level = 2; 
- }else {
- *level = 1;  
- }
  
- return 0; 
+ err_exit:
+ return rc;
 }
+
 /* 函数名：函数名：socket_wifi_reset
 *  功能：  复位WiFi
 *  返回：  0  成功 其他：失败
@@ -377,7 +386,6 @@ int socket_wifi_reset()
 */ 
 int socket_gsm_reset()
 {
- 
  if(gsm_m6312_pwr_off() != 0){
  log_error("gsm pwr off err.\r\n");
  return -1;
@@ -385,7 +393,6 @@ int socket_gsm_reset()
  if(gsm_m6312_pwr_on() != 0){
  log_error("gsm pwr on err.\r\n");
  return -1;
- 
 }
 
  return 0; 

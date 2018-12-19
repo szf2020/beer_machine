@@ -1171,7 +1171,7 @@ int gsm_m6312_get_reg_location(gsm_m6312_register_t *reg)
  
  rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
  if(rc == GSM_ERR_OK){
- rc = -1;
+ rc = GSM_ERR_UNKNOW;
  temp = strstr(gsm_cmd.recv,"+CGREG: ");
  if(temp == NULL){
  goto err_exit;  
@@ -1188,7 +1188,10 @@ int gsm_m6312_get_reg_location(gsm_m6312_register_t *reg)
  if(strncmp(temp,"1",1) == 0){
  reg->status = GSM_M6312_STATUS_REGISTER;  
  }else {
- reg->status = GSM_M6312_STATUS_NO_REGISTER;  
+ reg->status = GSM_M6312_STATUS_NO_REGISTER; 
+ /*没有注册就没有位置信息*/ 
+ rc = GSM_ERR_OK;
+ goto err_exit;
  }
  
  /*找到第2个，*/
@@ -1197,7 +1200,6 @@ int gsm_m6312_get_reg_location(gsm_m6312_register_t *reg)
  goto err_exit;    
  }  
  temp = break_str + 1;
- 
  /*找到第3个，*/
  break_str = strstr(temp,",");
  if(break_str == NULL || break_str - temp != 6){

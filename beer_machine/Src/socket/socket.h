@@ -37,30 +37,20 @@ typedef enum
 int socket_config_wifi(const char *ssid,const char *passwd);
 
 
-/* 函数名：函数名：socket_get_ap_rssi
-*  功能：  获取AP的rssi值
-*  参数：  rssi ap rssi指针
-*  返回：  0  成功 其他：失败
-*/ 
-int socket_get_ap_rssi(const char *ssid,int *rssi);
-
 /* 函数名：函数名：socket_query_wifi_status
 *  功能：  询问WiFi是否就绪
+*  参数：  wifi_level wifi强度 
 *  返回：  0  成功 其他：失败
 */ 
-int socket_query_wifi_status();
-/* 函数名：函数名：socket_query_wifi_level
-*  功能：  询问WiFi的level值
-*  参数：  rssi值指针
-*  返回：  0  成功 其他：失败
-*/ 
-int socket_query_wifi_level(int *level);
+int socket_query_wifi_status(int *wifi_level);
+
 /* 函数名：函数名：socket_query_gsm_status
 *  功能：  询问gsm是否就绪
-*  参数：  无
+*  参数：  lac 基站代码
+*  参数：  ci  小区代码
 *  返回：  0 成功 其他：失败
 */ 
-int socket_query_gsm_status();
+int socket_query_gsm_status(char *lac,char *ci);
 
 /* 函数名：函数名：socket_wifi_reset
 *  功能：  复位WiFi
