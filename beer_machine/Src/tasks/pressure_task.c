@@ -1,12 +1,13 @@
 #include "cmsis_os.h"
 #include "tasks_init.h"
 #include "adc_task.h"
+#include "stdio.h"
 #include "alarm_task.h"
 #include "pressure_task.h"
 #include "display_task.h"
 #include "capacity_task.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_ERROR
+#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
 #define  LOG_MODULE_NAME     "[pressure]"
 
 osThreadId   pressure_task_handle;
@@ -30,14 +31,24 @@ static pressure_t  pressure;
 static uint8_t get_pressure(uint16_t adc)
 {
  float v,p;
+ uint8_t int_pressure;
+ char p_str[6];
+ 
  if(adc == ADC_TASK_ADC_ERR_VALUE){
  return PRESSURE_ERR_VALUE_SENSOR;
  }
  v= (adc * PRESSURE_SENSOR_REFERENCE_VOLTAGE)/PRESSURE_SENSOR_ADC_VALUE_MAX;   
  p= (v - PRESSURE_SENSOR_OUTPUT_VOLTAGE_MIN) * (PRESSURE_SENSOR_INPUT_PA_MAX - PRESSURE_SENSOR_INPUT_PA_MIN)/(PRESSURE_SENSOR_OUTPUT_VOLTAGE_MAX - PRESSURE_SENSOR_OUTPUT_VOLTAGE_MIN) + PRESSURE_SENSOR_INPUT_PA_MIN;
- p= (p / PA_VALUE_PER_1KG_CM2) * 10;
-
- log_debug("v:%d mv p:%d.%d kg/cm2.\r\n",(uint16_t)(v*1000),(uint8_t)p / 10,(uint8_t)p % 10);
+ 
+ /*换算成 kg/cm2*/
+ p= (p / PA_VALUE_PER_1KG_CM2);
+   
+ snprintf(p_str,6,"%4f",p);
+ log_debug("v:%d mv p:%skg/cm2.\r\n",(uint16_t)(v*1000),p_str);
+ 
+ /*放大10倍 按整数计算*/
+  p *= 10;
+  
  /*减去外部大气压*/
  if(p > PRESSURE_VALUE_IN_KG_CM2_ERR_MAX ){
  return PRESSURE_ERR_VALUE_SENSOR;  
@@ -48,7 +59,10 @@ static uint8_t get_pressure(uint16_t adc)
  }
  
  p = p < PRESSURE_VALUE_STANDARD_ATM ? 0 : p - PRESSURE_VALUE_STANDARD_ATM;
- return (uint8_t)p;
+ 
+ int_pressure = (uint8_t)p;
+ /*四舍五入*/
+ return int_pressure + (p - int_pressure >= 0.50 ? 1 : 0 );
 }
 
 void pressure_task(void const *argument)

@@ -16,12 +16,12 @@ static osMutexId wifi_mutex;
 
 static wifi_8710bx_at_cmd_t wifi_cmd;
 
-/* 函数名：wifi_8710bx_hal_init
+/* 函数名：wifi_8710bx_serial_hal_init
 *  功能：  串口驱动初始化
 *  参数：  无
 *  返回：  WIFI_ERR_OK：成功 其他：失败
 */
-int wifi_8710bx_hal_init()
+int wifi_8710bx_serial_hal_init()
 {
 int rc;
 rc = serial_create(&wifi_8710bx_serial_handle,WIFI_8710BX_BUFFER_SIZE,WIFI_8710BX_BUFFER_SIZE);
@@ -269,7 +269,8 @@ static int wifi_8710bx_at_cmd_recv(char *recv,const uint16_t size,const uint32_t
 static int wifi_8710bx_cmd_check_response(const char *rsp,wifi_8710bx_err_code_t *err_head,bool *complete)
 {
     wifi_8710bx_err_code_t *err_node;
-    log_warning("*\r\n");
+    /*接收一帧数据标志*/
+    //log_warning("*\r\n");
     err_node = err_head;
     while(err_node){
         if (strstr(rsp,err_node->str)){

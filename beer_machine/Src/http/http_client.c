@@ -32,7 +32,22 @@ return -1;                                      \
 #define  HEAD_START1_STR                    "HTTP/1.1 "
 #define  HEAD_END_STR                       "\r\n\r\n"
 
+typedef struct
+{
+bool up;
+uint32_t start;
+uint32_t value;
+}http_client_timer_t;
 
+
+/* 函数名：http_client_parse_url
+*  功能：  解析URL
+*  参数：  url 输入的url
+*  参数：  host 输出主机字符串
+*  参数：  port 输出主机端口
+*  参数：  path 输出主机路径
+*  返回：  0：成功 其他：失败
+*/
 static int http_client_parse_url(const char *url,char *host,uint16_t *port,char *path)
 {
   char *pos;
@@ -75,7 +90,14 @@ static int http_client_parse_url(const char *url,char *host,uint16_t *port,char 
 }
 
 
- 
+/* 函数名：http_client_build_head
+*  功能：  构造http请求head
+*  参数：  buffer 输出head缓存
+*  参数：  method 方法
+*  参数：  context http上下文
+*  参数：  size head缓存大小
+*  返回：  >0：成功构造的head大小 其他：失败
+*/ 
 static int http_client_build_head(char *buffer,const char *method,http_client_context_t *context,int size)
 {
   int head_size;
@@ -104,13 +126,14 @@ static int http_client_build_head(char *buffer,const char *method,http_client_co
  return head_size;     
 }
 
-typedef struct
-{
-bool up;
-uint32_t start;
-uint32_t value;
-}http_client_timer_t;
 
+/* 函数名：http_client_timer_init
+*  功能：  http自定义定时器初始化
+*  参数：  timer 定时器指针
+*  参数：  timeout 超时时间
+*  参数：  up 定时器方向-向上计数-向下计数
+*  返回：  0：成功 其他：失败
+*/ 
 static int http_client_timer_init(http_client_timer_t *timer,uint32_t timeout,bool up)
 {
 if(timer == NULL){
@@ -124,6 +147,10 @@ timer->value = timeout;
 return 0;
 }
 
+/* 函数名：http_client_timer_value
+*  功能：  定时器现在的值
+*  返回：  >=0：现在时间值 其他：失败
+*/ 
 static int http_client_timer_value(http_client_timer_t *timer)
 {
 uint32_t time_elapse;
@@ -140,7 +167,14 @@ return  timer->value > time_elapse ? time_elapse : timer->value;
 return  timer->value > time_elapse ? timer->value - time_elapse : 0; 
 }
 
-
+/* 函数名：http_client_recv_head
+*  功能：  http接收head
+*  参数：  context http上下文
+*  参数：  buffer 接收缓存
+*  参数：  buffer_size 缓存大小
+*  参数：  timeout 超时时间
+*  返回：  0：成功 其他：失败
+*/ 
 static int http_client_recv_head(http_client_context_t *context,char *buffer,uint16_t buffer_size,const uint32_t timeout)
 {
   int rc;
@@ -198,7 +232,12 @@ static int http_client_recv_head(http_client_context_t *context,char *buffer,uin
   return -1;
  }
  
-
+/* 函数名：http_client_recv_chunk_size
+*  功能：  http接收chunk编码大小
+*  参数：  context http上下文
+*  参数：  timeout 超时时间
+*  返回：  0：成功 其他：失败
+*/ 
 #define  CHUNK_CODE_SIZE_MAX    6
 static int http_client_recv_chunk_size(http_client_context_t *context,uint32_t timeout)
 {
@@ -241,8 +280,13 @@ static int http_client_recv_chunk_size(http_client_context_t *context,uint32_t t
   return -1;                                                         
 }                                                 
  
-
-static int http_client_recv_chun_tail(http_client_context_t *context,uint32_t timeout)
+/* 函数名：http_client_recv_chunk_tail
+*  功能：  http接收chunk编码结尾
+*  参数：  context http上下文
+*  参数：  timeout 超时时间
+*  返回：  0：成功 其他：失败
+*/ 
+static int http_client_recv_chunk_tail(http_client_context_t *context,uint32_t timeout)
 {
   int rc;
   http_client_timer_t timer;
@@ -273,8 +317,12 @@ static int http_client_recv_chun_tail(http_client_context_t *context,uint32_t ti
   }
   
 
-
-
+/* 函数名：http_client_recv_chunk
+*  功能：  http接收chunk编码数据
+*  参数：  context http上下文
+*  参数：  timeout 超时时间
+*  返回：  0：成功 其他：失败
+*/ 
 static int http_client_recv_chunk(http_client_context_t *context,uint32_t timeout)
 {
   int rc;
@@ -290,7 +338,7 @@ static int http_client_recv_chunk(http_client_context_t *context,uint32_t timeou
   }
   if(context->chunk_size == 0){
   /*接收chunk tail*/
-  rc = http_client_recv_chun_tail(context,http_client_timer_value(&timer));
+  rc = http_client_recv_chunk_tail(context,http_client_timer_value(&timer));
   if(rc != 0){
   return -1;   
   }
@@ -316,7 +364,7 @@ static int http_client_recv_chunk(http_client_context_t *context,uint32_t timeou
   return -1;  
   }
   /*接收chunk tail*/
-  rc = http_client_recv_chun_tail(context,http_client_timer_value(&timer));
+  rc = http_client_recv_chunk_tail(context,http_client_timer_value(&timer));
   if(rc != 0){
   return -1;   
   }
@@ -328,7 +376,12 @@ static int http_client_recv_chunk(http_client_context_t *context,uint32_t timeou
   return -1;
 }
 
-/*http 请求*/
+/* 函数名：http_client_request
+*  功能：  http请求
+*  参数：  method 请求方法
+*  参数：  context http上下文
+*  返回：  0：成功 其他：失败
+*/ 
 static int http_client_request(const char *method,http_client_context_t *context)
 {
  int rc;
@@ -336,8 +389,9 @@ static int http_client_request(const char *method,http_client_context_t *context
  char *http_buffer;
  http_client_timer_t timer;
  
+ /*整个过程的时间计算超时时间*/
  http_client_timer_init(&timer,context->timeout,false);
-
+ 
  /*申请http缓存*/
  http_buffer = HTTP_CLIENT_MALLOC(HTTP_BUFFER_SIZE);
  if(http_buffer == NULL){
@@ -356,10 +410,7 @@ static int http_client_request(const char *method,http_client_context_t *context
  log_error("http build head err.\r\n");
  goto err_handler;
  }
- /*组合body*/
- //strcat(http_buffer,context->user_data);
- //head_size +=strlen(context->user_data);
- /*http 连接*/
+ /*http建立连接*/
  rc = socket_connect(context->host,context->port,SOCKET_PROTOCOL_TCP);
  if(rc < 0){
  goto err_handler;
@@ -375,17 +426,15 @@ static int http_client_request(const char *method,http_client_context_t *context
  }
 
  /*http user data发送*/
- 
  rc = socket_send(context->handle,context->user_data,context->user_data_size,http_client_timer_value(&timer));
  if(rc != context->user_data_size){
  log_error("http user data send err.\r\n");
  goto err_handler;
  }
 
- 
  /*清空http buffer 等待接收数据*/
  memset(http_buffer,0,HTTP_BUFFER_SIZE);
-
+ 
  rc = http_client_recv_head(context,http_buffer,HTTP_BUFFER_SIZE,http_client_timer_value(&timer));
  /*接收head失败 返回*/
  if(rc != 0){
@@ -422,7 +471,6 @@ err_handler:
  socket_disconnect(context->handle);
  context->connected = false;
  }
- 
  
  return rc;
 }

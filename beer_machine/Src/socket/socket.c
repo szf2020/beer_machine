@@ -13,12 +13,30 @@
 
 
 #define  BUFFER_CNT                           2
-#define  BUFFER_SIZE                          1024
+#define  BUFFER_SIZE                          1024 /*必须是2的x次方*/
 #define  SOCKET_GSM_HANDLE_BASE               10
+#define  SOCKET_GSM_HANDLE_MAX                5
+
+#define  SOCKET_WIFI_RSSI_OF_LEVEL_1         -90
+#define  SOCKET_WIFI_RSSI_OF_LEVEL_2         -80
+#define  SOCKET_WIFI_RSSI_OF_LEVEL_3         -60
+
+
+#if  (((BUFFER_SIZE) - 1) & (BUFFER_SIZE)) != 0
+#error "BUFFER SIZE must be 2^X !!!"
+#endif
 
 
 static void socket_gsm_handle_init();
 static int socket_buffer_init();
+
+typedef struct
+{
+ int value;
+ bool alive;
+}socket_gsm_handle_t;
+
+
 typedef struct
 {
 bool valid;
@@ -43,17 +61,47 @@ socket_status_t status;
 
 struct
 {
-bool initialized;
+bool base_initialized;
+bool gprs_initialized;
 socket_status_t status;
+socket_gsm_handle_t   handle[SOCKET_GSM_HANDLE_MAX];
 }gsm;
 
 socket_buffer_t buffer[BUFFER_CNT];
+osMutexId mutex;
 }socket_manage_t;
 
 
 
 static socket_manage_t socket_manage;
 
+
+/* 函数名：socket_manage_wifi_init
+*  功能：  网络管理wifi初始化
+*  参数：  无
+*  返回：  0：成功 其他：失败
+*/
+static int socket_manage_wifi_init()
+{
+ socket_manage.wifi.initialized = false;
+ socket_manage.wifi.status = SOCKET_STATUS_NOT_READY; 
+
+ return 0;
+}
+
+/* 函数名：socket_manage_gsm_init
+*  功能：  网络管理gsm初始化
+*  参数：  无
+*  返回：  0：成功 其他：失败
+*/
+static int socket_manage_gsm_init()
+{
+ socket_manage.gsm.base_initialized = false;
+ socket_manage.gsm.gprs_initialized = false;
+ socket_manage.gsm.status = SOCKET_STATUS_NOT_READY;
+ 
+ return 0;
+}
 
 
 /* 函数名：socket_init
@@ -64,27 +112,19 @@ static socket_manage_t socket_manage;
 int socket_init()
 {
   
- if(wifi_8710bx_hal_init() !=0 || gsm_m6312_serial_hal_init() != 0){
- return -1;
+ if(wifi_8710bx_serial_hal_init() !=0 || gsm_m6312_serial_hal_init() != 0){
+ log_assert(0);
  }
  
- if( socket_wifi_reset() != 0){
+ osMutexDef(socket_mutex);
+ socket_manage.mutex = osMutexCreate(osMutex(socket_mutex));
+ if(socket_manage.mutex == NULL) {
+ log_error("create socket mutex err.\r\n");
  return -1;
  }
+ osMutexRelease(socket_manage.mutex);
+ log_debug("create socket mutex ok.\r\n");
  
- if(socket_gsm_reset() != 0){
- return -1;
- }
- 
- socket_manage.wifi.config = false;
- socket_manage.wifi.initialized = false;
- socket_manage.wifi.status = SOCKET_STATUS_NOT_READY;
- strcpy(socket_manage.wifi.connect.ssid ,"wkxboot");
- strcpy(socket_manage.wifi.connect.passwd, "wkxboot6666");
- socket_manage.wifi.config =true;
- 
- socket_manage.gsm.initialized = false;
- socket_manage.gsm.status = SOCKET_STATUS_NOT_READY;
  socket_gsm_handle_init();
  socket_buffer_init();
  
@@ -93,27 +133,27 @@ int socket_init()
  return 0;
 }
 
-/* 函数名：socket_config_wifi
+
+/* 函数名：socket_module_config_wifi
 *  功能：  配置wifi 连接的ssid和密码
 *  参数：  ssid 热点名称
 *  参数：  passwd 密码 
 *  返回：  0：成功 其他：失败
 */
-int socket_config_wifi(const char *ssid,const char *passwd)
+int socket_module_config_wifi(const char *ssid,const char *passwd)
 {
+ strcpy(socket_manage.wifi.connect.ssid ,ssid);
+ strcpy(socket_manage.wifi.connect.passwd,passwd);
+ socket_manage.wifi.config =true;
  return 0; 
 }
 
-
-#define  SOCKET_LEVEL_1         -90
-#define  SOCKET_LEVEL_2         -80
-#define  SOCKET_LEVEL_3         -60
-/* 函数名：函数名：socket_query_wifi_level
+/* 函数名：函数名：socket_module_query_wifi_level
 *  功能：  询问WiFi的level值
 *  参数：  rssi值指针
 *  返回：  0  成功 其他：失败
 */ 
-static int socket_query_wifi_level(int *level)
+static int socket_module_query_wifi_level(int *level)
 {
  int rc;
  /*尝试扫描ssid*/
@@ -131,9 +171,9 @@ static int socket_query_wifi_level(int *level)
  /*rssi   - 90 == level 1*/
  /*rssi   - 80 == level 2*/
  /*rssi   - 60 == level 3*/
- if(socket_manage.wifi.rssi >= SOCKET_LEVEL_3){
+ if(socket_manage.wifi.rssi >= SOCKET_WIFI_RSSI_OF_LEVEL_3){
  *level = 3; 
- }else if(socket_manage.wifi.rssi >= SOCKET_LEVEL_2){
+ }else if(socket_manage.wifi.rssi >= SOCKET_WIFI_RSSI_OF_LEVEL_2){
  *level = 2; 
  }else {
  *level = 1;  
@@ -143,56 +183,75 @@ static int socket_query_wifi_level(int *level)
 }
 
 
-/* 函数名：函数名：socket_gsm_init
+/* 函数名：函数名：socket_module_gsm_base_init
+*  功能：  gsm模块基本参数初始化
+*  参数：  无
+*  返回：  0 成功 其他：失败
+*/ 
+static int socket_module_gsm_base_init(void)
+{
+ int rc;
+ /*关闭回显*/
+ rc = gsm_m6312_set_echo(GSM_M6312_ECHO_OFF); 
+ if(rc != 0){
+ goto err_exit;
+ }
+ /*关闭信息主动上报*/
+ rc = gsm_m6312_set_report(GSM_M6312_REPORT_OFF);
+ if(rc != 0){
+ goto err_exit;
+ }  
+  
+ /*设置SIM卡注册主动回应位置信息*/
+ rc = gsm_m6312_set_reg_echo(GSM_M6312_REG_ECHO_ON);
+ if(rc != 0){
+ goto err_exit; 
+ } 
+ return 0;
+ 
+err_exit:
+  return rc;
+}
+
+/* 函数名：函数名：socket_module_gsm_gprs_init
 *  功能：  gsm网络初始化
 *  参数：  无
 *  返回：  0 成功 其他：失败
 */ 
-static int socket_gsm_init(void)
+static int socket_module_gsm_gprs_init(void)
 {
  int rc;
  operator_name_t operator_name;
  gsm_m6312_apn_t apn;
  
- /*关闭回显*/
- rc = gsm_m6312_set_echo(GSM_M6312_ECHO_OFF); 
- if(rc != 0){
- goto err_handler;
- }
- /*关闭信息主动上报*/
- rc = gsm_m6312_set_report(GSM_M6312_REPORT_OFF);
- if(rc != 0){
- goto err_handler;
- }
- 
  /*去除附着网络*/
  rc = gsm_m6312_set_attach_status(GSM_M6312_NOT_ATTACH); 
  if(rc != 0){
- goto err_handler;
+ goto err_exit;
  }
  
  /*设置多连接*/
  rc = gsm_m6312_set_connect_mode(GSM_M6312_CONNECT_MODE_MULTIPLE); 
  if(rc != 0){
- goto err_handler;
+ goto err_exit;
  }
  /*设置运营商格式*/
  /*
  rc = gsm_m6312_set_auto_operator_format(GSM_M6312_OPERATOR_FORMAT_SHORT_NAME);
  if(rc != 0){
- goto err_handler;
+ goto err_exit;
  }
 */
  /*设置接收缓存*/
  rc = gsm_m6312_config_recv_buffer(GSM_M6312_RECV_BUFFERE); 
  if(rc != 0){
- goto err_handler;
+ goto err_exit;
  }
  
  /*获取运营商*/
  rc = gsm_m6312_get_operator(&operator_name);
  if(rc != 0){
- goto err_handler;
+ goto err_exit;
  }
  
  /*赋值apn值*/
@@ -205,36 +264,36 @@ static int socket_gsm_init(void)
  /*设置apn*/
  rc = gsm_m6312_set_apn(apn); 
  if(rc != 0){
- goto err_handler;
+ goto err_exit;
  }
 
  /*附着网络*/
  rc = gsm_m6312_set_attach_status(GSM_M6312_ATTACH); 
  if(rc != 0){
- goto err_handler;
+ goto err_exit;
  }
  
  /*激活网络*/
  rc = gsm_m6312_set_active_status(GSM_M6312_ACTIVE); 
+ if(rc != 0){
+ goto err_exit;
+ }
+ log_debug("socket gsm gprs init ok.\r\n");
+ return 0;
 
-
-err_handler:
-  if(rc == 0){
-  log_debug("gsm init ok.\r\n");
-  }else{
+err_exit:
   log_error("gsm init err.\r\n");
-  }
 
  return rc;
 }
 
-/* 函数名：函数名：socket_query_gsm_status
+/* 函数名：函数名：socket_module_query_gsm_status
 *  功能：  询问gsm是否就绪
 *  参数：  lac 基站代码
 *  参数：  ci  小区代码
 *  返回：  0 成功 其他：失败
 */ 
-int socket_query_gsm_status(char *lac,char *ci)
+int socket_module_query_gsm_status(char *lac,char *ci)
 {
  int rc;
  sim_card_status_t sim_card_status;
@@ -251,40 +310,56 @@ int socket_query_gsm_status(char *lac,char *ci)
  
  /*sim卡是否就位*/
  if(sim_card_status == SIM_CARD_STATUS_NO_SIM_CARD){
+ socket_manage.gsm.base_initialized = false;
+ socket_manage.gsm.gprs_initialized = false;   
+ socket_manage.gsm.status = SOCKET_STATUS_NOT_READY;
  log_debug("SIM card not ready.\r\n");
  return 0; 
  }
+ /*gsm基础参数是否初始化*/ 
+ if(socket_manage.gsm.base_initialized == false){
+ rc = socket_module_gsm_base_init();
+ if(rc != 0){
+ goto err_exit;
+ }  
+ socket_manage.gsm.base_initialized = true;
+ }
+ 
  /*SIM卡是否注册*/  
  rc = gsm_m6312_get_reg_location(&register_info);
  if(rc != 0){
  goto err_exit; 
  }
+/*没有注册直接返回*/ 
  if(register_info.status == GSM_M6312_STATUS_NO_REGISTER){
  log_debug("sim not register.\r\n");
- socket_manage.gsm.initialized = false;
- socket_manage.gsm.status = SOCKET_STATUS_NOT_READY;
  return 0;
  }
- /*gsm模块参数初始化*/  
- if(socket_manage.gsm.initialized == false){
- rc = socket_gsm_init();
+ /*注册后就有位置信息*/
+ strcpy(lac,register_info.location.lac);
+ strcpy(ci,register_info.location.ci);
+ 
+ /*gsm模块gprs参数初始化*/  
+ if(socket_manage.gsm.gprs_initialized == false){
+ rc = socket_module_gsm_gprs_init();
  if(rc != 0){
  goto err_exit;
  }
- socket_manage.gsm.initialized = true;
+ socket_manage.gsm.gprs_initialized = true;
  socket_manage.gsm.status = SOCKET_STATUS_READY;
  }
+ return 0;
  
 err_exit:
  return rc;   
 }
 
-/* 函数名：socket_wifi_init
+/* 函数名：socket_module_wifi_init
 *  功能：  初始化wifi模块参数
 *  参数：  无
 *  返回：  0 成功 其他：失败
 */ 
-static int socket_wifi_init()
+static int socket_module_wifi_init()
 {
  int rc;
  rc = wifi_8710bx_set_echo(WIFI_8710BX_ECHO_OFF);
@@ -304,19 +379,19 @@ err_exit:
   return rc;
 }
 
-/* 函数名：函数名：socket_query_wifi_status
+/* 函数名：函数名：socket_module_query_wifi_status
 *  功能：  询问WiFi状态
 *  参数：  wifi_level wifi强度 
 *  返回：  0  成功 其他：失败
 */ 
-int socket_query_wifi_status(int *wifi_level)
+int socket_module_query_wifi_status(int *wifi_level)
 {
  int rc;
  wifi_8710bx_device_t wifi;
  
  /*如果没有初始化参数*/
  if(socket_manage.wifi.initialized == false){
- rc = socket_wifi_init();
+ rc = socket_module_wifi_init();
  if(rc != 0){
  goto err_exit;
  }
@@ -330,7 +405,7 @@ int socket_query_wifi_status(int *wifi_level)
  return 0;
  }
  /*扫描是否存在配置的ap ssid并获取强度值*/
- rc = socket_query_wifi_level(wifi_level); 
+ rc = socket_module_query_wifi_level(wifi_level); 
  if(rc != 0){
  goto err_exit;
  }
@@ -368,24 +443,26 @@ int socket_query_wifi_status(int *wifi_level)
  return rc;
 }
 
-/* 函数名：函数名：socket_wifi_reset
+/* 函数名：函数名：socket_module_wifi_reset
 *  功能：  复位WiFi
 *  返回：  0  成功 其他：失败
 */ 
-int socket_wifi_reset()
+int socket_module_wifi_reset()
 {
+ socket_manage_wifi_init();
  if(wifi_8710bx_reset() != 0){
  return -1;
  }
  return 0; 
 }
 
-/* 函数名：函数名：socket_gsm_reset
+/* 函数名：函数名：socket_module_gsm_reset
 *  功能：  复位WiFi
 *  返回：  0  成功 其他：失败
 */ 
-int socket_gsm_reset()
+int socket_module_gsm_reset()
 {
+ socket_manage_gsm_init(); 
  if(gsm_m6312_pwr_off() != 0){
  log_error("gsm pwr off err.\r\n");
  return -1;
@@ -398,16 +475,6 @@ int socket_gsm_reset()
  return 0; 
 }
 
-typedef struct
-{
- int value;
- bool alive;
-}socket_handle_t;
-
-#define  GSM_HANDLE_MAX             5
-
-socket_handle_t socket_gsm_handle[GSM_HANDLE_MAX];
-
 /* 函数名：socket_gsm_handle_init
 *  功能：  gsm句柄池初始化
 *  参数：  无 
@@ -415,26 +482,32 @@ socket_handle_t socket_gsm_handle[GSM_HANDLE_MAX];
 */ 
 static void socket_gsm_handle_init()
 {
- for(uint8_t i = 0;i < GSM_HANDLE_MAX; i++){
- socket_gsm_handle[i].alive = false;
- socket_gsm_handle[i].value = i ;      
+ for(uint8_t i = 0;i < SOCKET_GSM_HANDLE_MAX; i++){
+ socket_manage.gsm.handle[i].alive = false;
+ socket_manage.gsm.handle[i].value = i ;      
  }
 }
 /* 函数名：socket_malloc_gsm_handle
 *  功能：  gsm句柄申请
 *  参数：  无 
-*  返回：  返回：  0：成功 其他：失败
+*  返回： >=0 成功 其他：失败
 */ 
 static int socket_malloc_gsm_handle()
 {
- for(uint8_t i = 0;i < GSM_HANDLE_MAX; i++){
- if(socket_gsm_handle[i].alive == false){
- socket_gsm_handle[i].alive = true;
- return socket_gsm_handle[i].value;      
+ int rc;
+ osMutexWait(socket_manage.mutex,osWaitForever);
+ for(uint8_t i = 0;i < SOCKET_GSM_HANDLE_MAX; i++){
+ if(socket_manage.gsm.handle[i].alive == false){
+ socket_manage.gsm.handle[i].alive = true;
+ rc = socket_manage.gsm.handle[i].value; 
+ goto exit;
  }
  }
- log_error("gsm has no invalid handle.\r\n");   
- return -1; 
+ rc = -1; 
+ log_error("gsm has no invalid handle.\r\n"); 
+exit: 
+ osMutexRelease(socket_manage.mutex);
+ return rc; 
 }
 /* 函数名：socket_free_gsm_handle
 *  功能：  gsm句柄释放
@@ -443,13 +516,21 @@ static int socket_malloc_gsm_handle()
 */ 
 static int socket_free_gsm_handle(int handle)
 {
- for(uint8_t i = 0;i < GSM_HANDLE_MAX; i++){
- if(socket_gsm_handle[i].value == handle && socket_gsm_handle[i].alive == true){
-  socket_gsm_handle[i].alive = false;      
-  return 0;
+ int rc;
+ osMutexWait(socket_manage.mutex,osWaitForever);
+ 
+ for(uint8_t i = 0;i < SOCKET_GSM_HANDLE_MAX; i++){
+ if(socket_manage.gsm.handle[i].value == handle && socket_manage.gsm.handle[i].alive == true){
+  socket_manage.gsm.handle[i].alive = false;      
+  rc = 0;
+  goto exit;
  }
-}
-return -1;
+ }
+ rc = -1;
+ log_error("gsm free handle:%d invalid.\r\n",handle); 
+exit:
+ osMutexRelease(socket_manage.mutex); 
+ return rc;
 }
 /* 函数名：socket_buffer_init
 *  功能：  socket接收缓存初始化
@@ -470,15 +551,22 @@ static int socket_buffer_init()
 */ 
 static int socket_malloc_buffer(int handle)
 {
+  int rc;
+  osMutexWait(socket_manage.mutex,osWaitForever);
+ 
   for(uint8_t i = 0; i< BUFFER_CNT; i++){
     if( socket_manage.buffer[i].valid == false){
     socket_manage.buffer[i].socket = handle;
     socket_manage.buffer[i].valid = true;
-    return 0; 
+    rc = 0; 
+    goto exit;
     }
   }
-  
-  return -1;  
+  rc = -1;
+  log_error("gsm malloc buffer handle:%d fail no more valid buffer.\r\n",handle);  
+exit:
+ osMutexRelease(socket_manage.mutex); 
+ return rc;   
 }
 /* 函数名：socket_free_buffer
 *  功能：  释放socket接收缓存
@@ -487,16 +575,23 @@ static int socket_malloc_buffer(int handle)
 */ 
 static int socket_free_buffer(int handle)
 {
+  int rc;
+  osMutexWait(socket_manage.mutex,osWaitForever);
+  
   for(uint8_t i = 0; i< BUFFER_CNT; i++){
     if(socket_manage.buffer[i].socket == handle && socket_manage.buffer[i].valid == true){
     socket_manage.buffer[i].valid = false; 
     socket_manage.buffer[i].socket = 0;
     socket_manage.buffer[i].read = socket_manage.buffer[i].write;
-    return 0; 
+    rc = 0; 
+    goto exit;
     }
   }
-  log_error("can not free buffer.handle:%d \r\n",handle);
-  return -1;  
+  rc = -1;
+  log_error("gsm free buffer handle:%d invalid.\r\n",handle);
+exit:
+ osMutexRelease(socket_manage.mutex); 
+ return rc;   
 }
 
 

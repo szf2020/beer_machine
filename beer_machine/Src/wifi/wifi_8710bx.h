@@ -158,7 +158,7 @@ int8_t cnt;
 
 
 /*wifi 8710bx串口外设初始化*/
-int wifi_8710bx_hal_init();
+int wifi_8710bx_serial_hal_init();
 
 /* 函数名：wifi_8710bx_reset
 *  功能：  wifi软件复位 

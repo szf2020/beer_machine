@@ -27,41 +27,45 @@ typedef enum
 }socket_status_t;
 
 
+/* 函数名：函数名：socket_module_wifi_reset
+*  功能：  复位WiFi
+*  返回：  0  成功 其他：失败
+*/ 
+int socket_module_wifi_reset();
 
-/* 函数名：socket_config_wifi
+/* 函数名：socket_module_config_wifi
 *  功能：  配置wifi 连接的ssid和密码
 *  参数：  ssid 热点名称
 *  参数：  passwd 密码 
 *  返回：  0：成功 其他：失败
 */
-int socket_config_wifi(const char *ssid,const char *passwd);
+int socket_module_config_wifi(const char *ssid,const char *passwd);
 
 
-/* 函数名：函数名：socket_query_wifi_status
-*  功能：  询问WiFi是否就绪
+/* 函数名：函数名：socket_module_query_wifi_status
+*  功能：  询问WiFi状态
 *  参数：  wifi_level wifi强度 
 *  返回：  0  成功 其他：失败
 */ 
-int socket_query_wifi_status(int *wifi_level);
+int socket_module_query_wifi_status(int *wifi_level);
 
-/* 函数名：函数名：socket_query_gsm_status
+
+
+/* 函数名：函数名：socket_module_gsm_reset
+*  功能：  复位WiFi
+*  返回：  0  成功 其他：失败
+*/ 
+int socket_module_gsm_reset();
+
+
+/* 函数名：函数名：socket_module_query_gsm_status
 *  功能：  询问gsm是否就绪
 *  参数：  lac 基站代码
 *  参数：  ci  小区代码
 *  返回：  0 成功 其他：失败
 */ 
-int socket_query_gsm_status(char *lac,char *ci);
+int socket_module_query_gsm_status(char *lac,char *ci);
 
-/* 函数名：函数名：socket_wifi_reset
-*  功能：  复位WiFi
-*  返回：  0  成功 其他：失败
-*/ 
-int socket_wifi_reset();
-/* 函数名：函数名：socket_gsm_reset
-*  功能：  复位WiFi
-*  返回：  0  成功 其他：失败
-*/ 
-int socket_gsm_reset();
 
 /* 函数名：socket_init
 *  功能：  网络连接初始化

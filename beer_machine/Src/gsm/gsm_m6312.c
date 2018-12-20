@@ -331,7 +331,7 @@ static int gsm_m6312_cmd_check_response(const char *rsp,uint16_t size,gsm_m6312_
     char *check_pos;
     
     /*接受完一帧数据标志*/
-    log_warning("**\r\n");
+    //log_warning("**\r\n");
 
     err_node = err_head;
     while(err_node){
@@ -369,7 +369,7 @@ static int gsm_m6312_at_cmd_excute(gsm_m6312_at_cmd_t *at_cmd)
     }
     
     /*发送完一帧数据的标志*/
-    log_warning("++\r\n");
+    //log_warning("++\r\n");
     /*清空数据*/
     serial_flush(gsm_m6312_serial_handle);
  

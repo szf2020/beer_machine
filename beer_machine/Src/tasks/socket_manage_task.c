@@ -19,12 +19,15 @@ osMessageQId socket_manage_task_msg_q_id;
 static osTimerId    wifi_query_timer_id;
 static osTimerId    gsm_query_timer_id;
 
-#define  SOCKET_MANAGE_TASK_NET_ERR_CNT      5
-
-
 
 #define  SOCKET_MANAGE_TASK_QUERY_WIFI_TIMEOUT    4000
 #define  SOCKET_MANAGE_TASK_QUERY_GSM_TIMEOUT     4000
+
+static char lac[8];
+static char ci[8];
+#define  SOCKET_MANAGE_TASK_ERR_CNT_MAX          10
+#define  SSID                                    "wkxboot"
+#define  PASSWD                                  "wkxboot6666"
 
 static void wifi_query_timer_init(void);
 static void wifi_query_timer_start(void);
@@ -86,10 +89,6 @@ static void gsm_query_timer_expired(void const *argument)
 osMessagePut(socket_manage_task_msg_q_id,SOCKET_MANAGE_TASK_MSG_QUERY_GSM_STATUS,0);
 }
 
-char lac[8];
-char ci[8];
-#define  SOCKET_MANAGE_TASK_ERR_CNT_MAX      10
-
 void socket_manage_task(void const *argument)
 {
  int rc;
@@ -101,9 +100,16 @@ void socket_manage_task(void const *argument)
  socket_manage_task_msg_t msg;
  display_task_msg_t display_msg;
 
- 
+ /*上电处理流程*/
  /*网络连接初始化*/
  socket_init();
+ /*wifi 复位*/
+ socket_module_wifi_reset();
+ /*gsm 复位*/
+ socket_module_gsm_reset();
+  /*配置wifi网路*/
+ socket_module_config_wifi(SSID,PASSWD);
+ 
  /*等待任务同步*/
  xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_NET_MANAGE_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
  log_debug("net manage task sync ok.\r\n");
@@ -116,20 +122,20 @@ void socket_manage_task(void const *argument)
  wifi_err_cnt = 0;
  gsm_err_cnt = 0;
  
- while(1){
- os_event = osMessageGet(socket_manage_task_msg_q_id,osWaitForever);
- if(os_event.status == osEventMessage){
- msg = (socket_manage_task_msg_t)os_event.value.v; 
+  while(1){
+  os_event = osMessageGet(socket_manage_task_msg_q_id,osWaitForever);
+  if(os_event.status == osEventMessage){
+  msg = (socket_manage_task_msg_t)os_event.value.v; 
  
  
   /*如果收到检查WIFI网络状态*/
   if(msg == SOCKET_MANAGE_TASK_MSG_QUERY_WIFI_STATUS){ 
-  rc = socket_query_wifi_status(&wifi_level);
+  rc = socket_module_query_wifi_status(&wifi_level);
   if(rc != 0){
   wifi_err_cnt ++;
   if(wifi_err_cnt > SOCKET_MANAGE_TASK_ERR_CNT_MAX){
   wifi_err_cnt = 0;
-  socket_wifi_reset();  
+  socket_module_wifi_reset();  
   }
   }else{
   wifi_err_cnt = 0;
@@ -155,12 +161,12 @@ void socket_manage_task(void const *argument)
   
   /*如果收到检查GSM网络状态*/
   if(msg == SOCKET_MANAGE_TASK_MSG_QUERY_GSM_STATUS){ 
-  rc = socket_query_gsm_status(lac,ci);
+  rc = socket_module_query_gsm_status(lac,ci);
   if(rc != 0){
   gsm_err_cnt ++;
   if(gsm_err_cnt >= SOCKET_MANAGE_TASK_ERR_CNT_MAX){
   gsm_err_cnt = 0;
-  socket_gsm_reset();  
+  socket_module_gsm_reset();  
   }
   }else{
   gsm_err_cnt = 0;

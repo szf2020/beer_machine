@@ -1,5 +1,6 @@
 #include "cmsis_os.h"
 #include "tasks_init.h"
+#include "stdio.h"
 #include "adc_task.h"
 #include "alarm_task.h"
 #include "compressor_task.h"
@@ -23,6 +24,10 @@ static int16_t const t_r_map[][2]={
   {38,1156}  ,{39,1110}  ,{40,1067}  ,{41,1025} ,{42,985} ,{43,947} ,{44,911} ,{45,876} ,{46,843} ,{47,811}  ,
   {48,781}   ,{49,752}   ,{50,724}   ,{51,697}  ,{52,672} ,{53,647} ,{54,624} ,{55,602} ,{56,580} ,{57,559}
 };
+#define  HIGH_ERR_R        11577
+#define  LOW_ERR_R         580
+#define  TR_MAP_IDX_MIN    0
+#define  TR_MAP_IDX_MAX    68
 
 typedef struct
 {
@@ -42,6 +47,41 @@ static uint32_t get_r(uint16_t adc)
  t_sensor_r = (TEMPERATURE_SENSOR_SUPPLY_VOLTAGE*TEMPERATURE_SENSOR_ADC_VALUE_MAX*TEMPERATURE_SENSOR_BYPASS_RES_VALUE)/(adc*TEMPERATURE_SENSOR_REFERENCE_VOLTAGE)-TEMPERATURE_SENSOR_BYPASS_RES_VALUE;
  return (uint32_t)t_sensor_r;
 }
+/*获取浮点温度值*/
+static float get_fine_t(uint32_t r,uint8_t idx)
+{
+uint32_t r1,r2;
+
+float t;
+char t_str[6];
+
+r1 = t_r_map[idx][1];
+r2 = t_r_map[idx + 1][1];
+
+t = t_r_map[idx][0] + (r1 - r) * 1.0 /(r1 - r2) + TEMPERATURE_COMPENSATION_VALUE;
+
+snprintf(t_str,6,"%4f",t);
+log_debug("temperature: %s C.\r\n",t_str);
+(void)t_str;
+
+return t;  
+}
+/*获取四舍五入整数温度值*/
+static int16_t get_approximate_t(float t_float)
+{
+int16_t t;
+
+t = (int16_t)t_float;
+t_float -= t;
+if(t_float >= 0.5){
+t +=1; 
+} 
+  
+return t;  
+}
+
+
+
 
 int16_t get_t(uint16_t adc)
 {
@@ -55,11 +95,11 @@ int16_t get_t(uint16_t adc)
  }
  r=get_r(adc);
  
- if(r < t_r_map[TR_MAP_IDX_MAX][1]){
- log_error("NTC 阻值超过最高温度范围！r=%d\r\n",r); 
+ if(r <= LOW_ERR_R){
+ log_error("NTC 低过最高温度阻值！r=%d\r\n",r); 
  return TEMPERATURE_ERR_VALUE_SENSOR;
- }else if(r >= t_r_map[TR_MAP_IDX_MIN][1]){
- log_error("NTC 阻值超过最低温度范围！r=%d\r\n",r); 
+ }else if(r >= HIGH_ERR_R){
+ log_error("NTC 高过最低温度阻值！r=%d\r\n",r); 
  return TEMPERATURE_ERR_VALUE_SENSOR;
  }
  
@@ -67,15 +107,15 @@ int16_t get_t(uint16_t adc)
  mid = (low + high) / 2;  
  if(r > t_r_map[mid][1]){
  if(r <= t_r_map[mid-1][1]){
- /*返回带有温度补偿值的温度*/
- return t_r_map[mid - 1][0] + TEMPERATURE_COMPENSATION_VALUE;
+ /*返回指定精度的温度*/
+ return get_approximate_t(get_fine_t(r, mid - 1));
  }else{
  high = mid - 1;  
  }
  }else{
  if(r > t_r_map[mid+1][1]){
  /*返回带有温度补偿值的温度*/
- return t_r_map[mid][0] + TEMPERATURE_COMPENSATION_VALUE;
+ return get_approximate_t(get_fine_t(r, mid));
  } else{
  low = mid + 1;   
  }
@@ -89,7 +129,7 @@ int16_t get_t(uint16_t adc)
 void temperature_task(void const *argument)
 {
   uint16_t bypass_r_adc;
-  int16_t   t;
+  int16_t  t;
   
   osEvent  os_msg;
   osStatus status;
@@ -113,10 +153,17 @@ void temperature_task(void const *argument)
   /*温度ADC转换完成消息处理*/
   if(msg.type == TEMPERATURE_TASK_MSG_ADC_COMPLETED){
    bypass_r_adc = msg.value;
-   t = get_t(bypass_r_adc);  
+   t = (int16_t)get_t(bypass_r_adc);  
+   /*判断是否在报警范围*/ 
+   if(t != TEMPERATURE_ERR_VALUE_SENSOR){
+   if(t > TEMPERATURE_ALARM_VALUE_MAX || t < TEMPERATURE_ALARM_VALUE_MIN){
+   t = TEMPERATURE_ERR_VALUE_SENSOR;  
+   }     
+   }
+   
    if(t == temperature.value){
    continue;  
-   }
+   } 
    if(t == TEMPERATURE_ERR_VALUE_SENSOR){
    temperature.dir = 0;
    temperature.value = t;
