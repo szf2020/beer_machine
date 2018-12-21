@@ -259,7 +259,8 @@ void compressor_task(void const *argument)
   /*缓存温度值*/
   compressor.temperature = msg.value; 
   /*温度错误处理*/
-  if(compressor.temperature == TEMPERATURE_ERR_VALUE_SENSOR && compressor.status == COMPRESSOR_STATUS_WORK){
+  if(compressor.temperature == TEMPERATURE_ERR_VALUE_SENSOR){
+  if(compressor.status == COMPRESSOR_STATUS_WORK){
   /*温度异常时，如果在工作,就变更为wait continue状态*/
   compressor.status = COMPRESSOR_STATUS_WAIT_CONTINUE;
   log_warning("温度错误.code:%d.\r\n",compressor.temperature); 
@@ -271,6 +272,7 @@ void compressor_task(void const *argument)
   compressor_work_timer_stop();
   /*打开等待定时器*/ 
   compressor_wait_timer_start();  
+  }
   }else if(compressor.temperature <= compressor.temperature_stop  && compressor.status == COMPRESSOR_STATUS_WORK){
   log_debug("温度:%d 低于关机温度.\r\n",compressor.temperature);
   compressor.status = COMPRESSOR_STATUS_WAIT;
