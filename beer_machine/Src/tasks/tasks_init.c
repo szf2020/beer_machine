@@ -7,6 +7,7 @@
 #include "pressure_task.h"
 #include "socket_manage_task.h"
 #include "temperature_task.h"
+#include "CJSON.h"
 #include "log.h"
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
 #define  LOG_MODULE_NAME     "[init]"
@@ -47,7 +48,6 @@ int tasks_init(void)
  osMessageQDef(temperature_msg_q,6,uint32_t);
  temperature_task_msg_q_id = osMessageCreate(osMessageQ(temperature_msg_q),temperature_task_handle);
  log_assert(temperature_task_msg_q_id);
- 
- 
+
  return 0;
 }

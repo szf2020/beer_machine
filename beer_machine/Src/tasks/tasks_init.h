@@ -13,8 +13,8 @@ int tasks_init(void);
 
 
 
-#define  TASKS_SYNC_EVENT_HTTP_POST_TASK_RDY            (1<<0)
-#define  TASKS_SYNC_EVENT_NET_MANAGE_TASK_RDY           (1<<1)
+#define  TASKS_SYNC_EVENT_REPORT_TASK_RDY               (1<<0)
+#define  TASKS_SYNC_EVENT_SOCKET_MANAGE_TASK_RDY        (1<<1)
 #define  TASKS_SYNC_EVENT_ALARM_TASK_RDY                (1<<2)
 #define  TASKS_SYNC_EVENT_TEMPERATURE_TASK_RDY          (1<<3)
 #define  TASKS_SYNC_EVENT_ADC_TASK_RDY                  (1<<4)

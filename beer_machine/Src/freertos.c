@@ -66,7 +66,7 @@
 #include "display_task.h"
 #include "capacity_task.h"
 #include "socket_manage_task.h"
-#include "http_post_task.h"
+#include "report_task.h"
 
 #include "log.h"
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
@@ -206,8 +206,8 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(socket_manage_task, socket_manage_task, osPriorityNormal, 0, 300);
   socket_manage_task_handle = osThreadCreate(osThread(socket_manage_task), NULL);
   
-  osThreadDef(http_post_task, http_post_task, osPriorityNormal, 0, 1200);
-  http_post_task_handle = osThreadCreate(osThread(http_post_task), NULL);
+  osThreadDef(report_task, report_task, osPriorityNormal, 0, 1200);
+  report_task_handle = osThreadCreate(osThread(report_task), NULL);
   
   /* USER CODE END RTOS_THREADS */
 

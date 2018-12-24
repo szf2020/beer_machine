@@ -4,7 +4,7 @@
 #include "string.h"
 #include "socket.h"
 #include "socket_manage_task.h"
-#include "http_post_task.h"
+#include "report_task.h"
 #include "display_task.h"
 #include "tasks_init.h"
 #include "log.h"
@@ -111,7 +111,7 @@ void socket_manage_task(void const *argument)
  socket_module_config_wifi(SSID,PASSWD);
  
  /*等待任务同步*/
- xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_NET_MANAGE_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
+ xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_SOCKET_MANAGE_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
  log_debug("net manage task sync ok.\r\n");
 
  

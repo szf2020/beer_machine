@@ -85,11 +85,6 @@ return -1;
 return 0;
 }
  
-typedef struct
-{
-const char *name;
-const char *value;
-}form_data_t;
 
 /* 函数名：utils_build_form_data
 *  功能：  构造form-data格式数据

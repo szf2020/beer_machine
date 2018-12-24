@@ -1,9 +1,11 @@
 #include "cmsis_os.h"
+#include "stdio.h"
 #include "serial.h"
 #include "tasks_init.h"
 #include "alarm_task.h"
 #include "pressure_task.h"
 #include "display_task.h"
+#include "report_task.h"
 #include "capacity_task.h"
 #include "log.h"
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
@@ -19,7 +21,7 @@ extern serial_hal_driver_t capacity_serial_driver;
 typedef struct
 {
 uint16_t high;
-float    value;
+uint8_t  value;
 int8_t   dir;
 uint8_t  err_cnt;
 bool     alarm;
@@ -109,9 +111,12 @@ void capacity_task(void const *argument)
 {
   osStatus status;
   uint16_t high;
-
-  display_task_msg_t  display_msg;
-  alarm_task_msg_t    alarm_msg; 
+  float    capacity;
+  char     capacity_str[4];
+  uint16_t int_capacity;
+  display_task_msg_t    display_msg;
+  alarm_task_msg_t      alarm_msg; 
+  report_task_msg_t     report_msg;
 
   /*串口驱动初始化*/
   capacity_serial_hal_init();
@@ -148,9 +153,18 @@ void capacity_task(void const *argument)
   /*容量传感器无异常关闭报警*/
   beer_capacity.alarm = false;
   beer_capacity.high = high;
-  beer_capacity.value = beer_capacity.high * S / 1000000.0 ;/*单位L*/   
+  capacity = beer_capacity.high * S / 1000000.0 ;/*单位L*/ 
+  if(capacity > 20.0 || capacity < 0){
+  capacity = 20.0;  
+  }
+  snprintf(capacity_str,4,"%3f",capacity);
+  log_debug("capacity value:%s\r\n",capacity_str);
+  int_capacity = (uint8_t)capacity;
+  int_capacity += capacity - int_capacity >= 0.5 ? 1 : 0;
+  beer_capacity.value = int_capacity;
+
   /*如果低于警告值就打开闪烁*/
-  if((uint8_t)beer_capacity.value <= CAPACITY_TASK_CAPACITY_BLINK_VALUE ){
+  if(beer_capacity.value <= CAPACITY_TASK_CAPACITY_BLINK_VALUE ){
   beer_capacity.blink = true;
   /*如果高于警告值就关闭闪烁*/
   }else {
@@ -163,7 +177,7 @@ void capacity_task(void const *argument)
   beer_capacity.change = false;
   /*发送显示消息*/
   display_msg.type = DISPLAY_TASK_MSG_CAPACITY;
-  display_msg.value = (uint16_t)beer_capacity.value;  
+  display_msg.value = beer_capacity.value;  
   display_msg.blink = beer_capacity.blink;  
   status = osMessagePut(display_task_msg_q_id,*(uint32_t*)&display_msg,CAPACITY_TASK_PUT_MSG_TIMEOUT);
   if(status != osOK){
@@ -174,7 +188,7 @@ void capacity_task(void const *argument)
   if(beer_capacity.value ==  CAPACITY_TASK_ERR_VALUE){
   display_msg.value = 5;  
   }else{
-  display_msg.value = (uint16_t)beer_capacity.value / 4;    
+  display_msg.value = beer_capacity.value / 4;    
   }
   display_msg.blink = beer_capacity.blink;  
   status = osMessagePut(display_task_msg_q_id,*(uint32_t*)&display_msg,CAPACITY_TASK_PUT_MSG_TIMEOUT);
@@ -185,11 +199,20 @@ void capacity_task(void const *argument)
   
   /*发送报警消息*/   
   alarm_msg.type = ALARM_TASK_MSG_CAPACITY;
-  alarm_msg.alarm = (uint16_t)beer_capacity.alarm;  
+  alarm_msg.alarm = beer_capacity.alarm;  
   status = osMessagePut(alarm_task_msg_q_id,*(uint32_t*)&alarm_msg,CAPACITY_TASK_PUT_MSG_TIMEOUT);
   if(status != osOK){
   log_error("capacity put alarm task msg err:%d.\r\n",status);
-  } 
+  }
+  
+  /*发送上报消息*/   
+  report_msg.type = REPORT_TASK_MSG_CAPACITY;
+  report_msg.capacity = beer_capacity.value;  
+  status = osMessagePut(report_task_msg_q_id,*(uint32_t*)&report_msg,CAPACITY_TASK_PUT_MSG_TIMEOUT);
+  if(status != osOK){
+  log_error("capacity put report task msg err:%d.\r\n",status);
+  }
+  
 
   }  
   }

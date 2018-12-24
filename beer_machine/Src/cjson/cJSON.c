@@ -34,7 +34,7 @@
 #endif
 
 #include "cJSON.h"
-
+#include "cmsis_os.h"
 /* define our own boolean type */
 #define true ((cJSON_bool)1)
 #define false ((cJSON_bool)0)
@@ -103,9 +103,9 @@ typedef struct internal_hooks
 } internal_hooks;
 
 
-#define internal_malloc malloc
-#define internal_free free
-#define internal_realloc realloc
+#define internal_malloc            pvPortMalloc
+#define internal_free              vPortFree
+#define internal_realloc           NULL  
 
 static internal_hooks global_hooks = { internal_malloc, internal_free, internal_realloc };
 
