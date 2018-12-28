@@ -26,6 +26,18 @@ typedef enum
  SOCKET_STATUS_NOT_READY
 }socket_status_t;
 
+typedef struct
+{
+char lac[8];
+char ci[8];
+char rssi[8];
+}socket_base_t;
+
+typedef struct
+{
+socket_base_t base[4];
+}socket_location_t;
+
 
 /* 函数名：函数名：socket_module_wifi_reset
 *  功能：  复位WiFi
@@ -64,7 +76,7 @@ int socket_module_gsm_reset();
 *  参数：  ci  小区代码
 *  返回：  0 成功 其他：失败
 */ 
-int socket_module_query_gsm_status(char *lac,char *ci);
+int socket_module_query_gsm_status(socket_location_t *location);
 
 
 /* 函数名：socket_init

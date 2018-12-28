@@ -168,13 +168,20 @@ typedef struct
 {
 char lac[7];
 char ci[7];
-}gsm_m6312_location_t;
+char rssi[3];
+}gsm_m6312_base_t;
+
+typedef struct
+{
+gsm_m6312_base_t base[3];
+}gsm_m6312_assist_base_t;
 
 typedef enum
 {
 GSM_M6312_STATUS_REGISTER,
 GSM_M6312_STATUS_NO_REGISTER
 }gsm_m6312_reg_status_t;
+
 typedef enum
 {
  GSM_M6312_REG_ECHO_OFF,
@@ -183,7 +190,7 @@ typedef enum
 
 typedef struct
 {
- gsm_m6312_location_t location;
+ gsm_m6312_base_t base;
  gsm_m6312_reg_status_t status;
 }gsm_m6312_register_t;
 
@@ -224,6 +231,21 @@ int gsm_m6312_set_reg_echo(gsm_m6312_reg_echo_t reg_echo);
 *  返回：  GSM_ERR_OK：成功 其他：失败
 */
 int gsm_m6312_get_sim_card_status(sim_card_status_t *sim_status);
+
+ /* 函数名：gsm_m6312_get_rssi
+*  功能：  获取当前基站信号强度
+*  参数：  rssi指针 
+*  返回：  GSM_ERR_OK：成功 其他：失败
+*/
+int gsm_m6312_get_rssi(char *rssi);
+
+/* 函数名：gsm_m6312_get_assist_base_info
+*  功能：  获取辅助基站信息
+*  参数：  assist_base辅助基站指针 
+*  返回：  GSM_ERR_OK：成功 其他：失败
+*/
+int gsm_m6312_get_assist_base_info(gsm_m6312_assist_base_t *assist_base);
+
 /* 函数名：gsm_m6312_get_sim_card_id
 *  功能：  获取 sim card id
 *  参数：  sim_id 指针 

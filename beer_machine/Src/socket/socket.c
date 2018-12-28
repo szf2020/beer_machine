@@ -288,20 +288,20 @@ err_exit:
 }
 
 /* 函数名：函数名：socket_module_query_gsm_status
-*  功能：  询问gsm是否就绪
-*  参数：  lac 基站代码
-*  参数：  ci  小区代码
+*  功能：  询问gsm是否就绪包括位置信息等
+*  参数：  location位置信息指针
 *  返回：  0 成功 其他：失败
 */ 
-int socket_module_query_gsm_status(char *lac,char *ci)
+int socket_module_query_gsm_status(socket_location_t *location)
 {
  int rc;
  sim_card_status_t sim_card_status;
  gsm_m6312_register_t register_info;
+ gsm_m6312_assist_base_t assist_base;
  
  /*默认为空*/
- lac[0] = '\0';
- ci[0] = '\0';
+ memset(location,0,sizeof(socket_location_t));
+ 
  /*获取sim卡状态*/
  rc = gsm_m6312_get_sim_card_status(&sim_card_status);
  if(rc != 0){
@@ -336,8 +336,23 @@ int socket_module_query_gsm_status(char *lac,char *ci)
  return 0;
  }
  /*注册后就有位置信息*/
- strcpy(lac,register_info.location.lac);
- strcpy(ci,register_info.location.ci);
+ strcpy(location->base[0].lac,register_info.base.lac);
+ strcpy(location->base[0].ci,register_info.base.ci);
+ /*获取主机站信号强度信息*/
+ rc = gsm_m6312_get_rssi(location->base[0].rssi);
+ if(rc != 0){
+ goto err_exit; 
+ }
+ /*获取辅助基站信息*/
+ rc = gsm_m6312_get_assist_base_info(&assist_base);
+ if(rc != 0){
+ goto err_exit; 
+ }
+ for(uint8_t i = 0 ;i < 3 ;i++){
+ strcpy(location->base[i + 1].lac,assist_base.base[i].lac);
+ strcpy(location->base[i + 1].ci,assist_base.base[i].ci);
+ strcpy(location->base[i + 1].rssi,assist_base.base[i].rssi);
+ }
  
  /*gsm模块gprs参数初始化*/  
  if(socket_manage.gsm.gprs_initialized == false){

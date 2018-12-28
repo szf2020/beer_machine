@@ -206,7 +206,7 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(socket_manage_task, socket_manage_task, osPriorityNormal, 0, 300);
   socket_manage_task_handle = osThreadCreate(osThread(socket_manage_task), NULL);
   
-  osThreadDef(report_task, report_task, osPriorityNormal, 0, 1200);
+  osThreadDef(report_task, report_task, osPriorityNormal, 0, 600);
   report_task_handle = osThreadCreate(osThread(report_task), NULL);
   
   /* USER CODE END RTOS_THREADS */

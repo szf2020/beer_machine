@@ -19,15 +19,15 @@ osMessageQId socket_manage_task_msg_q_id;
 static osTimerId    wifi_query_timer_id;
 static osTimerId    gsm_query_timer_id;
 
+socket_location_t location;
 
-#define  SOCKET_MANAGE_TASK_QUERY_WIFI_TIMEOUT    4000
-#define  SOCKET_MANAGE_TASK_QUERY_GSM_TIMEOUT     4000
+#define  SOCKET_MANAGE_TASK_QUERY_WIFI_TIMEOUT    10000
+#define  SOCKET_MANAGE_TASK_QUERY_GSM_TIMEOUT     10000
 
-static char lac[8];
-static char ci[8];
-#define  SOCKET_MANAGE_TASK_ERR_CNT_MAX          10
-#define  SSID                                    "wkxboot"
-#define  PASSWD                                  "wkxboot6666"
+
+#define  SOCKET_MANAGE_TASK_ERR_CNT_MAX           10
+#define  SSID                                     "wkxboot"
+#define  PASSWD                                   "wkxboot6666"
 
 static void wifi_query_timer_init(void);
 static void wifi_query_timer_start(void);
@@ -102,11 +102,23 @@ void socket_manage_task(void const *argument)
 
  /*上电处理流程*/
  /*网络连接初始化*/
- socket_init();
+ rc = socket_init();
+ log_assert(rc != 0);
  /*wifi 复位*/
- socket_module_wifi_reset();
+wifi_reset:
+ rc = socket_module_wifi_reset();
+ if(rc != 0){
+    osDelay(1000);  
+    goto wifi_reset;
+ }
  /*gsm 复位*/
- socket_module_gsm_reset();
+gsm_reset:
+ rc = socket_module_gsm_reset();
+ if(rc != 0){
+    osDelay(5000);
+    goto gsm_reset;
+ }
+ 
   /*配置wifi网路*/
  socket_module_config_wifi(SSID,PASSWD);
  
@@ -161,7 +173,7 @@ void socket_manage_task(void const *argument)
   
   /*如果收到检查GSM网络状态*/
   if(msg == SOCKET_MANAGE_TASK_MSG_QUERY_GSM_STATUS){ 
-  rc = socket_module_query_gsm_status(lac,ci);
+  rc = socket_module_query_gsm_status(&location);
   if(rc != 0){
   gsm_err_cnt ++;
   if(gsm_err_cnt >= SOCKET_MANAGE_TASK_ERR_CNT_MAX){

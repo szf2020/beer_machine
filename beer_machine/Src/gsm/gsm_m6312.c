@@ -488,7 +488,168 @@ int gsm_m6312_get_sim_card_id(char *sim_id)
  osMutexRelease(gsm_mutex);
  return rc;
 }
+
+/* 函数名：gsm_m6312_get_rssi
+*  功能：  获取当前基站信号强度
+*  参数：  rssi指针 
+*  返回：  GSM_ERR_OK：成功 其他：失败
+*/
+int gsm_m6312_get_rssi(char *rssi)
+{
+ int rc;
+ char *rssi_str,*break_str;
+ gsm_m6312_err_code_t ok,err;
  
+ osMutexWait(gsm_mutex,osWaitForever);
+ 
+ memset(&gsm_cmd,0,sizeof(gsm_cmd));
+ strcpy(gsm_cmd.send,"AT+CSQ\r\n");
+ gsm_cmd.send_size = strlen(gsm_cmd.send);
+ gsm_cmd.send_timeout = 5;
+ gsm_cmd.recv_timeout = 1000;
+ ok.str = "OK\r\n";
+ ok.code = GSM_ERR_OK;
+ ok.next = NULL;
+ err.str = "ERROR";
+ err.code = GSM_ERR_CMD_ERR;
+ err.next = NULL;
+ 
+ gsm_m6312_err_code_add(&gsm_cmd.err_head,&ok);
+ gsm_m6312_err_code_add(&gsm_cmd.err_head,&err);
+ 
+ rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
+
+ if(rc == GSM_ERR_OK){ 
+ rc = GSM_ERR_UNKNOW;   
+ rssi_str = strstr(gsm_cmd.recv,"+CSQ: ");
+ if(rssi_str){
+ rssi_str +=strlen("+CSQ: ");
+ break_str = strstr(rssi_str ,",");
+ if(break_str){
+ memcpy(rssi,rssi_str,break_str - rssi_str);
+ rssi[break_str - rssi_str] = '\0';
+ }
+ }
+ }
+ 
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
+ osMutexRelease(gsm_mutex);
+ return rc;
+}
+
+/*查找指定位置和指定字符后的地址*/
+static int gsm_m6312_get_str_addr(char *buffer,const char *flag,const uint8_t num,char **addr)
+{
+ uint8_t cnt = 0;
+ uint16_t flag_size;
+ 
+ char *search,*temp;
+ 
+ temp = buffer;
+ flag_size = strlen(flag);
+ 
+ while(cnt < num ){
+ search = strstr(temp,flag);
+ if(search == NULL){
+   return -1;
+ }
+ temp = search + flag_size;
+ cnt ++;
+ }
+ *addr = search;
+ return 0; 
+}
+
+/*查找指定位置和指定字符串后面的字符串*/
+static int gsm_m6312_get_str(char *buffer,char *dst,const char *flag,const uint8_t num)
+{
+ int rc;
+ uint16_t flag_size;
+ 
+ char *addr_start,*addr_end;
+ flag_size = strlen(flag);
+ 
+ rc = gsm_m6312_get_str_addr(buffer,flag,num,&addr_start);
+ if(rc != 0){
+    return -1;
+ }
+ addr_start += flag_size;
+ rc = gsm_m6312_get_str_addr(buffer,flag,num + 1,&addr_end);
+ if(rc != 0){
+    return -1;
+ }
+ memcpy(dst,addr_start,addr_end - addr_start);
+ dst[addr_end - addr_start] = '\0';
+ 
+ return 0; 
+}
+
+
+/* 函数名：gsm_m6312_get_assist_base_info
+*  功能：  获取辅助基站信息
+*  参数：  assist_base辅助基站指针 
+*  返回：  GSM_ERR_OK：成功 其他：失败
+*/
+int gsm_m6312_get_assist_base_info(gsm_m6312_assist_base_t *assist_base)
+{
+ int rc;
+ int rc_search;
+ char *base_str;
+ gsm_m6312_err_code_t ok,err;
+ 
+ osMutexWait(gsm_mutex,osWaitForever);
+ 
+ memset(&gsm_cmd,0,sizeof(gsm_cmd));
+ strcpy(gsm_cmd.send,"AT+CCED=0,2\r\n");
+ gsm_cmd.send_size = strlen(gsm_cmd.send);
+ gsm_cmd.send_timeout = 5;
+ gsm_cmd.recv_timeout = 1000;
+ ok.str = "OK\r\n";
+ ok.code = GSM_ERR_OK;
+ ok.next = NULL;
+ err.str = "ERROR";
+ err.code = GSM_ERR_CMD_ERR;
+ err.next = NULL;
+ 
+ gsm_m6312_err_code_add(&gsm_cmd.err_head,&ok);
+ gsm_m6312_err_code_add(&gsm_cmd.err_head,&err);
+ 
+ rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
+
+ if(rc == GSM_ERR_OK){ 
+ rc_search = gsm_m6312_get_str_addr(gsm_cmd.recv,"+CCED:",1,&base_str);
+ if(rc_search != 0){
+   rc = GSM_ERR_UNKNOW;  
+   goto err_exit;
+ } 
+ 
+ for(uint8_t i =0 ;i < 3;i++){
+ rc_search = gsm_m6312_get_str(gsm_cmd.recv,assist_base->base[i].lac,",",2 + i * 6);
+ if(rc_search != 0){
+   rc = GSM_ERR_UNKNOW;  
+   goto err_exit;
+ } 
+ rc_search = gsm_m6312_get_str(gsm_cmd.recv,assist_base->base[i].ci,",",3 + i * 6);
+ if(rc_search != 0){
+   rc = GSM_ERR_UNKNOW;  
+   goto err_exit;
+ }
+ 
+ rc_search = gsm_m6312_get_str(gsm_cmd.recv,assist_base->base[i].rssi,",",5 + i * 6);
+ if(rc_search != 0){
+   rc = GSM_ERR_UNKNOW;  
+   goto err_exit;
+ } 
+ }
+ }
+ 
+
+err_exit: 
+ gsm_m6312_print_err_info(gsm_cmd.send,gsm_cmd.recv,rc);
+ osMutexRelease(gsm_mutex);
+ return rc;
+}
+
 /* 函数名：gsm_m6312_set_echo
 *  功能：  设置是否回显输入的命令
 *  参数：  echo 回显设置 
@@ -1206,8 +1367,8 @@ int gsm_m6312_get_reg_location(gsm_m6312_register_t *reg)
  log_error("gsm location format err.\r\n");
  goto err_exit;
  }
- memcpy(reg->location.lac,temp,6);
- reg->location.lac[6] = '\0';
+ memcpy(reg->base.lac,temp,6);
+ reg->base.lac[6] = '\0';
  /*找到第4个，*/
  temp = break_str + 1;
  break_str = strstr(temp,",");
@@ -1215,8 +1376,8 @@ int gsm_m6312_get_reg_location(gsm_m6312_register_t *reg)
  log_error("gsm location format err.\r\n");
  goto err_exit;
  }
- memcpy(reg->location.ci,temp,6);
- reg->location.ci[6] = '\0';
+ memcpy(reg->base.ci,temp,6);
+ reg->base.ci[6] = '\0';
  rc = GSM_ERR_OK;
  }
 

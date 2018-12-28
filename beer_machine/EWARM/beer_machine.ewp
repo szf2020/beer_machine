@@ -375,6 +375,9 @@
                     <state>$PROJ_DIR$/../Src/led</state>
                     <state>$PROJ_DIR$/../Src/utils</state>
                     <state>$PROJ_DIR$/../Src/tm1629a</state>
+                    <state>$PROJ_DIR$/../Src/bootloader_if</state>
+                    <state>$PROJ_DIR$/../Src/flash_utils</state>
+                    <state>$PROJ_DIR$/../Src/firmware_version</state>
                     <state>$PROJ_DIR$/../Src/cjson</state>
                 </option>
                 <option>
@@ -1086,6 +1089,12 @@
                 </file>
             </group>
             <group>
+                <name>bootloader_if</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Src\bootloader_if\bootloader_if.c</name>
+                </file>
+            </group>
+            <group>
                 <name>debug</name>
                 <group>
                     <name>cpu</name>
@@ -1111,6 +1120,12 @@
                         <name>$PROJ_DIR$\..\Src\debug\log\log.c</name>
                     </file>
                 </group>
+            </group>
+            <group>
+                <name>flash_utils</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Src\flash_utils\flash_utils.c</name>
+                </file>
             </group>
             <group>
                 <name>gsm</name>

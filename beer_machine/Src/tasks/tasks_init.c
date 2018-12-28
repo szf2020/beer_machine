@@ -7,7 +7,7 @@
 #include "pressure_task.h"
 #include "socket_manage_task.h"
 #include "temperature_task.h"
-#include "CJSON.h"
+#include "report_task.h"
 #include "log.h"
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
 #define  LOG_MODULE_NAME     "[init]"
@@ -48,6 +48,20 @@ int tasks_init(void)
  osMessageQDef(temperature_msg_q,6,uint32_t);
  temperature_task_msg_q_id = osMessageCreate(osMessageQ(temperature_msg_q),temperature_task_handle);
  log_assert(temperature_task_msg_q_id);
-
+ /*信息上报消息队列*/
+ osMessageQDef(report_task_msg_q,10,report_task_msg_t*);
+ report_task_msg_q_id = osMessageCreate(osMessageQ(report_task_msg_q),report_task_handle);
+ log_assert(report_task_msg_q_id); 
+ /*信息上报位置消息队列*/
+ osMessageQDef(report_task_location_msg_q,4,report_location_t*);
+ report_task_location_msg_q_id = osMessageCreate(osMessageQ(report_task_location_msg_q),report_task_handle);
+ log_assert(report_task_location_msg_q_id); 
+ 
+ /*信息上报位置消息队列*/
+ osMessageQDef(report_task_net_hal_info_msg_q,4,report_location_t*);
+ report_task_net_hal_info_msg_q_id = osMessageCreate(osMessageQ(report_task_net_hal_info_msg_q),report_task_handle);
+ log_assert(report_task_net_hal_info_msg_q_id); 
+ 
+ 
  return 0;
 }
