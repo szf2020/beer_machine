@@ -20,64 +20,6 @@ typedef struct
  uint16_t local_port;
 }socket_info_t;
 
-typedef enum
-{
- SOCKET_STATUS_READY = 1,
- SOCKET_STATUS_NOT_READY
-}socket_status_t;
-
-typedef struct
-{
-char lac[8];
-char ci[8];
-char rssi[8];
-}socket_base_t;
-
-typedef struct
-{
-socket_base_t base[4];
-}socket_location_t;
-
-
-/* 函数名：函数名：socket_module_wifi_reset
-*  功能：  复位WiFi
-*  返回：  0  成功 其他：失败
-*/ 
-int socket_module_wifi_reset();
-
-/* 函数名：socket_module_config_wifi
-*  功能：  配置wifi 连接的ssid和密码
-*  参数：  ssid 热点名称
-*  参数：  passwd 密码 
-*  返回：  0：成功 其他：失败
-*/
-int socket_module_config_wifi(const char *ssid,const char *passwd);
-
-
-/* 函数名：函数名：socket_module_query_wifi_status
-*  功能：  询问WiFi状态
-*  参数：  wifi_level wifi强度 
-*  返回：  0  成功 其他：失败
-*/ 
-int socket_module_query_wifi_status(int *wifi_level);
-
-
-
-/* 函数名：函数名：socket_module_gsm_reset
-*  功能：  复位WiFi
-*  返回：  0  成功 其他：失败
-*/ 
-int socket_module_gsm_reset();
-
-
-/* 函数名：函数名：socket_module_query_gsm_status
-*  功能：  询问gsm是否就绪
-*  参数：  lac 基站代码
-*  参数：  ci  小区代码
-*  返回：  0 成功 其他：失败
-*/ 
-int socket_module_query_gsm_status(socket_location_t *location);
-
 
 /* 函数名：socket_init
 *  功能：  网络连接初始化

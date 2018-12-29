@@ -17,6 +17,9 @@
 
 #define  GSM_M6312_IMEI_LEN                      15
 #define  GSM_M6312_SN_LEN                        20
+#define  GSM_M6312_SIM_ID_STR_LEN                20
+#define  GSM_M6312_LAC_STR_LEN                   8
+#define  GSM_M6312_CI_STR_LEN                    8
 
 #define  GSM_M6312_SEND_BUFFER_SIZE              2000
 #define  GSM_M6312_RECV_BUFFER_SIZE              2000

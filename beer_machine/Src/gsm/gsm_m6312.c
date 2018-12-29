@@ -1,5 +1,6 @@
 #include "beer_machine.h"
 #include "serial.h"
+#include "utils.h"
 #include "gsm_m6312.h"
 #include "cmsis_os.h"
 #include "log.h"
@@ -478,8 +479,8 @@ int gsm_m6312_get_sim_card_id(char *sim_id)
  if(rc == GSM_ERR_OK){ 
  ccid_str = strstr(gsm_cmd.recv,"+CCID: ");
  if(ccid_str){
- memcpy(sim_id,ccid_str + strlen("+CCID: "),20); 
- sim_id[20] = '\0';
+ memcpy(sim_id,ccid_str + strlen("+CCID: "),GSM_M6312_SIM_ID_STR_LEN); 
+ sim_id[GSM_M6312_SIM_ID_STR_LEN] = '\0';
  }else{
  rc = GSM_ERR_UNKNOW;   
  }
@@ -528,6 +529,7 @@ int gsm_m6312_get_rssi(char *rssi)
  if(break_str){
  memcpy(rssi,rssi_str,break_str - rssi_str);
  rssi[break_str - rssi_str] = '\0';
+ rc = GSM_ERR_OK;
  }
  }
  }
@@ -536,54 +538,6 @@ int gsm_m6312_get_rssi(char *rssi)
  osMutexRelease(gsm_mutex);
  return rc;
 }
-
-/*查找指定位置和指定字符后的地址*/
-static int gsm_m6312_get_str_addr(char *buffer,const char *flag,const uint8_t num,char **addr)
-{
- uint8_t cnt = 0;
- uint16_t flag_size;
- 
- char *search,*temp;
- 
- temp = buffer;
- flag_size = strlen(flag);
- 
- while(cnt < num ){
- search = strstr(temp,flag);
- if(search == NULL){
-   return -1;
- }
- temp = search + flag_size;
- cnt ++;
- }
- *addr = search;
- return 0; 
-}
-
-/*查找指定位置和指定字符串后面的字符串*/
-static int gsm_m6312_get_str(char *buffer,char *dst,const char *flag,const uint8_t num)
-{
- int rc;
- uint16_t flag_size;
- 
- char *addr_start,*addr_end;
- flag_size = strlen(flag);
- 
- rc = gsm_m6312_get_str_addr(buffer,flag,num,&addr_start);
- if(rc != 0){
-    return -1;
- }
- addr_start += flag_size;
- rc = gsm_m6312_get_str_addr(buffer,flag,num + 1,&addr_end);
- if(rc != 0){
-    return -1;
- }
- memcpy(dst,addr_start,addr_end - addr_start);
- dst[addr_end - addr_start] = '\0';
- 
- return 0; 
-}
-
 
 /* 函数名：gsm_m6312_get_assist_base_info
 *  功能：  获取辅助基站信息
@@ -617,25 +571,25 @@ int gsm_m6312_get_assist_base_info(gsm_m6312_assist_base_t *assist_base)
  rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
 
  if(rc == GSM_ERR_OK){ 
- rc_search = gsm_m6312_get_str_addr(gsm_cmd.recv,"+CCED:",1,&base_str);
+ rc_search = utils_get_str_addr(gsm_cmd.recv,"+CCED:",1,&base_str);
  if(rc_search != 0){
    rc = GSM_ERR_UNKNOW;  
    goto err_exit;
  } 
  
  for(uint8_t i =0 ;i < 3;i++){
- rc_search = gsm_m6312_get_str(gsm_cmd.recv,assist_base->base[i].lac,",",2 + i * 6);
+ rc_search = utils_get_str_value(gsm_cmd.recv,assist_base->base[i].lac,",",2 + i * 6);
  if(rc_search != 0){
    rc = GSM_ERR_UNKNOW;  
    goto err_exit;
  } 
- rc_search = gsm_m6312_get_str(gsm_cmd.recv,assist_base->base[i].ci,",",3 + i * 6);
+ rc_search = utils_get_str_value(gsm_cmd.recv,assist_base->base[i].ci,",",3 + i * 6);
  if(rc_search != 0){
    rc = GSM_ERR_UNKNOW;  
    goto err_exit;
  }
  
- rc_search = gsm_m6312_get_str(gsm_cmd.recv,assist_base->base[i].rssi,",",5 + i * 6);
+ rc_search = utils_get_str_value(gsm_cmd.recv,assist_base->base[i].rssi,",",5 + i * 6);
  if(rc_search != 0){
    rc = GSM_ERR_UNKNOW;  
    goto err_exit;

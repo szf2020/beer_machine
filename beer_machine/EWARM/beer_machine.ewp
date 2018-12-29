@@ -365,13 +365,14 @@
                     <state>$PROJ_DIR$/../Src/debug/log/SEGGER_RTT_V612j/Syscalls</state>
                     <state>$PROJ_DIR$/../Src/serial</state>
                     <state>$PROJ_DIR$/../Src/http</state>
-                    <state>$PROJ_DIR$/../Src/socket</state>
+                    <state>$PROJ_DIR$/../Src/net</state>
                     <state>$PROJ_DIR$/../Src/tasks</state>
                     <state>$PROJ_DIR$/../Src/gsm</state>
                     <state>$PROJ_DIR$/../Src/wifi</state>
                     <state>$PROJ_DIR$/../Src/at</state>
                     <state>$PROJ_DIR$/../Src/md5</state>
                     <state>$PROJ_DIR$/../Src/ntp</state>
+                    <state>$PROJ_DIR$/../Src/socket</state>
                     <state>$PROJ_DIR$/../Src/led</state>
                     <state>$PROJ_DIR$/../Src/utils</state>
                     <state>$PROJ_DIR$/../Src/tm1629a</state>
@@ -1161,6 +1162,12 @@
                 </file>
             </group>
             <group>
+                <name>net</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Src\net\net.c</name>
+                </file>
+            </group>
+            <group>
                 <name>ntp</name>
                 <file>
                     <name>$PROJ_DIR$\..\Src\ntp\ntp.c</name>
@@ -1196,13 +1203,13 @@
                     <name>$PROJ_DIR$\..\Src\tasks\display_task.c</name>
                 </file>
                 <file>
+                    <name>$PROJ_DIR$\..\Src\tasks\net_task.c</name>
+                </file>
+                <file>
                     <name>$PROJ_DIR$\..\Src\tasks\pressure_task.c</name>
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\Src\tasks\report_task.c</name>
-                </file>
-                <file>
-                    <name>$PROJ_DIR$\..\Src\tasks\socket_manage_task.c</name>
                 </file>
                 <file>
                     <name>$PROJ_DIR$\..\Src\tasks\tasks_init.c</name>

@@ -43,29 +43,11 @@ REPORT_TASK_MSG_CAPACITY_SENSOR_FAULT
 
 typedef struct
 {
-char lac[7];
-char cid[7];
-}location_t;
-
-typedef struct
-{
-location_t value[3];
-}report_location_t;
-
-typedef struct
-{
-char mac[20];
-char sim_id[20];
-}net_hal_information_t;
-
-typedef struct
-{
 uint8_t type;
 union {
 int16_t temperature;
 uint8_t capacity;
 uint8_t pressure;
-report_location_t location;
 };
 }report_task_msg_t;
 

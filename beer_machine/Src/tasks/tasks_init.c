@@ -5,7 +5,7 @@
 #include "compressor_task.h"
 #include "display_task.h"
 #include "pressure_task.h"
-#include "socket_manage_task.h"
+#include "net_task.h"
 #include "temperature_task.h"
 #include "report_task.h"
 #include "log.h"
@@ -40,10 +40,10 @@ int tasks_init(void)
  osMessageQDef(pressure_msg_q,6,uint32_t);
  pressure_task_msg_q_id = osMessageCreate(osMessageQ(pressure_msg_q),pressure_task_handle);
  log_assert(pressure_task_msg_q_id);
- /*创建socket管理消息队列*/
- osMessageQDef(socket_manage_task_msg_q,4,uint32_t);
- socket_manage_task_msg_q_id = osMessageCreate(osMessageQ(socket_manage_task_msg_q),socket_manage_task_handle);
- log_assert(socket_manage_task_msg_q_id);
+ /*创建网络管理消息队列*/
+ osMessageQDef(net_task_msg_q,4,uint32_t);
+ net_task_msg_q_id = osMessageCreate(osMessageQ(net_task_msg_q),net_task_handle);
+ log_assert(net_task_msg_q_id);
  /*创建温度消息队列*/
  osMessageQDef(temperature_msg_q,6,uint32_t);
  temperature_task_msg_q_id = osMessageCreate(osMessageQ(temperature_msg_q),temperature_task_handle);
@@ -53,12 +53,12 @@ int tasks_init(void)
  report_task_msg_q_id = osMessageCreate(osMessageQ(report_task_msg_q),report_task_handle);
  log_assert(report_task_msg_q_id); 
  /*信息上报位置消息队列*/
- osMessageQDef(report_task_location_msg_q,4,report_location_t*);
+ osMessageQDef(report_task_location_msg_q,4,net_location_t*);
  report_task_location_msg_q_id = osMessageCreate(osMessageQ(report_task_location_msg_q),report_task_handle);
  log_assert(report_task_location_msg_q_id); 
  
  /*信息上报位置消息队列*/
- osMessageQDef(report_task_net_hal_info_msg_q,4,report_location_t*);
+ osMessageQDef(report_task_net_hal_info_msg_q,4,net_hal_information_t*);
  report_task_net_hal_info_msg_q_id = osMessageCreate(osMessageQ(report_task_net_hal_info_msg_q),report_task_handle);
  log_assert(report_task_net_hal_info_msg_q_id); 
  

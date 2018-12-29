@@ -2,8 +2,10 @@
 #include "string.h"
 #include "stdint.h"
 #include "stdarg.h"
+#include "stdbool.h"
 #include "md5.h"
 #include "utils.h"
+#include "cmsis_os.h"
 #include "log.h"
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
 #define  LOG_MODULE_NAME     "[utils]"
@@ -86,16 +88,16 @@ return 0;
 }
  
 
-/* 函数名：utils_build_form_data
-*  功能：  构造form-data格式数据
-*  参数：  form_data form-data缓存 
-*  参数：  size 缓存大小 
-*  参数：  boundary 分界标志 
-*  参数：  cnt form-data数据个数 
-*  参数：  ... form-data参数列表 
-*  参数：  source 源 
-*  参数：  timestamp 时间戳 
-*  返回：  0：成功 其他：失败 
+/* 函数：utils_build_form_data
+*  功能：构造form-data格式数据
+*  参数：form_data form-data缓存 
+*  参数：size 缓存大小 
+*  参数：boundary 分界标志 
+*  参数：cnt form-data数据个数 
+*  参数：... form-data参数列表 
+*  参数：source 源 
+*  参数：timestamp 时间戳 
+*  返回：0：成功 其他：失败 
 */ 
 int utils_build_form_data(char *form_data,const int size,const char *boundary,const int cnt,...)
 {
@@ -128,6 +130,109 @@ int utils_build_form_data(char *form_data,const int size,const char *boundary,co
  log_error("form data size :%d is too large.\r\n",temp_size);
  return -1;  
  }
+ 
+ return 0; 
+}
+
+
+/* 函数：utils_timer_init
+*  功能：自定义定时器初始化
+*  参数：timer 定时器指针
+*  参数：timeout 超时时间
+*  参数：up 定时器方向-向上计数-向下计数
+*  返回: 0：成功 其他：失败
+*/ 
+int utils_timer_init(utils_timer_t *timer,uint32_t timeout,bool up)
+{
+if(timer == NULL){
+return -1;
+}
+
+timer->up = up;
+timer->start = osKernelSysTick();  
+timer->value = timeout;  
+
+return 0;
+}
+
+/* 函数：utils_timer_value
+*  功能：定时器现在的值
+*  返回：>=0：现在时间值 其他：失败
+*/ 
+int utils_timer_value(utils_timer_t *timer)
+{
+uint32_t time_elapse;
+
+if(timer == NULL){
+   return -1;
+}  
+time_elapse = osKernelSysTick() - timer->start; 
+
+if(timer->up == true){
+   return  timer->value > time_elapse ? time_elapse : timer->value;
+}
+
+return  timer->value > time_elapse ? timer->value - time_elapse : 0; 
+}
+
+/* 函数：utils_get_str_addr
+*  功能：获取字符串中第num个flag的地址
+*  参数：buffer 字符串地址
+*  参数：flag   标志
+*  参数：num    第num个flag
+*  参数：addr   第num个flag的地址
+*  返回：>=0：成功 其他：失败
+*/ 
+int utils_get_str_addr(char *buffer,const char *flag,const uint8_t num,char **addr)
+{
+ uint8_t cnt = 0;
+ uint16_t flag_size;
+ 
+ char *search,*temp;
+ 
+ temp = buffer;
+ flag_size = strlen(flag);
+ 
+ while(cnt < num ){
+ search = strstr(temp,flag);
+ if(search == NULL){
+    return -1;
+ }
+ temp = search + flag_size;
+ cnt ++;
+ }
+ *addr = search;
+ 
+ return 0; 
+}
+
+/* 函数：utils_get_str_value
+*  功能：获取字符串中第num个flag和第num+1flag之间的字符串
+*  参数：buffer 字符串地址
+*  参数：dst    存储地址
+*  参数：flag   标志
+*  参数：num    第num个flag
+*  返回：>=0：成功 其他：失败
+*/
+int utils_get_str_value(char *buffer,char *dst,const char *flag,const uint8_t num)
+{
+ int rc;
+ uint16_t flag_size;
+ 
+ char *addr_start,*addr_end;
+ flag_size = strlen(flag);
+ 
+ rc = utils_get_str_addr(buffer,flag,num,&addr_start);
+ if(rc != 0){
+    return -1;
+ }
+ addr_start += flag_size;
+ rc = utils_get_str_addr(buffer,flag,num + 1,&addr_end);
+ if(rc != 0){
+    return -1;
+ }
+ memcpy(dst,addr_start,addr_end - addr_start);
+ dst[addr_end - addr_start] = '\0';
  
  return 0; 
 }

@@ -16,7 +16,7 @@
 #include "stdint.h"
 #include "socket.h"
 #include "http_client.h"
-#include "comm_utils.h"
+#include "utils.h"
 #include "cmsis_os.h"
 #include "log.h"
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
@@ -31,13 +31,6 @@ return -1;                                      \
 #define  HEAD_START0_STR                    "HTTP/1.0 "
 #define  HEAD_START1_STR                    "HTTP/1.1 "
 #define  HEAD_END_STR                       "\r\n\r\n"
-
-typedef struct
-{
-bool up;
-uint32_t start;
-uint32_t value;
-}http_client_timer_t;
 
 
 /* 函数名：http_client_parse_url
@@ -127,46 +120,6 @@ static int http_client_build_head(char *buffer,const char *method,http_client_co
 }
 
 
-/* 函数名：http_client_timer_init
-*  功能：  http自定义定时器初始化
-*  参数：  timer 定时器指针
-*  参数：  timeout 超时时间
-*  参数：  up 定时器方向-向上计数-向下计数
-*  返回：  0：成功 其他：失败
-*/ 
-static int http_client_timer_init(http_client_timer_t *timer,uint32_t timeout,bool up)
-{
-if(timer == NULL){
-return -1;
-}
-
-timer->up = up;
-timer->start = osKernelSysTick();  
-timer->value = timeout;  
-
-return 0;
-}
-
-/* 函数名：http_client_timer_value
-*  功能：  定时器现在的值
-*  返回：  >=0：现在时间值 其他：失败
-*/ 
-static int http_client_timer_value(http_client_timer_t *timer)
-{
-uint32_t time_elapse;
-
-if(timer == NULL){
-return -1;
-}  
-time_elapse = osKernelSysTick() - timer->start; 
-
-if(timer->up == true){
-return  timer->value > time_elapse ? time_elapse : timer->value;
-}
-
-return  timer->value > time_elapse ? timer->value - time_elapse : 0; 
-}
-
 /* 函数名：http_client_recv_head
 *  功能：  http接收head
 *  参数：  context http上下文
@@ -181,13 +134,13 @@ static int http_client_recv_head(http_client_context_t *context,char *buffer,uin
   int recv_total = 0;
   char *tmp_ptr,*encode_type;
   int encode_type_size;
-  http_client_timer_t timer;
+  utils_timer_t timer;
  
-  http_client_timer_init(&timer,timeout,false);
+  utils_timer_init(&timer,timeout,false);
  
   /*获取http head*/
   do{
-  rc = socket_recv(context->handle,buffer + recv_total,1,http_client_timer_value(&timer));
+  rc = socket_recv(context->handle,buffer + recv_total,1,utils_timer_value(&timer));
   if(rc < 0){
   log_error("http header recv err.\r\n");
   return -1;
@@ -244,13 +197,13 @@ static int http_client_recv_chunk_size(http_client_context_t *context,uint32_t t
   int rc;
   int recv_total = 0;
   char chunk_code[CHUNK_CODE_SIZE_MAX];
-  http_client_timer_t timer;
+  utils_timer_t timer;
   
-  http_client_timer_init(&timer,timeout,false);
+  utils_timer_init(&timer,timeout,false);
   context->chunk_size = 0;
   /*获取chunk code*/
   do{
-  rc = socket_recv(context->handle,chunk_code + recv_total,1,http_client_timer_value(&timer));
+  rc = socket_recv(context->handle,chunk_code + recv_total,1,utils_timer_value(&timer));
   if(rc < 0){
   log_error("http chunk code recv err.\r\n");
   return -1;
@@ -289,12 +242,12 @@ static int http_client_recv_chunk_size(http_client_context_t *context,uint32_t t
 static int http_client_recv_chunk_tail(http_client_context_t *context,uint32_t timeout)
 {
   int rc;
-  http_client_timer_t timer;
+  utils_timer_t timer;
   char tail[2];
   
-  http_client_timer_init(&timer,timeout,false);  
+  utils_timer_init(&timer,timeout,false);  
   
-  rc = socket_recv(context->handle,tail ,2,http_client_timer_value(&timer));
+  rc = socket_recv(context->handle,tail ,2,utils_timer_value(&timer));
   if(rc < 0){
   log_error("http chunk code recv err.\r\n");
   return -1;
@@ -326,19 +279,19 @@ static int http_client_recv_chunk_tail(http_client_context_t *context,uint32_t t
 static int http_client_recv_chunk(http_client_context_t *context,uint32_t timeout)
 {
   int rc;
-  http_client_timer_t timer;
+  utils_timer_t timer;
   
-  http_client_timer_init(&timer,timeout,false);
+  utils_timer_init(&timer,timeout,false);
   
   context->content_size = 0;
   do{
-  rc = http_client_recv_chunk_size(context,http_client_timer_value(&timer));
+  rc = http_client_recv_chunk_size(context,utils_timer_value(&timer));
   if(rc != 0){
   return -1;   
   }
   if(context->chunk_size == 0){
   /*接收chunk tail*/
-  rc = http_client_recv_chunk_tail(context,http_client_timer_value(&timer));
+  rc = http_client_recv_chunk_tail(context,utils_timer_value(&timer));
   if(rc != 0){
   return -1;   
   }
@@ -352,7 +305,7 @@ static int http_client_recv_chunk(http_client_context_t *context,uint32_t timeou
   return -1;   
   }
   
-  rc = socket_recv(context->handle,context->rsp_buffer + context->content_size,context->chunk_size,http_client_timer_value(&timer));
+  rc = socket_recv(context->handle,context->rsp_buffer + context->content_size,context->chunk_size,utils_timer_value(&timer));
   if(rc < 0){
   log_error("http chunk code recv err.\r\n");
   return -1;
@@ -364,7 +317,7 @@ static int http_client_recv_chunk(http_client_context_t *context,uint32_t timeou
   return -1;  
   }
   /*接收chunk tail*/
-  rc = http_client_recv_chunk_tail(context,http_client_timer_value(&timer));
+  rc = http_client_recv_chunk_tail(context,utils_timer_value(&timer));
   if(rc != 0){
   return -1;   
   }
@@ -387,10 +340,10 @@ static int http_client_request(const char *method,http_client_context_t *context
  int rc;
  int head_size;
  char *http_buffer;
- http_client_timer_t timer;
+ utils_timer_t timer;
  
  /*整个过程的时间计算超时时间*/
- http_client_timer_init(&timer,context->timeout,false);
+ utils_timer_init(&timer,context->timeout,false);
  
  /*申请http缓存*/
  http_buffer = HTTP_CLIENT_MALLOC(HTTP_BUFFER_SIZE);
@@ -419,14 +372,14 @@ static int http_client_request(const char *method,http_client_context_t *context
  context->connected = true;
  
  /*http head发送*/
- rc = socket_send(context->handle,http_buffer,head_size,http_client_timer_value(&timer));
+ rc = socket_send(context->handle,http_buffer,head_size,utils_timer_value(&timer));
  if(rc != head_size){
  log_error("http head send err.\r\n");
  goto err_handler;
  }
 
  /*http user data发送*/
- rc = socket_send(context->handle,context->user_data,context->user_data_size,http_client_timer_value(&timer));
+ rc = socket_send(context->handle,context->user_data,context->user_data_size,utils_timer_value(&timer));
  if(rc != context->user_data_size){
  log_error("http user data send err.\r\n");
  goto err_handler;
@@ -435,7 +388,7 @@ static int http_client_request(const char *method,http_client_context_t *context
  /*清空http buffer 等待接收数据*/
  memset(http_buffer,0,HTTP_BUFFER_SIZE);
  
- rc = http_client_recv_head(context,http_buffer,HTTP_BUFFER_SIZE,http_client_timer_value(&timer));
+ rc = http_client_recv_head(context,http_buffer,HTTP_BUFFER_SIZE,utils_timer_value(&timer));
  /*接收head失败 返回*/
  if(rc != 0){
  goto err_handler;
@@ -443,7 +396,7 @@ static int http_client_request(const char *method,http_client_context_t *context
 
  /*编码是chunk处理*/
  if(context->is_chunked == true){
- rc = http_client_recv_chunk(context,http_client_timer_value(&timer));
+ rc = http_client_recv_chunk(context,utils_timer_value(&timer));
  if(rc != 0){
  goto err_handler;  
  }
@@ -452,7 +405,7 @@ static int http_client_request(const char *method,http_client_context_t *context
  log_error("content size:%d large than free buffer size:%d.\r\n",context->content_size,context->rsp_buffer_size);   
  return -1;
  }
- rc = socket_recv(context->handle,context->rsp_buffer,context->content_size,http_client_timer_value(&timer));
+ rc = socket_recv(context->handle,context->rsp_buffer,context->content_size,utils_timer_value(&timer));
  if(rc < 0){
  log_error("content recv err.\r\n");
  goto err_handler;

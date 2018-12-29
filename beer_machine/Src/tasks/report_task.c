@@ -1,16 +1,15 @@
 #include "FreeRTOS.h"
 #include "task.h"
+#include "flash_utils.h"
 #include "cmsis_os.h"
-#include "string.h"
-#include "socket.h"
+#include "ntp.h"
 #include "http_client.h"
 #include "report_task.h"
 #include "pressure_task.h"
 #include "compressor_task.h"
-#include "flash_utils.h"
 #include "bootloader_if.h"
 #include "firmware_version.h"
-#include "ntp.h"
+#include "net_task.h"
 #include "tasks_init.h"
 #include "utils.h"
 #include "cJSON.h"
@@ -45,7 +44,7 @@ uint8_t pressure;
 hal_fault_t t_sensor_fault;
 hal_fault_t p_sensor_fault;
 hal_fault_t c_sensor_fault;
-report_location_t location;
+net_location_t location;
 char sn[20];
 char sim_id[20];
 char wifi_mac[20];
@@ -164,7 +163,7 @@ static char *report_task_build_log_json_str(report_information_t *info)
 {
   char *json_str;
   cJSON *log_json;
-  cJSON *location_array,*location1,*location2,*location3;
+  cJSON *location_array,*location1,*location2,*location3,*location4;
   log_json = cJSON_CreateObject();
   cJSON_AddStringToObject(log_json,"source",info->source);
   cJSON_AddNumberToObject(log_json,"pressure",info->pressure / 10.0);
@@ -172,15 +171,27 @@ static char *report_task_build_log_json_str(report_information_t *info)
   cJSON_AddNumberToObject(log_json,"temp",info->temperature);
   /*location数组*/
   cJSON_AddItemToObject(log_json,"location",location_array = cJSON_CreateArray());
+  
   cJSON_AddItemToArray(location_array,location1 = cJSON_CreateObject());
-  cJSON_AddStringToObject(location1,"lac",info->location.value[0].lac);
-  cJSON_AddStringToObject(location1,"cid",info->location.value[0].cid);
+  cJSON_AddStringToObject(location1,"lac",info->location.base_main.lac);
+  cJSON_AddStringToObject(location1,"cid",info->location.base_main.ci);
+  cJSON_AddStringToObject(location1,"rssi",info->location.base_main.rssi);
+  
   cJSON_AddItemToArray(location_array,location2 = cJSON_CreateObject());
-  cJSON_AddStringToObject(location2,"lac",info->location.value[1].lac);
-  cJSON_AddStringToObject(location2,"cid",info->location.value[1].cid);
+  cJSON_AddStringToObject(location2,"lac",info->location.base_assist1.lac);
+  cJSON_AddStringToObject(location2,"cid",info->location.base_assist1.ci);
+  cJSON_AddStringToObject(location2,"rssi",info->location.base_assist1.rssi);
+  
   cJSON_AddItemToArray(location_array,location3 = cJSON_CreateObject());
-  cJSON_AddStringToObject(location3,"lac",info->location.value[2].lac);
-  cJSON_AddStringToObject(location3,"cid",info->location.value[2].cid);
+  cJSON_AddStringToObject(location3,"lac",info->location.base_assist2.lac);
+  cJSON_AddStringToObject(location3,"cid",info->location.base_assist2.ci);
+  cJSON_AddStringToObject(location3,"rssi",info->location.base_assist2.rssi);
+  
+  cJSON_AddItemToArray(location_array,location4 = cJSON_CreateObject());
+  cJSON_AddStringToObject(location4,"lac",info->location.base_assist3.lac);
+  cJSON_AddStringToObject(location4,"cid",info->location.base_assist3.ci);
+  cJSON_AddStringToObject(location4,"rssi",info->location.base_assist3.rssi);
+  
   json_str = cJSON_PrintUnformatted(log_json);
   cJSON_Delete(log_json);
   return json_str;
@@ -627,7 +638,7 @@ static void report_task_get_net_hal_info(char *mac,char *sim_id)
  /*处理网络模块硬件消息*/
  os_event = osMessageGet(report_task_net_hal_info_msg_q_id,osWaitForever);
  if(os_event.status == osEventMessage){
-   net_hal_info = (net_hal_information_t *)os_event.value.v; 
+   net_hal_info = (net_hal_information_t*)os_event.value.v; 
    strcpy(mac,net_hal_info->mac);
    strcpy(sim_id,net_hal_info->sim_id);
  }  
@@ -652,9 +663,9 @@ static void report_task_get_sn(char *sn)
   }
 }
 
-static void report_task_get_firmware_version(char *fw_version)
+static void report_task_get_firmware_version(char **fw_version)
 {
-  strcpy(fw_version,FIRMWARE_VERSION_STR);
+  *fw_version = FIRMWARE_VERSION_STR;
 }
 
 
@@ -679,7 +690,7 @@ void report_task(void const *argument)
  report_info.model = MODEL;
  report_info.boundary = BOUNDARY;
  
- report_task_get_firmware_version(report_info.fw_version);
+ report_task_get_firmware_version(&report_info.fw_version);
  report_task_get_sn(report_info.sn);
  
  report_task_get_net_hal_info(report_info.wifi_mac,report_info.sim_id);
@@ -818,7 +829,7 @@ void report_task(void const *argument)
  /*处理位置信息队列消息*/
  os_event = osMessageGet(report_task_location_msg_q_id,0);
  if(os_event.status == osEventMessage){
-    report_info.location  = *(report_location_t*)os_event.value.v; 
+    report_info.location  = *(net_location_t*)os_event.value.v; 
  }                     
 
  

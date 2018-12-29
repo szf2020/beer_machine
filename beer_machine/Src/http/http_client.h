@@ -9,7 +9,7 @@
 
 #ifndef  __HTTP_CLIENT_H__
 #define  __HTTP_CLIENT_H__
-
+#include "stdbool.h"
 
 #define  HTTP_CLIENT_MALLOC(x)           pvPortMalloc((x))
 #define  HTTP_CLIENT_FREE(x)             vPortFree((x))
