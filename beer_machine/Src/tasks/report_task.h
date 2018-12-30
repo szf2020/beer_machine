@@ -11,44 +11,41 @@ extern osMessageQId report_task_net_hal_info_msg_q_id;
 void report_task(void const * argument);
 
 
-#define  REPORT_TASK_PUT_MSG_TIMEOUT             5
-#define  REPORT_TASK_GET_MSG_INTERVAL            500
+#define  REPORT_TASK_PUT_MSG_TIMEOUT                5
+#define  REPORT_TASK_GET_MSG_INTERVAL               500
 
-#define  REPORT_TASK_REPORT_LOG_INTERVAL         (60 * 1000) /*默认日志数据上报间隔*/
-#define  REPORT_TASK_RETRY_INTERVAL              10000       /*重试间隔*/
-#define  REPORT_TASK_DEVICE_ACTIVE_RETRY         10
+#define  REPORT_TASK_RETRY_DELAY                    (1 * 60 * 1000)
+#define  REPORT_TASK_RETRY1_DELAY                   (60 * 1000)
+#define  REPORT_TASK_RETRY2_DELAY                   (5 * 60 * 1000)
+#define  REPORT_TASK_RETRY3_DELAY                   (10 * 60 * 1000)
+#define  REPORT_TASK_WAIT_NET_HAL_INFO_TIMEOUT      (5 * 60 * 1000)
+#define  REPORT_TASK_SYNC_UTC_DELAY                 (2 * 60 * 60 * 1000U)
 
-#define  URL_LOG                                 "http://mh1597193030.uicp.cn:35787/device/log/submit"
-#define  URL_ACTIVE                              "http://mh1597193030.uicp.cn:35787/device/info/active"
-#define  URL_FAULT                               "http://mh1597193030.uicp.cn:35787/device/info/active"
-#define  BOUNDARY                                "##wkxboot##"
-#define  KEY                                     "meiling-beer"
-#define  SOURCE                                  "coolbeer"
-#define  MODEL                                   "pijiuji"
-#define  FW_VERSION                              "v1.0.0"
+#define  REPORT_TASK_FAULT_QUEUE_SIZE               8 
 
+#define  SN_LEN                                     18
+#define  SN_ADDR                                    0x803FF00
 
 typedef enum
 {
-REPORT_TASK_MSG_CONFIG_DEVICE,
-REPORT_TASK_MSG_CAPACITY,
-REPORT_TASK_MSG_PRESSURE,
-REPORT_TASK_MSG_TEMPERATURE,
-REPORT_TASK_MSG_REPORT_LOG,
-REPORT_TASK_MSG_REPORT_FAULT,
-REPORT_TASK_MSG_TEMPERATURE_SENSOR_FAULT,
-REPORT_TASK_MSG_PRESSURE_SENSOR_FAULT,
-REPORT_TASK_MSG_CAPACITY_SENSOR_FAULT
+  REPORT_TASK_MSG_NET_HAL_INFO,
+  REPORT_TASK_MSG_SYNC_UTC,
+  REPORT_TASK_MSG_ACTIVE,
+  REPORT_TASK_MSG_CAPACITY,
+  REPORT_TASK_MSG_PRESSURE,
+  REPORT_TASK_MSG_TEMPERATURE,
+  REPORT_TASK_MSG_REPORT_LOG,
+  REPORT_TASK_MSG_REPORT_FAULT,
+  REPORT_TASK_MSG_TEMPERATURE_SENSOR_FAULT,
+  REPORT_TASK_MSG_PRESSURE_SENSOR_FAULT,
+  REPORT_TASK_MSG_CAPACITY_SENSOR_FAULT,
 }report_task_msg_type_t;
 
 typedef struct
 {
-uint8_t type;
-union {
-int16_t temperature;
-uint8_t capacity;
-uint8_t pressure;
-};
+  uint32_t type:8;
+  uint32_t value:16;
+  uint32_t reserved:8;
 }report_task_msg_t;
 
 

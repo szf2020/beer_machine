@@ -40,10 +40,10 @@ struct
   bool is_config;
   int  rssi;
   int  level;
-  char ssid[WIFI_8710BX_SSID_STR_LEN];
-  char passwd[WIFI_8710BX_PASSWD_STR_LEN];
-  char mac[WIFI_8710BX_MAC_STR_LEN];
-  char ip[WIFI_8710BX_IP_STR_LEN];
+  char ssid[WIFI_8710BX_SSID_STR_LEN + 1];
+  char passwd[WIFI_8710BX_PASSWD_STR_LEN + 1];
+  char mac[WIFI_8710BX_MAC_STR_LEN + 1];
+  char ip[WIFI_8710BX_IP_STR_LEN + 1];
   uint16_t err_cnt;
   net_status_t status;
 }wifi;
@@ -52,7 +52,7 @@ struct
 {
   bool is_sim_exsit;
   bool is_initial;
-  char sim_id[GSM_M6312_SIM_ID_STR_LEN];
+  char sim_id[GSM_M6312_SIM_ID_STR_LEN + 1];
   net_location_t location;
   uint16_t err_cnt;
   net_status_t status;

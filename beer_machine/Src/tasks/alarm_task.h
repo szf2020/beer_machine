@@ -20,21 +20,27 @@ extern osMessageQId alarm_task_msg_q_id;
 
 void alarm_task(void const *argument);
 
+#define  ALARM_TASK_PRESSURE_ERR_VALUE         (0x0e * 10 + 0)
+#define  ALARM_TASK_TEMPERATURE_ERR_VALUE      (0x0e * 10 + 1)
+#define  ALARM_TASK_CAPACITY_ERR_VALUE         (0x0e * 10 + 2)
+
+#define  ALARM_TASK_TEMPERATURE_HIGH            
+
 
 typedef enum
 {
-ALARM_TASK_MSG_TIMER_TIMEOUT,
-ALARM_TASK_MSG_TEMPERATURE,
-ALARM_TASK_MSG_PRESSURE,
-ALARM_TASK_MSG_CAPACITY
+  ALARM_TASK_MSG_TIMER_TIMEOUT,
+  ALARM_TASK_MSG_TEMPERATURE,
+  ALARM_TASK_MSG_PRESSURE,
+  ALARM_TASK_MSG_CAPACITY,
 }alarm_task_msg_type_t;
 
 
 typedef struct
 {
-uint32_t type:8;
-uint32_t alarm:8;
-uint32_t reserved:16;
+  uint32_t type:8;
+  uint32_t value:16;
+  uint32_t reserved:8;
 }alarm_task_msg_t;
 
 

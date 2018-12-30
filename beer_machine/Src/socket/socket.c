@@ -31,7 +31,7 @@ uint32_t read;
 uint32_t write;
 }socket_buffer_t;
 
-socket_buffer_t buffer[BUFFER_CNT];
+socket_buffer_t socket_buffer[BUFFER_CNT];
 
 socket_gsm_handle_t   gsm_handle[SOCKET_GSM_HANDLE_MAX];
 
@@ -47,7 +47,7 @@ int socket_init()
 {
   osMutexDef(socket_mutex);
   mutex = osMutexCreate(osMutex(socket_mutex));
-  log_assert(mutex == NULL);
+  log_assert(mutex);
 
   osMutexRelease(mutex);
   log_debug("create socket mutex ok.\r\n");
@@ -124,7 +124,7 @@ exit:
 static int socket_buffer_init()
 {
  for(uint8_t i = 0; i< BUFFER_CNT; i++){
-     memset(&buffer[i],0,sizeof(socket_buffer_t));  
+     memset(&socket_buffer[i],0,sizeof(socket_buffer_t));  
  }
  return 0;
 }
@@ -139,9 +139,9 @@ static int socket_malloc_buffer(int handle)
   osMutexWait(mutex,osWaitForever);
  
   for(uint8_t i = 0; i< BUFFER_CNT; i++){
-      if(buffer[i].valid == false){
-         buffer[i].socket = handle;
-         buffer[i].valid = true;
+      if(socket_buffer[i].valid == false){
+         socket_buffer[i].socket = handle;
+         socket_buffer[i].valid = true;
          rc = 0; 
          goto exit;
     }
@@ -163,10 +163,10 @@ static int socket_free_buffer(int handle)
   osMutexWait(mutex,osWaitForever);
   
   for(uint8_t i = 0; i< BUFFER_CNT; i++){
-    if(buffer[i].socket == handle && buffer[i].valid == true){
-    buffer[i].valid = false; 
-    buffer[i].socket = 0;
-    buffer[i].read = buffer[i].write;
+    if(socket_buffer[i].socket == handle && socket_buffer[i].valid == true){
+    socket_buffer[i].valid = false; 
+    socket_buffer[i].socket = 0;
+    socket_buffer[i].read = socket_buffer[i].write;
     rc = 0; 
     goto exit;
     }
@@ -188,7 +188,7 @@ static int socket_seek_buffer_idx(int handle)
 {
 
   for(uint8_t i = 0; i< BUFFER_CNT; i++){
-     if(buffer[i].socket == handle && buffer[i].valid == true){
+     if(socket_buffer[i].socket == handle && socket_buffer[i].valid == true){
        return i; 
      }
   }
@@ -208,7 +208,7 @@ static int socket_get_used_size(int handle)
   if(rc < 0){
      return -1; 
   }
-  return buffer[rc].write - buffer[rc].read;    
+  return socket_buffer[rc].write - socket_buffer[rc].read;    
 }
 
 /* 函数：socket_get_free_size
@@ -224,7 +224,7 @@ static int socket_get_free_size(int handle)
   return -1; 
   }
   
- return BUFFER_SIZE - (buffer[rc].write - buffer[rc].read);   
+ return BUFFER_SIZE - (socket_buffer[rc].write - socket_buffer[rc].read);   
 }
 
 /* 函数：socket_write_buffer
@@ -243,8 +243,8 @@ static int socket_write_buffer(int handle,const char *src,const int size)
   }
   
   for(int i= 0; i< size ; i ++){
-  buffer[rc].buffer[buffer[rc].write & (BUFFER_SIZE - 1)] = src[i];
-  buffer[rc].write ++;
+  socket_buffer[rc].buffer[socket_buffer[rc].write & (BUFFER_SIZE - 1)] = src[i];
+  socket_buffer[rc].write ++;
   }
   return 0;
  }
@@ -265,8 +265,8 @@ static int socket_write_buffer(int handle,const char *src,const int size)
   }
   
   for(int i = 0 ; i < size ; i++){
-  dst[i] = buffer[rc].buffer[buffer[rc].read & (BUFFER_SIZE - 1)];
-  buffer[rc].read ++; 
+  dst[i] = socket_buffer[rc].buffer[socket_buffer[rc].read & (BUFFER_SIZE - 1)];
+  socket_buffer[rc].read ++; 
   }
   return 0;  
 }
@@ -403,7 +403,7 @@ int socket_send(const int socket_handle,const char *buffer,int size,uint32_t tim
  utils_timer_init(&timer,timeout,false);
  
  /*此连接handle是GSM网络*/
- while(utils_timer_value(&timer) > 0){
+ while(utils_timer_value(&timer) > 0 && send_left > 0){
    
  if(socket_handle >= SOCKET_GSM_HANDLE_BASE ){
 
@@ -450,7 +450,7 @@ int socket_recv(const int socket_handle,char *buffer,int size,uint32_t timeout)
  
  read_size = 0;
  
- while(read_size != size && utils_timer_value(&timer) > 0){
+ while(read_size < size && utils_timer_value(&timer) > 0){
  buffer_size = socket_get_used_size(socket_handle);
  if(buffer_size < 0){
  return -1;

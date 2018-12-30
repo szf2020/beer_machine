@@ -90,25 +90,25 @@ int utils_timer_init(utils_timer_t *timer,uint32_t timeout,bool up);
 */ 
 int utils_timer_value(utils_timer_t *timer);
 
-/* 函数：utils_get_str_addr
-*  功能：获取字符串中第num个flag的地址
+/* 函数：utils_get_str_addr_by_num
+*  功能：获取字符串中第num个str的地址
 *  参数：buffer 字符串地址
-*  参数：flag   标志
-*  参数：num    第num个flag
-*  参数：addr   第num个flag的地址
-*  返回：>=0：成功 其他：失败
+*  参数：str    查找的字符串
+*  参数：num    第num个str
+*  参数：addr   第num个str的地址
+*  返回：0：成功 其他：失败
 */ 
-int utils_get_str_addr(char *buffer,const char *flag,const uint8_t num,char **addr);
+int utils_get_str_addr_by_num(char *buffer,const char *str,const uint8_t num,char **addr);
 
-/* 函数：utils_get_str_value
-*  功能：获取字符串中第num个flag和第num+1flag之间的字符串
+/* 函数：utils_get_str_value_by_num
+*  功能：获取字符串中第num和第num+1个str之间的字符串
 *  参数：buffer 字符串地址
 *  参数：dst    存储地址
-*  参数：flag   标志
-*  参数：num    第num个flag
-*  返回：>=0：成功 其他：失败
+*  参数：str    字符串
+*  参数：num    第num个字符串
+*  返回：0：成功 其他：失败
 */
-int utils_get_str_value(char *buffer,char *dst,const char *flag,const uint8_t num);
+int utils_get_str_value_by_num(char *buffer,char *dst,const char *str,uint8_t num);
 
 
    

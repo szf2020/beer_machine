@@ -8,6 +8,7 @@
 #include "cmsis_os.h"
 #include "gsm_m6312.h"
 #include "wifi_8710bx.h"
+#include "socket.h"
 #include "net.h"
 #include "log.h"
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
@@ -23,7 +24,8 @@ int net_init(void)
  if(wifi_8710bx_serial_hal_init() !=0 || gsm_m6312_serial_hal_init() != 0){
  log_assert(0);
  }
- 
+ /*socket*/
+ socket_init(); 
  return 0;
 }
 
@@ -419,14 +421,15 @@ int net_query_gsm_location(gsm_base_t *base,uint8_t cnt)
     return 0;
  }
  /*注册后就有位置信息*/
- strcpy(base->lac,register_info.base.lac);
- strcpy(base->ci,register_info.base.ci);
+ strcpy(base[0].lac,register_info.base.lac);
+ strcpy(base[0].ci,register_info.base.ci);
  /*获取主机站信号强度信息*/
- rc = gsm_m6312_get_rssi(base->rssi);
+ rc = gsm_m6312_get_rssi(base[0].rssi);
  if(rc != 0){
     goto err_exit; 
  }
  /*获取辅助基站信息*/
+ memset(&assist_base,0,sizeof(assist_base));
  rc = gsm_m6312_get_assist_base_info(&assist_base);
  if(rc != 0){
  goto err_exit; 

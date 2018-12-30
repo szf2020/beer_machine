@@ -29,28 +29,28 @@ void display_task(void const *argument);
 
 typedef struct
 {
-uint16_t value;
-bool     blink;
+  uint16_t value;
+  bool     blink;
 }display_unit_t;
 
 typedef enum
 {
-DISPLAY_TASK_MSG_TEMPERATURE,
-DISPLAY_TASK_MSG_PRESSURE,
-DISPLAY_TASK_MSG_PRESSURE_POINT,
-DISPLAY_TASK_MSG_CAPACITY,
-DISPLAY_TASK_MSG_CAPACITY_LEVEL,
-DISPLAY_TASK_MSG_WIFI,
-DISPLAY_TASK_MSG_COMPRESSOR,
-DISPLAY_TASK_MSG_BLINK_ON,
-DISPLAY_TASK_MSG_BLINK_OFF
+  DISPLAY_TASK_MSG_TEMPERATURE,
+  DISPLAY_TASK_MSG_PRESSURE,
+  DISPLAY_TASK_MSG_PRESSURE_POINT,
+  DISPLAY_TASK_MSG_CAPACITY,
+  DISPLAY_TASK_MSG_CAPACITY_LEVEL,
+  DISPLAY_TASK_MSG_WIFI,
+  DISPLAY_TASK_MSG_COMPRESSOR,
+  DISPLAY_TASK_MSG_BLINK_ON,
+  DISPLAY_TASK_MSG_BLINK_OFF
 }display_task_msg_type_t;
 
 typedef struct
 {
-uint32_t  type:8;
-uint32_t  value:16;
-uint32_t  blink:8;
+  uint32_t  type:8;
+  uint32_t  value:16;
+  uint32_t  blink:8;
 }display_task_msg_t;
 
 

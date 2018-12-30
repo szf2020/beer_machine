@@ -549,6 +549,7 @@ int gsm_m6312_get_assist_base_info(gsm_m6312_assist_base_t *assist_base)
  int rc;
  int rc_search;
  char *base_str;
+ uint8_t i;
  gsm_m6312_err_code_t ok,err;
  
  osMutexWait(gsm_mutex,osWaitForever);
@@ -571,30 +572,31 @@ int gsm_m6312_get_assist_base_info(gsm_m6312_assist_base_t *assist_base)
  rc = gsm_m6312_at_cmd_excute(&gsm_cmd);
 
  if(rc == GSM_ERR_OK){ 
- rc_search = utils_get_str_addr(gsm_cmd.recv,"+CCED:",1,&base_str);
+ rc_search = utils_get_str_addr_by_num(gsm_cmd.recv,"+CCED:",1,&base_str);
  if(rc_search != 0){
    rc = GSM_ERR_UNKNOW;  
    goto err_exit;
  } 
  
- for(uint8_t i =0 ;i < 3;i++){
- rc_search = utils_get_str_value(gsm_cmd.recv,assist_base->base[i].lac,",",2 + i * 6);
+ i = 0;
+ do{
+ rc_search = utils_get_str_value_by_num(gsm_cmd.recv,assist_base->base[i].lac,",",2 + i * 6);
  if(rc_search != 0){
-   rc = GSM_ERR_UNKNOW;  
    goto err_exit;
  } 
- rc_search = utils_get_str_value(gsm_cmd.recv,assist_base->base[i].ci,",",3 + i * 6);
+ rc_search = utils_get_str_value_by_num(gsm_cmd.recv,assist_base->base[i].ci,",",3 + i * 6);
  if(rc_search != 0){
    rc = GSM_ERR_UNKNOW;  
    goto err_exit;
  }
  
- rc_search = utils_get_str_value(gsm_cmd.recv,assist_base->base[i].rssi,",",5 + i * 6);
+ rc_search = utils_get_str_value_by_num(gsm_cmd.recv,assist_base->base[i].rssi,",",5 + i * 6);
  if(rc_search != 0){
    rc = GSM_ERR_UNKNOW;  
    goto err_exit;
  } 
- }
+ }while( ++ i < 3);
+ 
  }
  
 

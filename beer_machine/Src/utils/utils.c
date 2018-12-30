@@ -175,30 +175,30 @@ if(timer->up == true){
 return  timer->value > time_elapse ? timer->value - time_elapse : 0; 
 }
 
-/* 函数：utils_get_str_addr
-*  功能：获取字符串中第num个flag的地址
+/* 函数：utils_get_str_addr_by_num
+*  功能：获取字符串中第num个str的地址
 *  参数：buffer 字符串地址
-*  参数：flag   标志
-*  参数：num    第num个flag
-*  参数：addr   第num个flag的地址
-*  返回：>=0：成功 其他：失败
+*  参数：str    查找的字符串
+*  参数：num    第num个str
+*  参数：addr   第num个str的地址
+*  返回：0：成功 其他：失败
 */ 
-int utils_get_str_addr(char *buffer,const char *flag,const uint8_t num,char **addr)
+int utils_get_str_addr_by_num(char *buffer,const char *str,const uint8_t num,char **addr)
 {
  uint8_t cnt = 0;
- uint16_t flag_size;
+ uint16_t str_size;
  
  char *search,*temp;
  
  temp = buffer;
- flag_size = strlen(flag);
+ str_size = strlen(str);
  
  while(cnt < num ){
- search = strstr(temp,flag);
- if(search == NULL){
-    return -1;
+       search = strstr(temp,str);
+       if(search == NULL){
+          return -1;
  }
- temp = search + flag_size;
+ temp = search + str_size;
  cnt ++;
  }
  *addr = search;
@@ -206,33 +206,43 @@ int utils_get_str_addr(char *buffer,const char *flag,const uint8_t num,char **ad
  return 0; 
 }
 
-/* 函数：utils_get_str_value
-*  功能：获取字符串中第num个flag和第num+1flag之间的字符串
+/* 函数：utils_get_str_value_by_num
+*  功能：获取字符串中第num和第num+1个str之间的字符串
 *  参数：buffer 字符串地址
 *  参数：dst    存储地址
-*  参数：flag   标志
-*  参数：num    第num个flag
-*  返回：>=0：成功 其他：失败
+*  参数：str    字符串
+*  参数：num    第num个字符串
+*  返回：0：成功 其他：失败
 */
-int utils_get_str_value(char *buffer,char *dst,const char *flag,const uint8_t num)
+int utils_get_str_value_by_num(char *buffer,char *dst,const char *str,uint8_t num)
 {
  int rc;
- uint16_t flag_size;
+ uint16_t str_size,str_start_size;
  
  char *addr_start,*addr_end;
- flag_size = strlen(flag);
  
- rc = utils_get_str_addr(buffer,flag,num,&addr_start);
+ rc = utils_get_str_addr_by_num(buffer,str,num,&addr_start);
  if(rc != 0){
     return -1;
  }
- addr_start += flag_size;
- rc = utils_get_str_addr(buffer,flag,num + 1,&addr_end);
+ /*先查找原来的字符串，没有就查询结束符*/
+ rc = utils_get_str_addr_by_num(buffer,str,num + 1,&addr_end);
  if(rc != 0){
+    rc = utils_get_str_addr_by_num(addr_start,"\r\n",1,&addr_end);
+    if(rc != 0){
+       return -1;
+    }
+ }
+ 
+ str_start_size = strlen(str);
+ if(addr_end < addr_start + str_start_size){
     return -1;
  }
- memcpy(dst,addr_start,addr_end - addr_start);
- dst[addr_end - addr_start] = '\0';
+ 
+ str_size = addr_end - addr_start - str_start_size;
+ 
+ memcpy(dst,addr_start + str_start_size,str_size);
+ dst[str_size] = '\0';
  
  return 0; 
 }

@@ -95,7 +95,7 @@ static int net_task_init(void)
   memset(&net,0,sizeof(net)); 
   /*wifi相关*/
   net.wifi.status = NET_STATUS_OFFLINE;
-  /**gsm相关*/
+  /*gsm相关*/
   net.gsm.status = NET_STATUS_OFFLINE;
   
   return 0;
@@ -203,7 +203,7 @@ static void net_task_send_hal_info_to_report_task()
  hal_info.mac = net.wifi.mac;
  hal_info.sim_id = net.gsm.sim_id;
  
- status = osMessagePut(report_task_net_hal_info_msg_q_id,*(uint32_t*)&hal_info,NET_TASK_PUT_MSG_TIMEOUT);
+ status = osMessagePut(report_task_net_hal_info_msg_q_id,(uint32_t)&hal_info,NET_TASK_PUT_MSG_TIMEOUT);
  if(status !=osOK){
  log_error("put report task msg error:%d\r\n",status);
  } 
@@ -259,6 +259,7 @@ init:
     log_error("gsm module is err.\r\n");  
  }else{
     net.gsm.is_initial = true;
+    net.gsm.status = NET_STATUS_ONLINE;
  }
  
  if(net.gsm.is_initial == false && net.wifi.is_initial == false){
@@ -266,7 +267,8 @@ init:
     osDelay(NET_TASK_INIT_RETRY_DELAY);
     goto init;
  }
-  
+
+ /*向上报任务提供设备信息 sim id 和 wifi mac*/
  net_task_send_hal_info_to_report_task();
  
  if(net.wifi.is_initial == true){
