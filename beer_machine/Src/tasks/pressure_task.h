@@ -46,7 +46,7 @@ void pressure_task(void const *argument);
 #define  PRESSURE_TASK_MSG_WAIT_TIMEOUT            osWaitForever
 #define  PRESSURE_TASK_PUT_MSG_TIMEOUT             5
 
-#define  PRESSURE_ERR_VALUE_SENSOR                 (0xe * 10 + 1)/*压力传感器故障值 代码 E1*/
+#define  PRESSURE_ERR_VALUE_SENSOR                 0xFF
 
 
 typedef enum

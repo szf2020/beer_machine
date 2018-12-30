@@ -31,11 +31,9 @@ static int16_t const t_r_map[][2]={
 
 typedef struct
 {
-int16_t value;
-int8_t  dir;
-bool    change;
-bool    alarm;
-bool    blink;
+  int8_t  value;
+  int8_t  dir;
+  bool    change;
 }temperature_t;
 
 
@@ -43,41 +41,41 @@ static temperature_t   temperature;
                
 static uint32_t get_r(uint16_t adc)
 {
- float t_sensor_r;
- t_sensor_r = (TEMPERATURE_SENSOR_SUPPLY_VOLTAGE*TEMPERATURE_SENSOR_ADC_VALUE_MAX*TEMPERATURE_SENSOR_BYPASS_RES_VALUE)/(adc*TEMPERATURE_SENSOR_REFERENCE_VOLTAGE)-TEMPERATURE_SENSOR_BYPASS_RES_VALUE;
- return (uint32_t)t_sensor_r;
+  float t_sensor_r;
+  t_sensor_r = (TEMPERATURE_SENSOR_SUPPLY_VOLTAGE*TEMPERATURE_SENSOR_ADC_VALUE_MAX*TEMPERATURE_SENSOR_BYPASS_RES_VALUE)/(adc*TEMPERATURE_SENSOR_REFERENCE_VOLTAGE)-TEMPERATURE_SENSOR_BYPASS_RES_VALUE;
+  return (uint32_t)t_sensor_r;
 }
 /*获取浮点温度值*/
 static float get_fine_t(uint32_t r,uint8_t idx)
 {
-uint32_t r1,r2;
+  uint32_t r1,r2;
 
-float t;
-char t_str[6];
+  float t;
+  char t_str[6];
 
-r1 = t_r_map[idx][1];
-r2 = t_r_map[idx + 1][1];
+  r1 = t_r_map[idx][1];
+  r2 = t_r_map[idx + 1][1];
 
-t = t_r_map[idx][0] + (r1 - r) * 1.0 /(r1 - r2) + TEMPERATURE_COMPENSATION_VALUE;
+  t = t_r_map[idx][0] + (r1 - r) * 1.0 /(r1 - r2) + TEMPERATURE_COMPENSATION_VALUE;
 
-snprintf(t_str,6,"%4f",t);
-log_debug("temperature: %s C.\r\n",t_str);
-(void)t_str;
+  snprintf(t_str,6,"%4f",t);
+  log_debug("temperature: %s C.\r\n",t_str);
+  (void)t_str;
 
-return t;  
+  return t;  
 }
 /*获取四舍五入整数温度值*/
 static int16_t get_approximate_t(float t_float)
 {
-int16_t t;
+  int16_t t;
 
-t = (int16_t)t_float;
-t_float -= t;
-if(t_float >= 0.5){
-t +=1; 
-} 
+  t = (int16_t)t_float;
+  t_float -= t;
+  if(t_float >= 0.5){
+     t +=1; 
+  } 
   
-return t;  
+  return t;  
 }
 
 
@@ -134,8 +132,7 @@ void temperature_task(void const *argument)
   osEvent  os_msg;
   osStatus status;
   temperature_task_msg_t msg;
-  display_task_msg_t    display_msg;
-  compressor_task_msg_t compressor_msg;
+
   alarm_task_msg_t      alarm_msg;
    
   /*等待任务同步*/
@@ -147,82 +144,51 @@ void temperature_task(void const *argument)
   while(1){
   os_msg = osMessageGet(temperature_task_msg_q_id,TEMPERATURE_TASK_MSG_WAIT_TIMEOUT);
   if(os_msg.status == osEventMessage){
-  msg = *(temperature_task_msg_t*)&os_msg.value.v;
+     msg = *(temperature_task_msg_t*)&os_msg.value.v;
+ 
+     /*温度ADC转换完成消息处理*/
+     if(msg.type == TEMPERATURE_TASK_MSG_ADC_COMPLETED){
+        bypass_r_adc = msg.value;
+        t = get_t(bypass_r_adc);  
+        /*判断是否在报警范围*/ 
+       if(t == TEMPERATURE_ERR_VALUE_SENSOR || t > TEMPERATURE_ALARM_VALUE_MAX || t < TEMPERATURE_ALARM_VALUE_MIN){
+          t = ALARM_TASK_TEMPERATURE_ERR_VALUE;  
+        }     
+   
+       if(t == temperature.value){
+          continue;  
+       } 
+       
+       if(t > temperature.value){
+          temperature.dir += 1;    
+       }else if(t < temperature.value){
+          temperature.dir -= 1;      
+       }
+       /*当满足条件时 接受数据变化*/
+       if(temperature.dir > TEMPERATURE_TASK_TEMPERATURE_CHANGE_CNT ||
+          temperature.dir < -TEMPERATURE_TASK_TEMPERATURE_CHANGE_CNT){
+          temperature.dir = 0;
+          temperature.value = t;
+          temperature.change = true;
+       }
+       if(temperature.change == true){
+         
+          if(t == ALARM_TASK_TEMPERATURE_ERR_VALUE){
+             log_error("temperature err.code:0x%2x.\r\n",temperature.value);
+           }
+          log_debug("teperature changed dir:%d value:%d C.\r\n",temperature.dir,temperature.value);
+          temperature.change = false;  
+          
+          /*报警消息*/
+          alarm_msg.type = ALARM_TASK_MSG_TEMPERATURE;
+          alarm_msg.value = temperature.value;
 
-  
-  /*温度ADC转换完成消息处理*/
-  if(msg.type == TEMPERATURE_TASK_MSG_ADC_COMPLETED){
-   bypass_r_adc = msg.value;
-   t = (int16_t)get_t(bypass_r_adc);  
-   /*判断是否在报警范围*/ 
-   if(t != TEMPERATURE_ERR_VALUE_SENSOR){
-   if(t > TEMPERATURE_ALARM_VALUE_MAX || t < TEMPERATURE_ALARM_VALUE_MIN){
-   t = TEMPERATURE_ERR_VALUE_SENSOR;  
-   }     
+          status = osMessagePut(alarm_task_msg_q_id,*(uint32_t*)&alarm_msg,TEMPERATURE_TASK_PUT_MSG_TIMEOUT);
+          if(status !=osOK){
+             log_error("put display t msg error:%d\r\n",status); 
+          } 
+       }
+     }
    }
-   
-   if(t == temperature.value){
-   continue;  
-   } 
-   if(t == TEMPERATURE_ERR_VALUE_SENSOR){
-   temperature.dir = 0;
-   temperature.value = t;
-   temperature.change = true;
-   temperature.alarm = true;
-   temperature.blink = true;
-   log_error("temperature err.code:0x%2x.\r\n",temperature.value);
-   }else {    
-   /*正常温度值*/
-   if(t > temperature.value){
-   temperature.dir += 1;    
-   }else if(t < temperature.value){
-   temperature.dir -= 1;      
-   }
-   /*当满足条件时 接受数据变化*/
-   if(temperature.dir > TEMPERATURE_TASK_TEMPERATURE_CHANGE_CNT ||
-      temperature.dir < -TEMPERATURE_TASK_TEMPERATURE_CHANGE_CNT){
-   temperature.dir = 0;
-   temperature.value = t;
-   temperature.change = true;
-   temperature.alarm = false;
-   /*当温度大于闪烁上限或者低于闪烁下限*/
-   if(temperature.value > TEMPERATURE_BLINK_VALUE_MAX || temperature.value < TEMPERATURE_BLINK_VALUE_MIN){
-   temperature.blink = true;
-   }else{
-   temperature.blink = false;      
-   }
-   }
-   }
-   if(temperature.change == true){
-   log_debug("teperature changed dir:%d value:%d C.\r\n",temperature.dir,temperature.value);
-   temperature.change = false;  
-   /*显示消息*/
-   display_msg.type = DISPLAY_TASK_MSG_TEMPERATURE;
-   display_msg.value = temperature.value;
-   display_msg.blink = temperature.blink;
-   status = osMessagePut(display_task_msg_q_id,*(uint32_t*)&display_msg,TEMPERATURE_TASK_PUT_MSG_TIMEOUT);
-   if(status !=osOK){
-   log_error("put display t msg error:%d\r\n",status); 
-   }
-   /*报警消息*/
-   alarm_msg.type = ALARM_TASK_MSG_TEMPERATURE;
-   alarm_msg.alarm = temperature.alarm;
-   status = osMessagePut(alarm_task_msg_q_id,*(uint32_t*)&alarm_msg,TEMPERATURE_TASK_PUT_MSG_TIMEOUT);
-   if(status !=osOK){
-   log_error("put alarm t msg error:%d\r\n",status); 
-   }
-   /*压缩机消息*/
-   compressor_msg.type = COMPRESSOR_TASK_MSG_TEMPERATURE;
-   compressor_msg.value= temperature.value;
-   status = osMessagePut(compressor_task_msg_q_id,*(uint32_t*)&compressor_msg,TEMPERATURE_TASK_PUT_MSG_TIMEOUT);
-   if(status !=osOK){
-   log_error("put compressor t msg error:%d\r\n",status); 
-   } 
-   }
-   
   }
   }
-  
-  
- }
-}

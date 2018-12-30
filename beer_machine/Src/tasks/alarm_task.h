@@ -33,14 +33,17 @@ typedef enum
   ALARM_TASK_MSG_TEMPERATURE,
   ALARM_TASK_MSG_PRESSURE,
   ALARM_TASK_MSG_CAPACITY,
+  ALARM_TASK_MSG_TEMPERATURE_CONFIG,
+  ALARM_TASK_MSG_PRESSURE_CONFIG,
+  ALARM_TASK_MSG_CAPACITY_CONFIG
 }alarm_task_msg_type_t;
 
 
 typedef struct
 {
   uint32_t type:8;
-  uint32_t value:16;
-  uint32_t reserved:8;
+  uint32_t value:8;
+  uint32_t reserved:16;
 }alarm_task_msg_t;
 
 

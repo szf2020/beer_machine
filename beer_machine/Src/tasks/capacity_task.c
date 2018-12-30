@@ -20,13 +20,11 @@ extern serial_hal_driver_t capacity_serial_driver;
 
 typedef struct
 {
-uint16_t high;
-uint8_t  value;
-int8_t   dir;
-uint8_t  err_cnt;
-bool     alarm;
-bool     change;
-bool     blink;
+  uint16_t high;
+  uint8_t  value;
+  int8_t   dir;
+  uint8_t  err_cnt;
+  bool     change;
 }beer_capacity_t;
 
 static beer_capacity_t beer_capacity;
@@ -62,9 +60,6 @@ static int capacity_serial_hal_init(void)
     return 0;
 }
 
-#define  CAPACITY_TASK_SENSOR_ERR_VALUE            0xFFFF
-
-
 static uint16_t capacity_task_get_high(void)
 {
   int select_size,read_size,read_total = 0;
@@ -81,23 +76,23 @@ static uint16_t capacity_task_get_high(void)
   do{
   /*数据量异常处理*/
   if(select_size + read_total > 4){
-  return CAPACITY_TASK_SENSOR_ERR_VALUE;    
+     return CAPACITY_TASK_SENSOR_ERR_VALUE;    
   }
   read_size = serial_read(capacity_serial_handle,(uint8_t *) buffer + read_total,select_size); 
   if(read_size < 0){
-  return CAPACITY_TASK_SENSOR_ERR_VALUE;
+     return CAPACITY_TASK_SENSOR_ERR_VALUE;
   }
   read_total +=read_size; 
   select_size = serial_select(capacity_serial_handle,100);
   if(select_size < 0){
-  return CAPACITY_TASK_SENSOR_ERR_VALUE;  
+     return CAPACITY_TASK_SENSOR_ERR_VALUE;  
   }
   }while(select_size != 0);
   
   /*协议头错误 或者校验错误*/
-  if (read_total != 4 || buffer[0] != 0xff || (( buffer[0] + buffer[1] + buffer[2]) & 0xff) != buffer[3]){
-  log_error("液位传感器协议数据错误.\r\n");
-  return CAPACITY_TASK_SENSOR_ERR_VALUE;  
+  if(read_total != 4 || buffer[0] != 0xff || (( buffer[0] + buffer[1] + buffer[2]) & 0xff) != buffer[3]){
+      log_error("液位传感器协议数据错误.\r\n");
+      return CAPACITY_TASK_SENSOR_ERR_VALUE;  
   }
   /*计算液位*/
   high = (buffer[1] * 256 + buffer[2]) & 0xFFFF;
@@ -114,9 +109,8 @@ void capacity_task(void const *argument)
   float    capacity;
   char     capacity_str[4];
   uint16_t int_capacity;
-  display_task_msg_t    display_msg;
+
   alarm_task_msg_t      alarm_msg; 
-  report_task_msg_t     report_msg;
 
   /*串口驱动初始化*/
   capacity_serial_hal_init();
@@ -132,89 +126,46 @@ void capacity_task(void const *argument)
   high = capacity_task_get_high(); 
   /*如果液位高度没有变化就继续*/
   if(high == beer_capacity.high){
-  continue;
+     continue;
   }
   
   /*如果传感器异常一定时间打开报警和闪烁*/
   if(high == CAPACITY_TASK_SENSOR_ERR_VALUE){
-  beer_capacity.err_cnt ++;
-  if( beer_capacity.err_cnt >= CAPACITY_TASK_ERR_CNT){
-  beer_capacity.err_cnt = 0;
-  beer_capacity.change = true;
-  beer_capacity.high = high;
-  beer_capacity.value = CAPACITY_TASK_ERR_VALUE;
-  beer_capacity.alarm = true;
-  beer_capacity.blink = true;  
-  }
+     beer_capacity.err_cnt ++;
+     if(beer_capacity.err_cnt >= CAPACITY_TASK_ERR_CNT){
+        beer_capacity.err_cnt = 0;
+        beer_capacity.change = true;
+        beer_capacity.high = high;
+        beer_capacity.value = ALARM_TASK_CAPACITY_ERR_VALUE;
+     }
   }else{
-  high > beer_capacity.high ? beer_capacity.dir ++ : beer_capacity.dir --;
-  if(beer_capacity.dir > CAPACITY_TASK_DIR_CHANGE_CNT || beer_capacity.dir < -CAPACITY_TASK_DIR_CHANGE_CNT ){
-  beer_capacity.change = true;
-  /*容量传感器无异常关闭报警*/
-  beer_capacity.alarm = false;
-  beer_capacity.high = high;
-  capacity = beer_capacity.high * S / 1000000.0 ;/*单位L*/ 
-  if(capacity > 20.0 || capacity < 0){
-  capacity = 20.0;  
-  }
-  snprintf(capacity_str,4,"%3f",capacity);
-  log_debug("capacity value:%s\r\n",capacity_str);
-  int_capacity = (uint8_t)capacity;
-  int_capacity += capacity - int_capacity >= 0.5 ? 1 : 0;
-  beer_capacity.value = int_capacity;
-
-  /*如果低于警告值就打开闪烁*/
-  if(beer_capacity.value <= CAPACITY_TASK_CAPACITY_BLINK_VALUE ){
-  beer_capacity.blink = true;
-  /*如果高于警告值就关闭闪烁*/
-  }else {
-  beer_capacity.blink = false;
-  }
-  }
+    beer_capacity.err_cnt = 0;
+    high > beer_capacity.high ? beer_capacity.dir ++ : beer_capacity.dir --;
+    if(beer_capacity.dir > CAPACITY_TASK_DIR_CHANGE_CNT || beer_capacity.dir < -CAPACITY_TASK_DIR_CHANGE_CNT ){
+       beer_capacity.change = true;
+       beer_capacity.high = high;
+       capacity = beer_capacity.high * S / 1000000.0 ;/*单位L*/ 
+       if(capacity > 20.0 || capacity < 0){
+          capacity = 20.0;  
+       }
+       snprintf(capacity_str,4,"%3f",capacity);
+       log_debug("capacity value:%s\r\n",capacity_str);
+       int_capacity = (uint8_t)capacity;
+       int_capacity += capacity - int_capacity >= 0.5 ? 1 : 0;
+       beer_capacity.value = int_capacity;
+    }
   }
   
   if(beer_capacity.change == true){
-  beer_capacity.change = false;
-  /*发送显示消息*/
-  display_msg.type = DISPLAY_TASK_MSG_CAPACITY;
-  display_msg.value = beer_capacity.value;  
-  display_msg.blink = beer_capacity.blink;  
-  status = osMessagePut(display_task_msg_q_id,*(uint32_t*)&display_msg,CAPACITY_TASK_PUT_MSG_TIMEOUT);
-  if(status != osOK){
-  log_error("capacity put display task msg err:%d.\r\n",status);
-  } 
-  
-  display_msg.type = DISPLAY_TASK_MSG_CAPACITY_LEVEL;
-  if(beer_capacity.value ==  CAPACITY_TASK_ERR_VALUE){
-  display_msg.value = 5;  
-  }else{
-  display_msg.value = beer_capacity.value / 4;    
-  }
-  display_msg.blink = beer_capacity.blink;  
-  status = osMessagePut(display_task_msg_q_id,*(uint32_t*)&display_msg,CAPACITY_TASK_PUT_MSG_TIMEOUT);
-  if(status != osOK){
-  log_error("capacity put display task msg err:%d.\r\n",status);
-  } 
-  
-  
-  /*发送报警消息*/   
-  alarm_msg.type = ALARM_TASK_MSG_CAPACITY;
-  alarm_msg.alarm = beer_capacity.alarm;  
-  status = osMessagePut(alarm_task_msg_q_id,*(uint32_t*)&alarm_msg,CAPACITY_TASK_PUT_MSG_TIMEOUT);
-  if(status != osOK){
-  log_error("capacity put alarm task msg err:%d.\r\n",status);
+     beer_capacity.change = false;
+     /*发送报警消息*/   
+     alarm_msg.type = ALARM_TASK_MSG_CAPACITY;
+     alarm_msg.value = beer_capacity.value;  
+     status = osMessagePut(alarm_task_msg_q_id,*(uint32_t*)&alarm_msg,CAPACITY_TASK_PUT_MSG_TIMEOUT);
+     if(status != osOK){
+        log_error("capacity put alarm task msg err:%d.\r\n",status);
+     }
   }
   
-  /*发送上报消息*/   
-  report_msg.type = REPORT_TASK_MSG_CAPACITY;
-  report_msg.capacity = beer_capacity.value;  
-  status = osMessagePut(report_task_msg_q_id,*(uint32_t*)&report_msg,CAPACITY_TASK_PUT_MSG_TIMEOUT);
-  if(status != osOK){
-  log_error("capacity put report task msg err:%d.\r\n",status);
   }
-  
-
-  }  
-  }
-  
 }

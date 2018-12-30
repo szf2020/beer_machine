@@ -111,10 +111,11 @@ void alarm_task(void const *argument)
   osEvent  os_msg;
 
   
-  alarm_task_msg_t msg;
+  alarm_task_msg_t       msg;
+  alarm_task_msg_t       alarm_msg;
   display_task_msg_t     display_msg;
-  compressor_task_msg_t compressor_msg;
-  report_task_msg_t     report_msg;
+  compressor_task_msg_t  compressor_msg;
+  report_task_msg_t      report_msg;
     
   /*等待任务同步*/
   /*
@@ -137,86 +138,85 @@ void alarm_task(void const *argument)
         alarm.temperature.value = msg.value;
         if(alarm.temperature.value == ALARM_TASK_TEMPERATURE_ERR_VALUE){
            alarm.temperature.alarm = true;
-
-           compressor_msg.type = COMPRESSOR_TASK_MSG_TEMPERATURE_ERR;      
-
-           display_msg.type = DISPLAY_TASK_MSG_TEMPERATURE_ERR;
-           display_msg.value = ALARM_TASK_TEMPERATURE_ERR_VALUE;
+                
            display_msg.blink = true;
+           display_msg.point = false;
+           
+           compressor_msg.type = COMPRESSOR_TASK_MSG_TEMPERATURE_ERR;            
            
            report_msg.type = REPORT_TASK_MSG_TEMPERATURE_ERR;     
-           report_msg.value = ALARM_TASK_TEMPERATURE_ERR_VALUE;                                  
+                              
         /*非温度故障处理*/    
-        }else {        
+        }else {     
            /*如果先前是故障状态*/
            if(alarm.temperature.alarm == true){
               alarm.temperature.alarm = false;
               report_msg.type = REPORT_TASK_MSG_TEMPERATURE_ERR_CLEAR;     
-           }else{
-              report_msg.type = REPORT_TASK_MSG_TEMPERATURE_VALUE;     
-           }
-           report_msg.value = alarm.temperature.value;    
-           
-           if(alarm.temperature.value >= ALARM_TASK_TEMPERATURE_HIGH || alarm.temperature.value <= ALARM_TASK_TEMPERATURE_LOW){
+           }          
+           if(alarm.temperature.value >= alarm.temperature.high || alarm.temperature.value <= alarm.temperature.low){
              alarm.temperature.warning = true;             
-             display_msg.blink = true;       
+             display_msg.blink = true;
            }else{
              alarm.temperature.warning = false;             
-             display_msg.blink = false;         
-           }
-           
-          display_msg.type = DISPLAY_TASK_MSG_TEMPERATURE_VALUE;
-          display_msg.value = alarm.temperature.value;
-          compressor_msg.type = COMPRESSOR_TASK_MSG_TEMPERATURE_VALUE;  
-          compressor_msg.value = alarm.temperature.value;                         
+             display_msg.blink = false;
+           }         
+          display_msg.point = true;       
+          compressor_msg.type = COMPRESSOR_TASK_MSG_TEMPERATURE_VALUE;       
+          report_msg.type = REPORT_TASK_MSG_TEMPERATURE_VALUE;                      
         }
+        
+       display_msg.type = DISPLAY_TASK_MSG_TEMPERATURE;
+       display_msg.value = alarm.temperature.value;
+       compressor_msg.value = alarm.temperature.value; 
+       report_msg.value = alarm.temperature.value;  
        /*压缩机温度消息*/
        alarm_task_send_msg(compressor_task_msg_q_id,*(uint32_t*)&compressor_msg);
        /*显示屏温度消息*/
        alarm_task_send_msg(display_task_msg_q_id,*(uint32_t*)&display_msg);
        /*上报任务温度消息*/
-       alarm_task_send_msg(display_task_msg_q_id,*(uint32_t*)&report_msg);         
+       alarm_task_send_msg(report_task_msg_q_id,*(uint32_t*)&report_msg);         
      }
      
      /*压力值消息处理*/ 
      if(msg.type == ALARM_TASK_MSG_PRESSURE){
         alarm.pressure.value = msg.value;
         /*故障处理*/
-        if(alarm.pressure.value == ALARM_TASK_PRESSURE_ERR){
+        if(alarm.pressure.value == ALARM_TASK_PRESSURE_ERR_VALUE){
            alarm.pressure.alarm = true;
- 
-           display_msg.type = DISPLAY_TASK_MSG_PRESSURE_ERR;
-           display_msg.value = ALARM_TASK_PRESSURE_ERR_VALUE;
-           display_msg.blink = true;
            
-           report_msg.type = REPORT_TASK_MSG_PRESSURE_ERR;     
-           report_msg.value = ALARM_TASK_PRESSURE_ERR_VALUE;                                  
+           display_msg.blink = true;
+           display_msg.point = false;
+           
+           report_msg.type = REPORT_TASK_MSG_PRESSURE_ERR;                                  
         /*非故障处理*/    
         }else {        
            /*如果先前是故障状态*/
            if(alarm.pressure.alarm == true){
               alarm.pressure.alarm = false;
               report_msg.type = REPORT_TASK_MSG_PRESSURE_ERR_CLEAR;     
-              report_msg.value = alarm.pressure.value;  
            }else{
-              report_msg.type = REPORT_TASK_MSG_PRESSURE_VALUE;     
-              report_msg.value = alarm.pressure.value;  
+              report_msg.type = REPORT_TASK_MSG_PRESSURE_VALUE;      
            }
              
-           if(alarm.pressure.value >= ALARM_TASK_PRESSURE_HIGH || alarm.pressure.value <= ALARM_TASK_PRESSURE_LOW){
+           if(alarm.pressure.value >= alarm.pressure.high || alarm.pressure.value <= alarm.pressure.low){
              alarm.pressure.warning = true;             
              display_msg.blink = true;       
            }else{
              alarm.pressure.warning = false;             
              display_msg.blink = false;         
-           }  
-          display_msg.type = DISPLAY_TASK_MSG_PRESSURE_VALUE;
-          display_msg.value = alarm.pressure.value;
+           }
+           display_msg.point = true;
         }
+        
+                             
+        display_msg.type = DISPLAY_TASK_MSG_PRESSURE;
+        display_msg.value = alarm.pressure.value;
+           
+        report_msg.value = alarm.pressure.value;  
         /*显示屏温度消息*/
         alarm_task_send_msg(display_task_msg_q_id,*(uint32_t*)&display_msg);
         /*上报任务温度消息*/
-        alarm_task_send_msg(display_task_msg_q_id,*(uint32_t*)&report_msg);  
+        alarm_task_send_msg(report_task_msg_q_id,*(uint32_t*)&report_msg);  
      }
      
      /*液位值消息处理*/ 
@@ -225,45 +225,75 @@ void alarm_task(void const *argument)
         /*故障处理*/
         if(alarm.capacity.value == ALARM_TASK_CAPACITY_ERR_VALUE){
            alarm.capacity.alarm = true;
- 
-           display_msg.type = DISPLAY_TASK_MSG_CAPACITY_ERR;
-           display_msg.value = ALARM_TASK_CAPACITY_ERR_VALUE;
            display_msg.blink = true;
+           display_msg.point = false;
            
-           report_msg.type = REPORT_TASK_MSG_CAPACITY_ERR;     
-           report_msg.value = ALARM_TASK_CAPACITY_ERR_VALUE;                                  
+           report_msg.type = REPORT_TASK_MSG_CAPACITY_ERR;                                   
         /*非故障处理*/    
         }else {        
            /*如果先前是故障状态*/
            if(alarm.capacity.alarm == true){
               alarm.capacity.alarm = false;
-              report_msg.type = ALARM_TASK_CAPACITY_ERR_CLEAR;     
-              report_msg.value = alarm.capacity.value;  
+              report_msg.type =REPORT_TASK_MSG_CAPACITY_ERR_CLEAR;       
            }else{
-              report_msg.type = REPORT_TASK_MSG_PRESSURE_VALUE;     
-              report_msg.value = alarm.capacity.value;  
+              report_msg.type = REPORT_TASK_MSG_CAPACITY_VALUE;     
            }
              
-           if(alarm.capacity.value >= ALARM_TASK_CAPACITY_HIGH || alarm.capacity.value <= ALARM_TASK_CAPACITY_LOW){
+           if(alarm.capacity.value >= alarm.capacity.high || alarm.capacity.value <= alarm.capacity.low){
              alarm.pressure.warning = true;             
              display_msg.blink = true;       
            }else{
              alarm.capacity.warning = false;             
              display_msg.blink = false;         
            }  
-           
-           display_msg.type = DISPLAY_TASK_MSG_CAPACITY_VALUE;
-           display_msg.value = alarm.capacity.value;
         }
+       display_msg.type = DISPLAY_TASK_MSG_CAPACITY;
+       display_msg.point = true;
+       display_msg.value = alarm.capacity.value;
         
+       report_msg.value = alarm.capacity.value; 
        /*显示屏温度消息*/
        alarm_task_send_msg(display_task_msg_q_id,*(uint32_t*)&display_msg);
        /*上报任务温度消息*/
-       alarm_task_send_msg(display_task_msg_q_id,*(uint32_t*)&report_msg);     
+       alarm_task_send_msg(report_task_msg_q_id,*(uint32_t*)&report_msg);     
      } 
      
+   /*温度配置消息处理*/ 
+   if(msg.type == ALARM_TASK_MSG_TEMPERATURE_CONFIG){
+      alarm.temperature.high = (int8_t)msg.reserved >> 8;
+      alarm.temperature.low =  (int8_t)msg.reserved & 0xFF;
+      if(alarm.temperature.value != ALARM_TASK_TEMPERATURE_ERR_VALUE){
+         /*发给自己的温度消息*/
+         alarm_msg.type = ALARM_TASK_MSG_TEMPERATURE;
+         alarm_msg.value = alarm.temperature.value;
+         alarm_task_send_msg(alarm_task_msg_q_id,*(uint32_t*)&alarm_msg);
+      }
+   }   
+    /*压力配置消息处理*/ 
+   if(msg.type == ALARM_TASK_MSG_PRESSURE_CONFIG){
+      alarm.pressure.high = msg.reserved >> 8;
+      alarm.pressure.low =  msg.reserved & 0xFF;
+      if(alarm.pressure.value != ALARM_TASK_PRESSURE_ERR_VALUE){
+         /*发给自己的压力消息*/
+         alarm_msg.type = ALARM_TASK_MSG_PRESSURE;
+         alarm_msg.value = alarm.pressure.value;
+         alarm_task_send_msg(alarm_task_msg_q_id,*(uint32_t*)&alarm_msg);
+      }
+   }  
 
-  /*液位报警消息处理*/ 
+   /*容量配置消息处理*/ 
+   if(msg.type == ALARM_TASK_MSG_TEMPERATURE_CONFIG){
+      alarm.capacity.high = msg.reserved >> 8;
+      alarm.capacity.low =  msg.reserved & 0xFF;
+      if(alarm.capacity.value != ALARM_TASK_CAPACITY_ERR_VALUE){
+         /*发给自己的压力消息*/
+         alarm_msg.type = ALARM_TASK_MSG_CAPACITY;
+         alarm_msg.value = alarm.capacity.value;
+         alarm_task_send_msg(alarm_task_msg_q_id,*(uint32_t*)&alarm_msg);
+      }
+   }  
+   
+  /*蜂鸣器报警消息处理*/ 
   if(msg.type == ALARM_TASK_MSG_TIMER_TIMEOUT){
   /*如果有任意一个报警状态存在 就继续操作蜂鸣器*/
   if(alarm.temperature.alarm == true || alarm.pressure.alarm == true || alarm.capacity.alarm == true){

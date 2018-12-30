@@ -37,7 +37,7 @@ void temperature_task(void const *argument);
 #define  TEMPERATURE_BLINK_VALUE_MAX               5   /*温度高值闪烁上限*/
 #define  TEMPERATURE_ALARM_VALUE_MAX               50  /*温度高值报警上限 >*/
 #define  TEMPERATURE_ALARM_VALUE_MIN               -9  /*温度低值报警下限 <*/
-#define  TEMPERATURE_ERR_VALUE_SENSOR              (0xe * 10 + 0)/*温度传感器故障 代码 E0*/
+#define  TEMPERATURE_ERR_VALUE_SENSOR              0xFFF
 
 typedef enum
 {

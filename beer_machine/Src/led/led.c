@@ -159,7 +159,7 @@ void led_display_temperature_icon(uint8_t on_off)
 void led_display_temperature(int16_t t)
 {
 uint8_t dis[2];
-if(t == LED_NULL_VALUE){
+if(t == LED_DISPLAY_OFF){
  dis[0]=null_code;
  dis[1]=null_code;  
 }else if(t < 0){
@@ -197,7 +197,7 @@ void led_display_pressure_icon(uint8_t on_off)
 /*压力小数点*/
 void led_display_pressure_point(uint8_t on_off)
 {
- if(on_off == LED_NULL_VALUE){
+ if(on_off == LED_DISPLAY_OFF){
  on_off = 0; 
  }
  if(on_off > 0 ){
@@ -212,7 +212,7 @@ void led_display_pressure_point(uint8_t on_off)
 void led_display_pressure(uint8_t p)
 {
 uint8_t dis[2]; 
-if(p == LED_NULL_VALUE){
+if(p == LED_DISPLAY_OFF){
  dis[0]=null_code;
  dis[1]=null_code;  
 }else {
@@ -240,7 +240,7 @@ void led_display_capacity_icon_frame(uint8_t on_off)
 void led_display_capacity_icon_level(uint8_t level)
 {
  uint8_t bit5,bit4l,bit4r,bits31;
- if(level == LED_NULL_VALUE){
+ if(level == LED_DISPLAY_OFF){
  level = 0; 
  }
  switch(level)
@@ -302,7 +302,7 @@ void led_display_capacity_unit(uint8_t on_off)
 void led_display_capacity(uint8_t c)
 {
 uint8_t dis[2]; 
-if(c == LED_NULL_VALUE){
+if(c == LED_DISPLAY_OFF){
  dis[0]=null_code;
  dis[1]=null_code;  
 }else {
@@ -317,7 +317,7 @@ tm1629a_buffer_update(LED_C_LO_POS,dis[1],LED_ABCDEFG_BITS);
 void led_display_wifi_icon(uint8_t level)
 {
   uint8_t bits;
-  if(level == LED_NULL_VALUE){
+  if(level == LED_DISPLAY_OFF){
   level = 0;
   }
   switch(level)

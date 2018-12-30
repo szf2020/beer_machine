@@ -1,17 +1,18 @@
 #include "FreeRTOS.h"
 #include "task.h"
-#include "flash_utils.h"
 #include "cmsis_os.h"
+#include "flash_utils.h"
 #include "ntp.h"
 #include "http_client.h"
 #include "report_task.h"
-#include "temperature_task.h"
-#include "pressure_task.h"
-#include "compressor_task.h"
 #include "bootloader_if.h"
 #include "firmware_version.h"
 #include "net_task.h"
 #include "tasks_init.h"
+#include "temperature_task.h"
+#include "pressure_task.h"
+#include "alarm_task.h"
+#include "compressor_task.h"
 #include "utils.h"
 #include "cJSON.h"
 #include "device_config.h"
@@ -79,10 +80,12 @@ typedef enum
 typedef struct
 {
   uint32_t report_log_interval;
-  uint16_t temperature_high;
-  uint16_t temperature_low;
-  uint16_t pressure_high;
-  uint16_t pressure_low;
+  int8_t temperature_high;
+  int8_t temperature_low;
+  uint8_t pressure_high;
+  uint8_t pressure_low;
+  uint8_t capacity_high;
+  uint8_t capacity_low;
   compressor_lock_t lock;
   device_config_status_t status;
 }device_config_t;
@@ -653,9 +656,8 @@ static int report_task_dispatch_device_config(device_config_t *config)
 {
   osStatus status;
    
-  temperature_task_msg_t temperature_msg;
-  pressure_task_msg_t   pressure_msg;
-  compressor_task_msg_t compressor_msg;
+  alarm_task_msg_t       alarm_msg;
+  compressor_task_msg_t  compressor_msg;
    
   if(config->lock == COMPRESSOR_LOCK){
      compressor_msg.type = COMPRESSOR_TASK_MSG_LOCK;
@@ -668,19 +670,26 @@ static int report_task_dispatch_device_config(device_config_t *config)
      log_error("report task put compressor msg err.\r\n"); 
   }
    
-  temperature_msg.type = TEMPERATURE_TASK_MSG_CONFIG;
-  temperature_msg.value = (config->temperature_high << 8 | config->temperature_low) & 0xFFFF;
-  status = osMessagePut(compressor_task_msg_q_id,*(uint32_t *)&temperature_msg,REPORT_TASK_PUT_MSG_TIMEOUT);
+  alarm_msg.type = ALARM_TASK_MSG_TEMPERATURE_CONFIG;
+  alarm_msg.reserved = (config->temperature_high << 8 | config->temperature_low) & 0xFFFF;
+  status = osMessagePut(alarm_task_msg_q_id,*(uint32_t *)&alarm_msg,REPORT_TASK_PUT_MSG_TIMEOUT);
   if(status != osOK){
      log_error("report task put compressor msg err.\r\n"); 
   }
-   
-  pressure_msg.type = PRESSURE_TASK_MSG_CONFIG;
-  pressure_msg.value = (config->pressure_high << 8 | config->pressure_low) & 0xFFFF;
-  status = osMessagePut(compressor_task_msg_q_id,*(uint32_t *)&pressure_msg,REPORT_TASK_PUT_MSG_TIMEOUT);
+  
+  alarm_msg.type = ALARM_TASK_MSG_PRESSURE_CONFIG;
+  alarm_msg.reserved = (config->pressure_high << 8 | config->pressure_low) & 0xFFFF;
+  status = osMessagePut(alarm_task_msg_q_id,*(uint32_t *)&alarm_msg,REPORT_TASK_PUT_MSG_TIMEOUT);
   if(status != osOK){
-     log_error("report task put pressure msg err.\r\n"); 
-  }  
+     log_error("report task put compressor msg err.\r\n"); 
+  }
+  
+  alarm_msg.type = ALARM_TASK_MSG_CAPACITY_CONFIG;
+  alarm_msg.reserved = (config->capacity_high << 8 | config->capacity_low) & 0xFFFF;
+  status = osMessagePut(alarm_task_msg_q_id,*(uint32_t *)&alarm_msg,REPORT_TASK_PUT_MSG_TIMEOUT);
+  if(status != osOK){
+     log_error("report task put compressor msg err.\r\n"); 
+  }
   
   return 0;
 }
@@ -877,43 +886,74 @@ void report_task(void const *argument)
          report_task_start_active_timer(REPORT_TASK_SYNC_UTC_DELAY,REPORT_TASK_MSG_SYNC_UTC);
        }
     }
-    
-    
+       
     /*温度消息*/
-    if(msg.type == REPORT_TASK_MSG_TEMPERATURE){
+    if(msg.type == REPORT_TASK_MSG_TEMPERATURE_VALUE){
        report_log.temperature = msg.value;
     }
     /*压力消息*/
-    if(msg.type == REPORT_TASK_MSG_PRESSURE){
+    if(msg.type == REPORT_TASK_MSG_PRESSURE_VALUE){
        report_log.pressure = msg.value;
     }
  
     /*容积消息*/
-    if(msg.type == REPORT_TASK_MSG_CAPACITY){
+    if(msg.type == REPORT_TASK_MSG_CAPACITY_VALUE){
        report_log.capacity = msg.value;
     }
  
     /*温度传感器故障消息*/
-    if(msg.type == REPORT_TASK_MSG_TEMPERATURE_SENSOR_FAULT){    
+    if(msg.type == REPORT_TASK_MSG_TEMPERATURE_ERR){    
        report_fault_t fault;
-       report_task_build_fault(&fault,"2010","null",report_task_get_utc(),msg.value == 1 ? HAL_FAULT_STATUS_FAULT : HAL_FAULT_STATUS_FAULT_CLEAR);
+       report_log.temperature = msg.value;
+       report_task_build_fault(&fault,"2010","null",report_task_get_utc(), HAL_FAULT_STATUS_FAULT );
        report_task_put_fault_to_queue(&fault_queue,&fault);  
+       report_task_start_fault_timer(0);
     }
  
     /*压力传感器故障消息*/
-    if(msg.type == REPORT_TASK_MSG_PRESSURE_SENSOR_FAULT){
-       report_fault_t fault;     
-       report_task_build_fault(&fault,"2011","null",report_task_get_utc(),msg.value == 1 ? HAL_FAULT_STATUS_FAULT : HAL_FAULT_STATUS_FAULT_CLEAR);
+    if(msg.type == REPORT_TASK_MSG_PRESSURE_ERR){
+       report_fault_t fault;   
+       report_log.pressure = msg.value;
+       report_task_build_fault(&fault,"2011","null",report_task_get_utc(), HAL_FAULT_STATUS_FAULT );
        report_task_put_fault_to_queue(&fault_queue,&fault);
+       report_task_start_fault_timer(0);
      }
  
     /*液位传感器故障消息*/
-    if(msg.type == REPORT_TASK_MSG_CAPACITY_SENSOR_FAULT){
+    if(msg.type == REPORT_TASK_MSG_CAPACITY_ERR){
        report_fault_t fault;
-       report_task_build_fault(&fault,"2012","null",report_task_get_utc(),msg.value == 1 ? HAL_FAULT_STATUS_FAULT : HAL_FAULT_STATUS_FAULT_CLEAR);
+       report_log.capacity = msg.value;
+       report_task_build_fault(&fault,"2012","null",report_task_get_utc(), HAL_FAULT_STATUS_FAULT);
        report_task_put_fault_to_queue(&fault_queue,&fault); 
+       report_task_start_fault_timer(0);
+     }
+     /*温度传感器故障解除消息*/
+    if(msg.type == REPORT_TASK_MSG_TEMPERATURE_ERR_CLEAR){    
+       report_fault_t fault;
+       report_log.temperature = msg.value;
+       report_task_build_fault(&fault,"2010","null",report_task_get_utc(), HAL_FAULT_STATUS_FAULT_CLEAR);
+       report_task_put_fault_to_queue(&fault_queue,&fault); 
+       report_task_start_fault_timer(0);    
+    }
+ 
+    /*压力传感器故障解除消息*/
+    if(msg.type == REPORT_TASK_MSG_PRESSURE_ERR_CLEAR){
+       report_fault_t fault;  
+       report_log.pressure = msg.value;
+       report_task_build_fault(&fault,"2011","null",report_task_get_utc(), HAL_FAULT_STATUS_FAULT_CLEAR);
+       report_task_put_fault_to_queue(&fault_queue,&fault);
+       report_task_start_fault_timer(0);
      }
  
+    /*液位传感器故障解除消息*/
+    if(msg.type == REPORT_TASK_MSG_CAPACITY_ERR_CLEAR){
+       report_fault_t fault;
+       report_log.capacity = msg.value;
+       report_task_build_fault(&fault,"2012","null",report_task_get_utc(), HAL_FAULT_STATUS_FAULT_CLEAR);
+       report_task_put_fault_to_queue(&fault_queue,&fault); 
+       report_task_start_fault_timer(0);
+     }
+    
     /*数据上报消息*/
     if(msg.type == REPORT_TASK_MSG_REPORT_LOG){
       /*只有设备激活才可以上报数据*/

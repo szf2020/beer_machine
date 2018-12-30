@@ -23,7 +23,7 @@ void capacity_task(void const *argument);
 #define  CAPACITY_TASK_CAPACITY_BLINK_VALUE    5 /*5升*/       
 #define  CAPACITY_TASK_PUT_MSG_TIMEOUT         5 
 
-#define  CAPACITY_TASK_ERR_VALUE               (0xe * 10 + 2) /*液位传感器故障 代码E2*/
+#define  CAPACITY_TASK_SENSOR_ERR_VALUE        0xFFFF
 
 
 
