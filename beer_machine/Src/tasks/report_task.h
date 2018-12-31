@@ -15,9 +15,9 @@ void report_task(void const * argument);
 #define  REPORT_TASK_GET_MSG_INTERVAL               500
 
 #define  REPORT_TASK_RETRY_DELAY                    (1 * 60 * 1000)
-#define  REPORT_TASK_RETRY1_DELAY                   (60 * 1000)
-#define  REPORT_TASK_RETRY2_DELAY                   (5 * 60 * 1000)
-#define  REPORT_TASK_RETRY3_DELAY                   (10 * 60 * 1000)
+#define  REPORT_TASK_RETRY1_DELAY                   (1 * 60 * 1000)
+#define  REPORT_TASK_RETRY2_DELAY                   (1 * 60 * 1000)
+#define  REPORT_TASK_RETRY3_DELAY                   (1 * 60 * 1000)
 #define  REPORT_TASK_WAIT_NET_HAL_INFO_TIMEOUT      (5 * 60 * 1000)
 #define  REPORT_TASK_SYNC_UTC_DELAY                 (2 * 60 * 60 * 1000U)
 

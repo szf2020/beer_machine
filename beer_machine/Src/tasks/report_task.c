@@ -40,7 +40,7 @@ typedef enum
   
 typedef struct
 {
-  char code[4];
+  char code[5];
   char msg[6];
   char time[14];
   char status[2];
@@ -50,7 +50,7 @@ typedef struct
 {
   int16_t temperature;
   uint8_t capacity;
-  uint8_t pressure;
+  float   pressure;
   net_location_t location;
 }report_log_t;
 
@@ -66,13 +66,13 @@ typedef struct
 
 typedef enum
 {
-  DEVICE_CONFIG_STATUS_VALID = 0x20180000U,
+  DEVICE_CONFIG_STATUS_VALID = 0xAA,
   DEVICE_CONFIG_STATUS_INVALID
 }device_config_status_t;
 
 typedef enum
 {
-  COMPRESSOR_LOCK = 0x20190000U,
+  COMPRESSOR_LOCK = 0xBB,
   COMPRESSOR_UNLOCK
 }compressor_lock_t;
 
@@ -107,12 +107,14 @@ static uint8_t active_event;
 
 static device_config_t device_default_config = {
   
-.temperature_low = DEFAULT_LOW_TEMPERATURE,
-.temperature_high = DEFAULT_HIGH_TEMPERATURE,
-.temperature_low = DEFAULT_LOW_PRESSURE,
-.temperature_high = DEFAULT_HIGH_PRESSURE,
+.temperature_low = DEFAULT_COMPRESSOR_LOW_TEMPERATURE,
+.temperature_high = DEFAULT_COMPRESSOR_HIGH_TEMPERATURE,
+.pressure_low = DEFAULT_LOW_PRESSURE,
+.pressure_high = DEFAULT_HIGH_PRESSURE,
+.capacity_low = DEFAULT_LOW_CAPACITY,
+.capacity_high = DEFAULT_HIGH_CAPACITY,
 .report_log_interval = DEFAULT_REPORT_LOG_INTERVAL,
-.lock = DEFAULT_REPORT_LOCK_STATUS,
+.lock = COMPRESSOR_UNLOCK,
 .status = DEVICE_CONFIG_STATUS_VALID
 
 };
@@ -133,7 +135,7 @@ static void report_task_active_timer_init(uint8_t *event)
 /*启动激活定时器*/
 static void report_task_start_active_timer(uint32_t timeout,uint8_t event)
 {
-  active_event = active_event;
+  active_event = event;
   osTimerStart(active_timer_id,timeout);  
 }
 /*激活定时器到达处理*/
@@ -142,7 +144,8 @@ static void report_task_active_timer_expired(void const *argument)
   osStatus status; 
   report_task_msg_t msg;
   
-  msg.type = *(uint8_t *)argument;
+  msg.type = *( uint8_t *) pvTimerGetTimerID( (void *)argument );
+  log_debug("0x%x 0x%x \r\n",(uint32_t) msg.type,pvTimerGetTimerID( (void *)argument ));
   
   status = osMessagePut(report_task_msg_q_id,*(uint32_t *)&msg,REPORT_TASK_PUT_MSG_TIMEOUT);
   if(status != osOK){
@@ -201,11 +204,26 @@ static void report_task_fault_timer_expired(void const *argument)
   }
 }
 
+/*同步UTC时间*/
+static int report_task_sync_utc(uint32_t *offset)
+{
+  int rc;
+  uint32_t cur_time;
+  
+  rc = ntp_sync_time(&cur_time);
+  if(rc != 0){
+     return -1;
+  }
+  
+  *offset = cur_time - osKernelSysTick() / 1000;
+  
+  return 0; 
+}
 
 /*获取同步后的本地UTC*/
 static uint32_t report_task_get_utc()
 {
- return osKernelSysTick() + time_offset;
+ return osKernelSysTick() / 1000 + time_offset;
 }
 
   
@@ -217,7 +235,7 @@ static char *report_task_build_log_json_str(report_log_t *log)
   cJSON *location_array,*location1,*location2,*location3,*location4;
   log_json = cJSON_CreateObject();
   cJSON_AddStringToObject(log_json,"source",SOURCE);
-  cJSON_AddNumberToObject(log_json,"pressure",log->pressure / 10.0);
+  cJSON_AddNumberToObject(log_json,"pressure",log->pressure);
   cJSON_AddNumberToObject(log_json,"capacity",log->capacity);
   cJSON_AddNumberToObject(log_json,"temp",log->temperature);
   /*location数组*/
@@ -248,6 +266,37 @@ static char *report_task_build_log_json_str(report_log_t *log)
   return json_str;
  }
  
+/*解析日志上报返回的信息数据json*/
+static int report_task_parse_log_rsp_json(char *json_str)
+{
+  int rc = -1;
+  cJSON *log_rsp_json;
+  cJSON *temp;
+  
+  log_debug("parse fault rsp.\r\n");
+  log_rsp_json = cJSON_Parse(json_str);
+  if(log_rsp_json == NULL){
+     log_error("rsp is not json.\r\n");
+     return -1;  
+  }
+  /*检查code值 200成功*/
+  temp = cJSON_GetObjectItem(log_rsp_json,"code");
+  if(!cJSON_IsNumber(temp)){
+     log_error("code is not num.\r\n");
+     goto err_exit;  
+  }
+               
+  log_debug("code:%d\r\n", temp->valueint);
+  if(temp->valueint != 200){
+     log_error("log rsp err code:%d.\r\n",temp->valueint); 
+     goto err_exit;  
+  } 
+  rc = 0;
+  
+err_exit:
+  cJSON_Delete(log_rsp_json);
+  return rc;
+}
 
 /*执行日志数据上报*/
  static int report_task_report_log(const char *url_origin,report_log_t *log,const char *sn)
@@ -290,8 +339,13 @@ static char *report_task_build_log_json_str(report_log_t *log)
     log_error("report log err.\r\n");  
     return -1;
  }
- 
+ rc = report_task_parse_log_rsp_json(context.rsp_buffer);
+ if(rc != 0){
+    log_error("json parse log rsp error.\r\n");  
+    return -1;
+ }
  log_debug("report log ok.\r\n");  
+ 
  return 0;
  }
  
@@ -318,6 +372,7 @@ static char *report_task_build_log_json_str(report_log_t *log)
 /*解析激活返回的信息数据json*/
 static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *config)
 {
+  int rc = -1;
   cJSON *active_rsp_json;
   cJSON *temp,*data,*run_config,*temperature,*pressure;
   
@@ -329,23 +384,27 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
   }
   /*检查code值 200成功*/
   temp = cJSON_GetObjectItem(active_rsp_json,"code");
-  if(!cJSON_IsNumber(temp) || temp->valuestring == NULL){
+  if(!cJSON_IsNumber(temp) || temp->valueint == NULL){
      log_error("code is not num.\r\n");
      goto err_exit;  
   }
                
-  log_debug("code:%s\r\n", temp->valuestring);
-  if(strcmp(temp->valuestring,"200") != 0){
-     log_error("active rsp err code:%d.\r\n",temp->valuestring); 
+  log_debug("code:%d\r\n", temp->valueint);
+  if(temp->valueint != 200 ){
+     log_error("active rsp err code:%d.\r\n",temp->valueint); 
      goto err_exit;  
-  }   
+  }  
+    /*测试*/
+    rc = 0;
+    goto err_exit;
+    
   /*检查success值 true or false*/
   temp = cJSON_GetObjectItem(active_rsp_json,"success");
   if(!cJSON_IsBool(temp) || !cJSON_IsTrue(temp)){
      log_error("success is not bool or is not true.\r\n");
      goto err_exit;  
   }
-  log_debug("success:%s\r\n",temp->valuestring); 
+  log_debug("success:%s\r\n",temp->valueint ? "true" : "false"); 
   
   /*检查data */
   data = cJSON_GetObjectItem(active_rsp_json,"data");
@@ -361,11 +420,11 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
   }
   /*检查log submit interval*/
   temp = cJSON_GetObjectItem(run_config,"logSubmitDur");
-  if(!cJSON_IsNumber(temp) || temp->valuestring == NULL){
+  if(!cJSON_IsNumber(temp)){
      log_error("logSubmitDur is not num or is null.\r\n");
      goto err_exit;  
   }
-  config->report_log_interval = atoi(temp->valuestring);
+  config->report_log_interval = temp->valueint;
   
   /*检查lock*/
   temp = cJSON_GetObjectItem(run_config,"lock");
@@ -388,18 +447,18 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
   }
   /*检查temperature min */ 
   temp = cJSON_GetObjectItem(temperature,"min");
-  if(!cJSON_IsNumber(temp) || temp->valuestring == NULL){
+  if(!cJSON_IsNumber(temp)){
      log_error("t min is not num or is null.\r\n");
      goto err_exit;  
   }
-  config->temperature_low = atoi(temp->valuestring);
+  config->temperature_low = temp->valueint;
  /*检查temperature max */ 
   temp = cJSON_GetObjectItem(temperature,"max");
-  if(!cJSON_IsNumber(temp) || temp->valuestring == NULL){
+  if(!cJSON_IsNumber(temp)){
      log_error("t max is not num or is null.\r\n");
      goto err_exit;  
   }
-  config->temperature_high = atoi(temp->valuestring);
+  config->temperature_high = temp->valueint;
   
   /*检查pressure*/ 
   pressure = cJSON_GetObjectItem(run_config,"pressure");
@@ -409,25 +468,26 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
   }
   /*检查pressure min */ 
   temp = cJSON_GetObjectItem(pressure,"min");
-  if(!cJSON_IsNumber(temp) || temp->valuestring == NULL){
+  if(!cJSON_IsNumber(temp)){
      log_error("p min is not num or is null.\r\n");
      goto err_exit;  
   }
-  config->pressure_low = atoi(temp->valuestring);
+  config->pressure_low = temp->valueint;
  /*检查pressure max */ 
   temp = cJSON_GetObjectItem(pressure,"max");
-  if(!cJSON_IsNumber(temp) || temp->valuestring == NULL){
+  if(!cJSON_IsNumber(temp)){
      log_error("p max is not num or is null.\r\n");
      goto err_exit;  
   }
-  config->pressure_high = atoi(temp->valuestring);
+  config->pressure_high = temp->valueint;
   
   log_debug("active rsp [lock:%d infointerval:%d. t_low:%d t_high:%d p_low:%d p_high:%d.\r\n",
             config->lock,config->temperature_low,config->temperature_high,config->pressure_low,config->pressure_high);
+  
 
 err_exit:
   cJSON_Delete(active_rsp_json);
-  return -1;
+  return rc;
 }
 
 
@@ -512,6 +572,7 @@ static void report_task_build_fault_form_data_str(char *form_data,const uint16_t
 /*解析故障上报返回的信息数据json*/
 static int report_task_parse_fault_rsp_json(char *json_str)
 {
+  int rc = -1;
   cJSON *fault_rsp_json;
   cJSON *temp;
   
@@ -523,21 +584,21 @@ static int report_task_parse_fault_rsp_json(char *json_str)
   }
   /*检查code值 200成功*/
   temp = cJSON_GetObjectItem(fault_rsp_json,"code");
-  if(!cJSON_IsNumber(temp) || temp->valuestring == NULL){
+  if(!cJSON_IsNumber(temp)){
      log_error("code is not num.\r\n");
      goto err_exit;  
   }
                
-  log_debug("code:%s\r\n", temp->valuestring);
-  if(strcmp(temp->valuestring,"200") != 0){
-     log_error("active rsp err code:%d.\r\n",temp->valuestring); 
+  log_debug("code:%d\r\n", temp->valueint);
+  if(temp->valueint != 200 && temp->valueint != 30010){
+     log_error("fault rsp err code:%d.\r\n",temp->valueint); 
      goto err_exit;  
   } 
-  return 0;
+  rc = 0;
   
 err_exit:
   cJSON_Delete(fault_rsp_json);
-  return -1;
+  return rc;
 }
 
  /*执行故障信息数据上报*/
@@ -550,7 +611,7 @@ static int report_task_report_fault(const char *url_origin,report_fault_t *fault
  
   char timestamp_str[14] = { 0 };
   char sign_str[33] = { 0 };
-  char req[200];
+  char req[300];
   char rsp[200] = { 0 };
   char url[200] = { 0 };
 
@@ -562,7 +623,7 @@ static int report_task_report_fault(const char *url_origin,report_fault_t *fault
   /*构建新的url*/
   utils_build_url(url,200,url_origin,sn,sign_str,SOURCE,timestamp_str);  
    
-  report_task_build_fault_form_data_str(req,200,fault);
+  report_task_build_fault_form_data_str(req,300,fault);
 
  
   context.range_size = 200;
@@ -656,39 +717,38 @@ static int report_task_dispatch_device_config(device_config_t *config)
 {
   osStatus status;
    
-  alarm_task_msg_t       alarm_msg;
-  compressor_task_msg_t  compressor_msg;
-   
+  alarm_task_msg_t alarm_msg;
+
   if(config->lock == COMPRESSOR_LOCK){
-     compressor_msg.type = COMPRESSOR_TASK_MSG_LOCK;
+     alarm_msg.value = ALARM_TASK_COMPRESSOR_LOCK_VALUE;
   }else{
-     compressor_msg.type = COMPRESSOR_TASK_MSG_UNLOCK;
-  }   
-   
-  status = osMessagePut(compressor_task_msg_q_id,*(uint32_t *)&compressor_msg,REPORT_TASK_PUT_MSG_TIMEOUT);
+     alarm_msg.value = ALARM_TASK_COMPRESSOR_UNLOCK_VALUE;
+  }      
+  alarm_msg.type = ALARM_TASK_MSG_COMPRESSOR_LOCK_CONFIG;
+  status = osMessagePut(alarm_task_msg_q_id,*(uint32_t *)&alarm_msg,REPORT_TASK_PUT_MSG_TIMEOUT);
   if(status != osOK){
-     log_error("report task put compressor msg err.\r\n"); 
+     log_error("report task put lock msg err.\r\n"); 
   }
    
   alarm_msg.type = ALARM_TASK_MSG_TEMPERATURE_CONFIG;
-  alarm_msg.reserved = (config->temperature_high << 8 | config->temperature_low) & 0xFFFF;
+  alarm_msg.reserved = ((uint16_t)config->temperature_high << 8 | config->temperature_low) & 0xFFFF;
   status = osMessagePut(alarm_task_msg_q_id,*(uint32_t *)&alarm_msg,REPORT_TASK_PUT_MSG_TIMEOUT);
   if(status != osOK){
-     log_error("report task put compressor msg err.\r\n"); 
+     log_error("report task put t msg err.\r\n"); 
   }
   
   alarm_msg.type = ALARM_TASK_MSG_PRESSURE_CONFIG;
-  alarm_msg.reserved = (config->pressure_high << 8 | config->pressure_low) & 0xFFFF;
+  alarm_msg.reserved = ((uint16_t)config->pressure_high << 8 | config->pressure_low) & 0xFFFF;
   status = osMessagePut(alarm_task_msg_q_id,*(uint32_t *)&alarm_msg,REPORT_TASK_PUT_MSG_TIMEOUT);
   if(status != osOK){
-     log_error("report task put compressor msg err.\r\n"); 
+     log_error("report task put pressure msg err.\r\n"); 
   }
   
   alarm_msg.type = ALARM_TASK_MSG_CAPACITY_CONFIG;
-  alarm_msg.reserved = (config->capacity_high << 8 | config->capacity_low) & 0xFFFF;
+  alarm_msg.reserved = ((uint16_t)config->capacity_high << 8 | config->capacity_low) & 0xFFFF;
   status = osMessagePut(alarm_task_msg_q_id,*(uint32_t *)&alarm_msg,REPORT_TASK_PUT_MSG_TIMEOUT);
   if(status != osOK){
-     log_error("report task put compressor msg err.\r\n"); 
+     log_error("report task put capacity msg err.\r\n"); 
   }
   
   return 0;
@@ -728,6 +788,9 @@ static void report_task_get_sn(char *sn)
      memcpy(sn,(char *)sn_str,SN_LEN);
      sn[SN_LEN] = '\0';  
   }
+  
+  /*测试*/
+  strcpy(sn,"129DP12399787777");
 }
 /*读取版本号*/
 static void report_task_get_firmware_version(char **fw_version)
@@ -771,34 +834,25 @@ int report_task_get_fault_from_queue(hal_fault_queue_t *queue,report_fault_t *fa
      return -1;
    }
        
-  *fault = queue->fault[queue->read & (REPORT_TASK_FAULT_QUEUE_SIZE - 1)];
-   queue->read++;
-     
+  *fault = queue->fault[queue->read & (REPORT_TASK_FAULT_QUEUE_SIZE - 1)];   
    return 0;    
 }
-         
-/*同步UTC时间*/
-static int report_task_sync_utc(uint32_t *offset)
+/*从故障参数队列删除一个故障参数*/         
+int report_task_delete_fault_from_queue(hal_fault_queue_t *queue)
 {
-  int rc;
-  uint32_t cur_time;
-  
-  rc = ntp_sync_time(&cur_time);
-  if(rc != 0){
-     return -1;
+  if(queue->read < queue->write){
+   queue->read++; 
   }
-  
-  *offset = cur_time - osKernelSysTick();
-  
-  return 0; 
+  return 0;
 }
+         
 
 
 /*上报任务*/
 void report_task(void const *argument)
 {
  int rc;
- int log_retry = 0,fault_retry = 0,active_retry = 0;
+ int fault_retry = 0,active_retry = 0;
  osEvent os_event;
  report_task_msg_t msg;
  device_config_t config;
@@ -820,12 +874,13 @@ void report_task(void const *argument)
  report_task_get_firmware_version(&report_active.fw_version);
  report_task_get_sn(report_active.sn);
  
+ report_task_start_active_timer(0,REPORT_TASK_MSG_NET_HAL_INFO);
  /*等待任务同步*/
- /*
+ 
  xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_REPORT_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
  log_debug("report task sync ok.\r\n");
  //snprintf(msg_log,200,"{\"source\":\"coolbeer\",\"pressure\":\"1.1\",\"capacity\":\"1\",\"temp\":4,\"location\":{\"lac\":%s,\"ci\":%s}}",reg.location.lac,reg.location.ci);
- */
+ 
  
  while(1){
  osDelay(REPORT_TASK_GET_MSG_INTERVAL);
@@ -889,11 +944,11 @@ void report_task(void const *argument)
        
     /*温度消息*/
     if(msg.type == REPORT_TASK_MSG_TEMPERATURE_VALUE){
-       report_log.temperature = msg.value;
+       report_log.temperature = (int8_t)msg.value;
     }
     /*压力消息*/
     if(msg.type == REPORT_TASK_MSG_PRESSURE_VALUE){
-       report_log.pressure = msg.value;
+       report_log.pressure = msg.value / 10.0 ;
     }
  
     /*容积消息*/
@@ -959,29 +1014,31 @@ void report_task(void const *argument)
       /*只有设备激活才可以上报数据*/
       if(report_active.is_active == true){       
          rc = report_task_report_log(URL_LOG,&report_log,report_active.sn);
-         if(rc != 0){
-            log_error("report task report log timeout.%d S later retry.",report_task_retry_delay(log_retry) / 1000);
-            report_task_start_log_timer(report_task_retry_delay(log_retry)); 
-            if(++log_retry >= 3){
-               log_retry = 0;
-            }
+         if(rc == 0){
+           log_warning("report log ok.\r\n");
          }else{
-         /*重置日志上报定时器*/
-           report_task_start_log_timer(report_task_retry_delay(log_retry)); 
-           log_retry = 0;
+           log_error("  report log err.\r\n");
          }
-      }
-   }
-    
+         /*重置日志上报定时器*/
+           report_task_start_log_timer(config.report_log_interval); 
+      }   
+    }
+
    /*故障上报消息*/
    if(msg.type == REPORT_TASK_MSG_REPORT_FAULT){
       /*只有设备激活才可以上报故障*/
       if(report_active.is_active == true){    
          report_fault_t report_fault;
+         uint32_t fault_time;
          /*取出故障信息*/
          rc = report_task_get_fault_from_queue(&fault_queue,&report_fault);
          if(rc == 0){
-            rc = report_task_report_fault(URL_LOG,&report_fault,report_active.sn);
+            fault_time = atoi(report_fault.time);
+            if(fault_time < 1546099200){/*时间晚于2018.12.30没有同步，重新构造时间*/
+               fault_time = report_task_get_utc() - fault_time;
+               snprintf(report_fault.time,14,"%d",fault_time);
+            }
+            rc = report_task_report_fault(URL_FAULT,&report_fault,report_active.sn);
             if(rc != 0){
                log_error("report task report fault timeout.%d S later retry.",report_task_retry_delay(fault_retry) / 1000);
                report_task_start_fault_timer(report_task_retry_delay(fault_retry)); 
@@ -989,7 +1046,9 @@ void report_task(void const *argument)
                   fault_retry = 0;
                }
             }else{
+              report_task_delete_fault_from_queue(&fault_queue);
               fault_retry = 0;
+              report_task_start_fault_timer(0);
             }
           }
        }

@@ -1264,8 +1264,8 @@ int gsm_m6312_set_reg_echo(gsm_m6312_reg_echo_t reg_echo)
 int gsm_m6312_get_reg_location(gsm_m6312_register_t *reg)
 {
  int rc;
+ int str_rc;
  char *temp;
- char *break_str;
  gsm_m6312_err_code_t ok,err;
  
  osMutexWait(gsm_mutex,osWaitForever);
@@ -1296,13 +1296,12 @@ int gsm_m6312_get_reg_location(gsm_m6312_register_t *reg)
  temp +=strlen("+CGREG: ");
  
  /*找到第1个，*/
- break_str = strstr(temp ,",");
- if(break_str == NULL){
+ str_rc = utils_get_str_addr_by_num(temp ,",",1,&temp);
+ if(str_rc != 0){
  goto err_exit; 
  }
- temp = break_str + 1;
- 
- if(strncmp(temp,"1",1) == 0){
+
+ if(strncmp(temp + 1,"1",1) == 0){
  reg->status = GSM_M6312_STATUS_REGISTER;  
  }else {
  reg->status = GSM_M6312_STATUS_NO_REGISTER; 
@@ -1311,29 +1310,16 @@ int gsm_m6312_get_reg_location(gsm_m6312_register_t *reg)
  goto err_exit;
  }
  
- /*找到第2个，*/
- break_str = strstr(temp,",");
- if(break_str == NULL){  
+ /*获取第1个和第2个 " 之间的字符串*/
+ str_rc = utils_get_str_value_by_num(temp,reg->base.lac,"\"",1);
+ if(str_rc != 0){  
  goto err_exit;    
  }  
- temp = break_str + 1;
- /*找到第3个，*/
- break_str = strstr(temp,",");
- if(break_str == NULL || break_str - temp != 6){
- log_error("gsm location format err.\r\n");
- goto err_exit;
- }
- memcpy(reg->base.lac,temp,6);
- reg->base.lac[6] = '\0';
- /*找到第4个，*/
- temp = break_str + 1;
- break_str = strstr(temp,",");
- if(break_str == NULL || break_str - temp != 6){
- log_error("gsm location format err.\r\n");
- goto err_exit;
- }
- memcpy(reg->base.ci,temp,6);
- reg->base.ci[6] = '\0';
+ /*获取第3个和第4个 " 之间的字符串*/
+ str_rc = utils_get_str_value_by_num(temp,reg->base.ci,"\"",3);
+ if(str_rc != 0){  
+ goto err_exit;    
+ }  
  rc = GSM_ERR_OK;
  }
 

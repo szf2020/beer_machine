@@ -58,7 +58,14 @@ static void wifi_query_timer_stop(void)
 */
 static void wifi_query_timer_expired(void const *argument)
 {
-osMessagePut(net_task_msg_q_id,NET_TASK_MSG_QUERY_WIFI,0);
+  osStatus status;
+  net_task_msg_t msg;
+  msg.type = NET_TASK_MSG_QUERY_WIFI;
+  
+  status = osMessagePut(net_task_msg_q_id,*(uint32_t*)&msg,0);
+  if(status != osOK){
+     log_error("put query gsm msg err.\r\n");
+  }
 }
 
 
@@ -83,7 +90,14 @@ static void gsm_query_timer_stop(void)
 */
 static void gsm_query_timer_expired(void const *argument)
 {
-osMessagePut(net_task_msg_q_id,NET_TASK_MSG_QUERY_GSM,0);
+  osStatus status;
+  net_task_msg_t msg;
+  msg.type = NET_TASK_MSG_QUERY_GSM;
+  
+  status = osMessagePut(net_task_msg_q_id,*(uint32_t*)&msg,0);
+  if(status != osOK){
+     log_error("put query gsm msg err.\r\n");
+  }
 }
 
 static net_t net;
@@ -276,7 +290,7 @@ init:
  }
  
  /*等待任务同步*/
- xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_SOCKET_MANAGE_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
+ xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_NET_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
  log_debug("net task sync ok.\r\n");
 
 
@@ -291,11 +305,11 @@ init:
   while(1){
   os_event = osMessageGet(net_task_msg_q_id,osWaitForever);
   if(os_event.status == osEventMessage){
-  msg = (net_task_msg_t)os_event.value.v; 
+  msg = *(net_task_msg_t*)&os_event.value.v; 
  
  
   /*如果收到检查WIFI网络状态*/
-  if(msg == NET_TASK_MSG_QUERY_WIFI){ 
+  if(msg.type == NET_TASK_MSG_QUERY_WIFI){ 
      /*wifi初始化完成和配网后才轮询wifi状态*/
      if(net.wifi.is_initial == true && net.wifi.is_config == true){
         rc = net_query_wifi_rssi_level(net.wifi.ssid,&net.wifi.rssi,&net.wifi.level);
@@ -350,7 +364,7 @@ init:
   
   
   /*如果收到检查GSM网络状态*/
-  if(msg == NET_TASK_MSG_QUERY_GSM){ 
+  if(msg.type == NET_TASK_MSG_QUERY_GSM){ 
      /*存在sim卡才轮询gsm的基站信息*/
      if(net.gsm.is_sim_exsit == true){
         rc = net_query_gsm_location(&net.gsm.location.base_main,4);
@@ -358,6 +372,11 @@ init:
            net.gsm.err_cnt ++;
         }else{
            net.gsm.err_cnt = 0;
+           /*发送位置消息*/
+           status = osMessagePut(report_task_location_msg_q_id,(uint32_t)&net.gsm.location.base_main,NET_TASK_PUT_MSG_TIMEOUT);
+           if(status !=osOK){
+              log_error("put loaction msg error:%d\r\n",status);
+           } 
         }
      }
      

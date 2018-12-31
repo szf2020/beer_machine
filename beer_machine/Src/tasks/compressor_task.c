@@ -4,6 +4,7 @@
 #include "compressor_task.h"
 #include "display_task.h"
 #include "alarm_task.h"
+#include "device_config.h"
 #include "log.h"
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
 #define  LOG_MODULE_NAME     "[compressor]"
@@ -27,27 +28,19 @@ typedef enum
   COMPRESSOR_STATUS_WAIT_CONTINUE /*异常时两次开机之间的状态*/
 }compressor_status_t;
 
-typedef enum
-{
-  COMPRESSOR_UNLOCK,
-  COMPRESSOR_LOCK
-}compressor_lock_t;
-
-
-
 typedef struct
 {
   compressor_status_t status;
-  int16_t temperature;
-  int16_t temperature_work;
-  int16_t temperature_stop;
-  compressor_lock_t lock;
-  bool    status_change;
+  int8_t temperature;
+  int8_t temperature_work;
+  int8_t temperature_stop;
+  bool   lock;
+  bool   status_change;
 }compressor_t;
 
 static compressor_t compressor ={
-.temperature_stop = COMPRESSOR_STOP_TEMPERATURE,
-.temperature_work = COMPRESSOR_WORK_TEMPERATURE,
+.temperature_stop = DEFAULT_COMPRESSOR_LOW_TEMPERATURE,
+.temperature_work = DEFAULT_COMPRESSOR_HIGH_TEMPERATURE,
 .status = COMPRESSOR_STATUS_RDY_CONTINUE
 };
 
@@ -177,7 +170,7 @@ static int compressor_task_send_temperature_msg_to_self()
   osStatus status;
   compressor_task_msg_t msg;
   /*构建温度消息*/
-  if(compressor.temperature == ALARM_TASK_TEMPERATURE_ERR_VALUE){
+  if((uint8_t)compressor.temperature == ALARM_TASK_TEMPERATURE_ERR_VALUE){
      msg.type = COMPRESSOR_TASK_MSG_TEMPERATURE_ERR;
   }else{
      msg.type = COMPRESSOR_TASK_MSG_TEMPERATURE_VALUE;
@@ -227,53 +220,52 @@ void compressor_task(void const *argument)
   log_debug("压缩机上电待机完毕.\r\n");
  
   while(1){
-  os_msg = osMessageGet(compressor_task_msg_q_id,COMPRESSOR_TASK_MSG_WAIT_TIMEOUT);
+  os_msg = osMessageGet(compressor_task_msg_q_id,osWaitForever);
   if(os_msg.status == osEventMessage){    
     
-  msg = *(compressor_task_msg_t*)&os_msg.value.v;
+     msg = *(compressor_task_msg_t*)&os_msg.value.v;
   
-  /*如果压缩机被锁定了 就只处理UNLOCK消息*/
-  if(compressor.lock == COMPRESSOR_LOCK){  
-     if(msg.type == COMPRESSOR_TASK_MSG_UNLOCK){
-        compressor.lock = COMPRESSOR_UNLOCK;   
-  
-        compressor_task_send_temperature_msg_to_self();
-     }else{
-       /*其他消息只处理温度信息*/
-       /*温度消息处理*/
-       if(msg.type == COMPRESSOR_TASK_MSG_TEMPERATURE_VALUE){ 
-       /*缓存温度值*/
-          compressor.temperature = msg.value; 
-          continue;  
+     /*LOCK配置消息*/
+     if(msg.type == COMPRESSOR_TASK_MSG_LOCK_CONFIG){
+        /*锁定消息*/
+        if(msg.value == ALARM_TASK_COMPRESSOR_LOCK_VALUE && compressor.lock == false){
+          compressor.lock = true;
+          log_debug("LOCK.....关压缩机.\r\n");
+          compressor.status = COMPRESSOR_STATUS_RDY_CONTINUE;
+          /*关闭压缩机*/
+          compressor_pwr_turn_off();  
+          compressor.status_change = true;
+          /*关闭所有定时器*/ 
+          compressor_work_timer_stop();  
+          compressor_wait_timer_stop();  
+          compressor_rest_timer_stop();
+ 
+        } else if (msg.value == ALARM_TASK_COMPRESSOR_UNLOCK_VALUE && compressor.lock == true){ 
+          /*解锁消息*/
+          compressor.lock = false;
+          compressor_task_send_temperature_msg_to_self();
        }
      }
-  }
-  
-  /*如果压缩机LOCK消息*/
-  if(msg.type == COMPRESSOR_TASK_MSG_LOCK){
-     if(compressor.lock !=  COMPRESSOR_LOCK ){
-        compressor.lock = COMPRESSOR_LOCK;
-        log_debug("LOCK.....关压缩机.\r\n");
-        compressor.status = COMPRESSOR_STATUS_RDY_CONTINUE;
-        /*关闭压缩机*/
-        compressor_pwr_turn_off();  
-        compressor.status_change = true;
-        /*关闭所有定时器*/ 
-        compressor_work_timer_stop();  
-        compressor_wait_timer_stop();  
-        compressor_rest_timer_stop();  
-     }  
-  }
+                   
+     /*压缩机温度配置消息处理*/
+     if(msg.type == COMPRESSOR_TASK_MSG_TEMPERATURE_CONFIG){ 
+       /*缓存温度配置值*/
+        compressor.temperature_work = (int8_t)msg.reserved >> 8;
+        compressor.temperature_stop = (int8_t)msg.reserved & 0xFF;
+        compressor_task_send_temperature_msg_to_self();
+     } 
   
   /*温度消息处理*/
   if(msg.type == COMPRESSOR_TASK_MSG_TEMPERATURE_VALUE){ 
      /*缓存温度值*/
-     compressor.temperature = msg.value; 
+     compressor.temperature = (int8_t)msg.value; 
+     if(compressor.lock == false){
+
      if(compressor.temperature <= compressor.temperature_stop  && compressor.status == COMPRESSOR_STATUS_WORK){
-        log_debug("温度:%d 低于关机温度.\r\n",compressor.temperature);
+        log_warning("温度:%d 低于关机温度.\r\n",compressor.temperature);
         compressor.status = COMPRESSOR_STATUS_WAIT;
-        log_debug("compressor change status to wait.\r\n");  
-        log_debug("关压缩机.\r\n");
+        log_warning("compressor change status to wait.\r\n");  
+        log_warning("关压缩机.\r\n");
         compressor.status_change = true;
         /*关闭压缩机和工作定时器*/
         compressor_pwr_turn_off(); 
@@ -285,10 +277,10 @@ void compressor_task(void const *argument)
         /*温度大于开机温度，同时是正常关机状态时，开机*/
         /*或者温度大于关机温度，同时是超时关机或者异常关机状态时，继续开机*/
   
-        log_debug("温度:%d 高于开机温度.\r\n",compressor.temperature);
-        log_debug("开压缩机.\r\n");
+        log_warning("温度:%d 高于开机温度.\r\n",compressor.temperature);
+        log_warning("开压缩机.\r\n");
         compressor.status = COMPRESSOR_STATUS_WORK;
-        log_debug("compressor change status to work.\r\n");  
+        log_warning("compressor change status to work.\r\n");  
         compressor.status_change = true;
         /*打开压缩机*/
         compressor_pwr_turn_on();
@@ -297,15 +289,19 @@ void compressor_task(void const *argument)
      }else{
         log_warning("压缩机状态:%d 无需处理.\r\n",compressor.status);     
      } 
-  }
+     }
+   }
    /*温度错误消息处理*/
-  if(msg.type == COMPRESSOR_TASK_MSG_TEMPERATURE_VALUE){  
+  if(msg.type == COMPRESSOR_TASK_MSG_TEMPERATURE_ERR){ 
+     compressor.temperature = msg.value;
+     if(compressor.lock == false){
+
      if(compressor.status == COMPRESSOR_STATUS_WORK){
         /*温度异常时，如果在工作,就变更为wait continue状态*/
         compressor.status = COMPRESSOR_STATUS_WAIT_CONTINUE;
         log_warning("温度错误.code:%d.\r\n",compressor.temperature); 
-        log_debug("compressor change status to wait continue.\r\n");  
-        log_debug("关压缩机.\r\n");
+        log_warning("compressor change status to wait continue.\r\n");  
+        log_warning("关压缩机.\r\n");
         compressor.status_change = true;
         /*关闭压缩机和工作定时器*/
         compressor_pwr_turn_off(); 
@@ -315,14 +311,17 @@ void compressor_task(void const *argument)
      }else{
         log_warning("压缩机状态:%d 无需处理.\r\n",compressor.status);  
      }
+     }
   }
   
   /*压缩机工作超时消息*/
   if(msg.type == COMPRESSOR_TASK_MSG_WORK_TIMEOUT){
+     if(compressor.lock == false){
+
      if(compressor.status == COMPRESSOR_STATUS_WORK){
-        log_debug("关压缩机.\r\n");
+        log_warning("关压缩机.\r\n");
         compressor.status = COMPRESSOR_STATUS_REST;
-        log_debug("compressor change status to rest.\r\n");  
+        log_warning("compressor change status to rest.\r\n");  
         /*关闭压缩机和工作定时器*/
         compressor_pwr_turn_off();  
         compressor.status_change = true;
@@ -331,34 +330,41 @@ void compressor_task(void const *argument)
       }else{
         log_warning("压缩机状态:%d 无需处理.\r\n",compressor.status);  
       }
+     }
    }
  
   /*压缩机等待超时消息*/
   if(msg.type == COMPRESSOR_TASK_MSG_WAIT_TIMEOUT){
+     if(compressor.lock == false){
+
      if(compressor.status == COMPRESSOR_STATUS_WAIT || compressor.status == COMPRESSOR_STATUS_WAIT_CONTINUE){
         if(compressor.status == COMPRESSOR_STATUS_WAIT){
            compressor.status = COMPRESSOR_STATUS_RDY;
-           log_debug("compressor change status to rdy.\r\n");  
+           log_warning("compressor change status to rdy.\r\n");  
         }else{
            compressor.status = COMPRESSOR_STATUS_RDY_CONTINUE;
-           log_debug("compressor change status to rdy continue.\r\n");  
+           log_warning("compressor change status to rdy continue.\r\n");  
         }
         /*构建温度消息*/
         compressor_task_send_temperature_msg_to_self();
     }else{
       log_warning("压缩机状态:%d 无需处理.\r\n",compressor.status);     
     }
+   }
  }
  
   /*压缩机休息超时消息*/
   if(msg.type == COMPRESSOR_TASK_MSG_REST_TIMEOUT){
+     if(compressor.lock == false){
+
      if(compressor.status == COMPRESSOR_STATUS_REST){
         compressor.status = COMPRESSOR_STATUS_RDY_CONTINUE;
-        log_debug("compressor change status to rdy continue.\r\n");
+        log_warning("compressor change status to rdy continue.\r\n");
         
         compressor_task_send_temperature_msg_to_self();
      }else{
        log_warning("压缩机状态:%d 无需处理.\r\n",compressor.status);     
+     }
      }
   }
  

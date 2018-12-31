@@ -16,8 +16,8 @@
 LED_BEGIN
 
 
-#define  LED_DISPLAY_ON              1
-#define  LED_DISPLAY_OFF             0
+#define  LED_DISPLAY_ON              0xFE
+#define  LED_DISPLAY_OFF             0xFF
 
 #define  LED_BRIGHTNESS_DEFAULT      8
 

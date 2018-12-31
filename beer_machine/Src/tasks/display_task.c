@@ -146,7 +146,7 @@ void display_task(void const *argument)
         display.pressure.blink = msg.blink;
         display.pressure.point = msg.point;
         led_display_pressure(display.pressure.value);
-        led_display_pressure_point(display.pressure.point); 
+        led_display_pressure_point(display.pressure.point ?  LED_DISPLAY_ON : LED_DISPLAY_OFF); 
         display.is_update = true;
      }
   

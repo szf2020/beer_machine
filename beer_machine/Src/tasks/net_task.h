@@ -29,8 +29,14 @@ typedef enum
 {
   NET_TASK_MSG_QUERY_WIFI,
   NET_TASK_MSG_QUERY_GSM,
-}net_task_msg_t;
+}net_task_msg_type_t;
 
+typedef struct
+{
+  uint32_t type:8;
+  uint32_t value:8;
+  uint32_t reserved:16;
+}net_task_msg_t;
 
 typedef struct
 {

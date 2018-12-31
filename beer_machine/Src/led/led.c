@@ -136,7 +136,7 @@ void led_display_brightness(uint8_t brightness)
 /*温度单位*/
 void led_display_temperature_unit(uint8_t on_off)
 {
-  if(on_off > 0 ){
+  if(on_off == LED_DISPLAY_ON){
   tm1629a_buffer_update(LED_T_UNIT_POS,LED_T_UNIT_BITS,LED_T_UNIT_BITS); 
  }else{
   tm1629a_buffer_update(LED_T_UNIT_POS,0,LED_T_UNIT_BITS); 
@@ -146,7 +146,7 @@ void led_display_temperature_unit(uint8_t on_off)
 /*温度图标*/
 void led_display_temperature_icon(uint8_t on_off)
 {
-  if(on_off > 0 ){
+  if(on_off == LED_DISPLAY_ON ){
   tm1629a_buffer_update(LED_T_ICON1_POS,LED_T_ICON1_BITS,LED_T_ICON1_BITS); 
   tm1629a_buffer_update(LED_T_ICON2_POS,LED_T_ICON2_BITS,LED_T_ICON2_BITS); 
  }else{
@@ -178,7 +178,7 @@ tm1629a_buffer_update(LED_T_LO_POS,dis[1],LED_ABCDEFG_BITS);
 /*压力单位*/
 void led_display_pressure_unit(uint8_t on_off)
 {
-  if(on_off > 0 ){
+  if(on_off == LED_DISPLAY_ON){
   tm1629a_buffer_update(LED_P_UNIT_POS,LED_P_UNIT_BITS,LED_P_UNIT_BITS); 
  }else{
   tm1629a_buffer_update(LED_P_UNIT_POS,0,LED_P_UNIT_BITS); 
@@ -187,7 +187,7 @@ void led_display_pressure_unit(uint8_t on_off)
 /*压力图标*/
 void led_display_pressure_icon(uint8_t on_off)
 {
-  if(on_off > 0 ){
+  if(on_off ==  LED_DISPLAY_ON ){
   tm1629a_buffer_update(LED_P_ICON_POS,LED_P_ICON_BITS,LED_P_ICON_BITS); 
  }else{
   tm1629a_buffer_update(LED_P_ICON_POS,0,LED_P_ICON_BITS); 
@@ -197,10 +197,7 @@ void led_display_pressure_icon(uint8_t on_off)
 /*压力小数点*/
 void led_display_pressure_point(uint8_t on_off)
 {
- if(on_off == LED_DISPLAY_OFF){
- on_off = 0; 
- }
- if(on_off > 0 ){
+ if(on_off ==  LED_DISPLAY_ON  ){
   tm1629a_buffer_update(LED_P_DP_POS,point_code,LED_P_DP_BITS); 
  }else{
   tm1629a_buffer_update(LED_P_DP_POS,0,LED_P_DP_BITS); 
@@ -227,7 +224,7 @@ tm1629a_buffer_update(LED_P_LO_POS,dis[1],LED_ABCDEFG_BITS);
 /*容积图标框架*/
 void led_display_capacity_icon_frame(uint8_t on_off)
 {
- if(on_off > 0 ){
+ if(on_off == LED_DISPLAY_ON ){
   tm1629a_buffer_update(LED_C_ICON_FRAME1_POS,LED_C_ICON_FRAME1_BITS,LED_C_ICON_FRAME1_BITS); 
   tm1629a_buffer_update(LED_C_ICON_FRAME2_POS,LED_C_ICON_FRAME2_BITS,LED_C_ICON_FRAME2_BITS); 
  }else{
@@ -291,7 +288,7 @@ void led_display_capacity_icon_level(uint8_t level)
 /*容积单位*/
 void led_display_capacity_unit(uint8_t on_off)
 {
- if(on_off > 0 ){
+ if(on_off == LED_DISPLAY_ON){
   tm1629a_buffer_update(LED_C_UNIT_POS,LED_C_UNIT_BITS,LED_C_UNIT_BITS); 
  }else{
   tm1629a_buffer_update(LED_C_UNIT_POS,0,LED_C_UNIT_BITS); 
@@ -345,13 +342,13 @@ void led_display_wifi_icon(uint8_t level)
 /*循环图标*/
 void led_display_compressor_icon(uint8_t on_off_up,uint8_t on_off_dwn)
 {
-  if(on_off_up > 0 ){
+  if(on_off_up == LED_DISPLAY_ON){
   tm1629a_buffer_update(LED_CIRCLE_ICON_POS,LED_CIRCLE_ICON_BITS,LED_CIRCLE_ICON_BITS); 
  }else{
   tm1629a_buffer_update(LED_CIRCLE_ICON_POS,0,LED_CIRCLE_ICON_BITS); 
  }
  
- if(on_off_dwn > 0 ){
+ if(on_off_dwn == LED_DISPLAY_ON){
   tm1629a_buffer_update(LED_CIRCLE_ICON_POS,LED_CIRCLE_ICON_BITS,LED_CIRCLE_ICON_BITS); 
  }else{
   tm1629a_buffer_update(LED_CIRCLE_ICON_POS,0,LED_CIRCLE_ICON_BITS); 
@@ -362,7 +359,7 @@ void led_display_compressor_icon(uint8_t on_off_up,uint8_t on_off_dwn)
 /*商标图标*/
 void led_display_brand_icon(uint8_t on_off)
 {
- if(on_off > 0 ){
+ if(on_off == LED_DISPLAY_ON){
   tm1629a_buffer_update(LED_BRAND_ICON1_POS,LED_BRAND_ICON1_BITS,LED_BRAND_ICON1_BITS); 
   tm1629a_buffer_update(LED_BRAND_ICON2_POS,LED_BRAND_ICON2_BITS,LED_BRAND_ICON2_BITS); 
  }else{
