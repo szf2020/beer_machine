@@ -21,27 +21,136 @@
 #define  GSM_M6312_LAC_STR_LEN                   8
 #define  GSM_M6312_CI_STR_LEN                    8
 
-#define  GSM_M6312_SEND_BUFFER_SIZE              2000
-#define  GSM_M6312_RECV_BUFFER_SIZE              2000
-typedef struct 
-{
-    char *str;
-    int code;
-    void *next;
-}gsm_m6312_err_code_t;
 
+typedef enum
+{
+  GSM_M6312_SOCKET_INIT,
+  GSM_M6312_SOCKET_CONNECT,
+  GSM_M6312_SOCKET_CONNECTTING,
+  GSM_M6312_SOCKET_CLOSE,
+  GSM_M6312_SOCKET_BIND
+}gsm_m6312_socket_status_t;
+
+typedef enum
+{
+  GSM_M6312_ECHO_ON,
+  GSM_M6312_ECHO_OFF
+}gsm_m6312_echo_t;
+
+
+typedef enum
+{
+  GSM_M6312_REPORT_ON,
+  GSM_M6312_REPORT_OFF
+}gsm_m6312_report_t;
+
+
+typedef enum
+{
+  GSM_M6312_APN_CMNET,
+  GSM_M6312_APN_UNINET,
+  GSM_M6312_APN_UNKNOW
+}gsm_m6312_apn_t;
+
+typedef enum
+{
+  GSM_M6312_ACTIVE ,
+  GSM_M6312_INACTIVE
+}gsm_m6312_active_status_t;
+
+typedef enum
+{
+  GSM_M6312_ATTACH,
+  GSM_M6312_NOT_ATTACH
+}gsm_m6312_attach_status_t;
+
+typedef enum
+{
+  SIM_CARD_STATUS_READY,
+  SIM_CARD_STATUS_NO_SIM_CARD,
+  SIM_CARD_STATUS_BLOCK
+}sim_card_status_t;
+
+typedef enum
+{
+  OPERATOR_CHINA_MOBILE,
+  OPERATOR_CHINA_UNICOM,
+  OPERATOR_CHINA_TELECOM
+}operator_name_t;
+
+typedef enum 
+{
+  OPERATOR_AUTO_MODE,
+  OPERATOR_MANUAL_MODE,
+  OPERATOR_LOGOUT_MODE
+}operator_mode_t;
+
+typedef enum
+{
+  GSM_M6312_CONNECT_MODE_SINGLE,
+  GSM_M6312_CONNECT_MODE_MULTIPLE
+}gsm_m6312_connect_mode_t;
+
+typedef enum
+{
+  GSM_M6312_OPERATOR_FORMAT_LONG_NAME,
+  GSM_M6312_OPERATOR_FORMAT_SHORT_NAME,
+  GSM_M6312_OPERATOR_FORMAT_NUMERIC_NAME
+}gsm_m6312_operator_format_t;
+
+typedef enum
+{
+  GSM_M6312_RECV_BUFFERE,
+  GSM_M6312_RECV_NO_BUFFERE,
+}gsm_m6312_recv_buffer_t;
+
+typedef enum
+{
+  GSM_M6312_NET_PROTOCOL_TCP,
+  GSM_M6312_NET_PROTOCOL_UDP
+}gsm_m6312_net_protocol_t;
+
+typedef enum
+{
+  GSM_M6312_SEND_PROMPT,
+  GSM_M6312_NO_SEND_PROMPT
+}gsm_m6312_send_prompt_t;
+
+typedef enum
+{
+  GSM_M6312_TRANPARENT,
+  GSM_M6312_NO_TRANPARENT
+}gsm_m6312_transparent_t;
 
 typedef struct
 {
-    char send[GSM_M6312_SEND_BUFFER_SIZE];
-    char recv[GSM_M6312_RECV_BUFFER_SIZE];
-    uint16_t send_size;
-    uint16_t recv_size;
-    uint16_t send_timeout;
-    uint32_t recv_timeout;
-    gsm_m6312_err_code_t *err_head;
-    bool complete;
-}gsm_m6312_at_cmd_t;
+  char lac[7];
+  char ci[7];
+  char rssi[3];
+}gsm_m6312_base_t;
+
+typedef struct
+{
+  gsm_m6312_base_t base[3];
+}gsm_m6312_assist_base_t;
+
+typedef enum
+{
+  GSM_M6312_STATUS_REGISTER,
+  GSM_M6312_STATUS_NO_REGISTER
+}gsm_m6312_reg_status_t;
+
+typedef enum
+{
+  GSM_M6312_REG_ECHO_OFF,
+  GSM_M6312_REG_ECHO_ON
+}gsm_m6312_reg_echo_t;
+
+typedef struct
+{
+  gsm_m6312_base_t base;
+  gsm_m6312_reg_status_t status;
+}gsm_m6312_register_t;
 
 enum
 {
@@ -49,154 +158,14 @@ enum
  GSM_ERR_MALLOC_FAIL = -1,
  GSM_ERR_CMD_ERR = -2,
  GSM_ERR_CMD_TIMEOUT = -3,
- GSM_ERR_RSP_TIMEOUT = -4,
- GSM_ERR_SEND_TIMEOUT = -5,
- GSM_ERR_SERIAL_SEND = -6,
- GSM_ERR_SERIAL_RECV = -7,
- GSM_ERR_RECV_NO_SPACE = -8,
- GSM_ERR_SEND_NO_SPACE = -9,
- GSM_ERR_SOCKET_ALREADY_CONNECT = -10,
- GSM_ERR_SOCKET_CONNECT_FAIL = -11,
- GSM_ERR_SOCKET_SEND_FAIL = -12,
- GSM_ERR_SOCKET_DISCONNECT = -13,
- GSM_ERR_NULL_POINTER = -14,
- GSM_ERR_HAL_GPIO = -15,
- GSM_ERR_HAL_INIT = -16,
+ GSM_ERR_TIMEOUT = -4,
+ GSM_ERR_SOCKET_ALREADY_CONNECT = -5,
+ GSM_ERR_SOCKET_CONNECT_FAIL = -6,
+ GSM_ERR_SOCKET_SEND_FAIL = -7,
+ GSM_ERR_SOCKET_DISCONNECT = -8,
+ GSM_ERR_NULL_POINTER = -9,
  GSM_ERR_UNKNOW = -200
 };
-
-
-
-typedef enum
-{
-GSM_M6312_SOCKET_INIT,
-GSM_M6312_SOCKET_CONNECT,
-GSM_M6312_SOCKET_CONNECTTING,
-GSM_M6312_SOCKET_CLOSE,
-GSM_M6312_SOCKET_BIND
-}gsm_m6312_socket_status_t;
-
-typedef enum
-{
-GSM_M6312_ECHO_ON,
-GSM_M6312_ECHO_OFF
-}gsm_m6312_echo_t;
-
-
-typedef enum
-{
-GSM_M6312_REPORT_ON,
-GSM_M6312_REPORT_OFF
-}gsm_m6312_report_t;
-
-
-typedef enum
-{
-GSM_M6312_APN_CMNET,
-GSM_M6312_APN_UNINET,
-GSM_M6312_APN_UNKNOW
-}gsm_m6312_apn_t;
-
-typedef enum
-{
-GSM_M6312_ACTIVE ,
-GSM_M6312_INACTIVE
-}gsm_m6312_active_status_t;
-
-typedef enum
-{
-GSM_M6312_ATTACH,
-GSM_M6312_NOT_ATTACH
-}gsm_m6312_attach_status_t;
-
-typedef enum
-{
-SIM_CARD_STATUS_READY,
-SIM_CARD_STATUS_NO_SIM_CARD,
-SIM_CARD_STATUS_BLOCK
-}sim_card_status_t;
-
-typedef enum
-{
-OPERATOR_CHINA_MOBILE,
-OPERATOR_CHINA_UNICOM,
-OPERATOR_CHINA_TELECOM
-}operator_name_t;
-
-typedef enum 
-{
-OPERATOR_AUTO_MODE,
-OPERATOR_MANUAL_MODE,
-OPERATOR_LOGOUT_MODE
-}operator_mode_t;
-
-typedef enum
-{
-GSM_M6312_CONNECT_MODE_SINGLE,
-GSM_M6312_CONNECT_MODE_MULTIPLE
-}gsm_m6312_connect_mode_t;
-
-typedef enum
-{
-GSM_M6312_OPERATOR_FORMAT_LONG_NAME,
-GSM_M6312_OPERATOR_FORMAT_SHORT_NAME,
-GSM_M6312_OPERATOR_FORMAT_NUMERIC_NAME
-}gsm_m6312_operator_format_t;
-
-typedef enum
-{
-GSM_M6312_RECV_BUFFERE,
-GSM_M6312_RECV_NO_BUFFERE,
-}gsm_m6312_recv_buffer_t;
-
-typedef enum
-{
-GSM_M6312_NET_PROTOCOL_TCP,
-GSM_M6312_NET_PROTOCOL_UDP
-}gsm_m6312_net_protocol_t;
-
-typedef enum
-{
-GSM_M6312_SEND_PROMPT,
-GSM_M6312_NO_SEND_PROMPT
-}gsm_m6312_send_prompt_t;
-
-typedef enum
-{
-GSM_M6312_TRANPARENT,
-GSM_M6312_NO_TRANPARENT
-}gsm_m6312_transparent_t;
-
-typedef struct
-{
-char lac[7];
-char ci[7];
-char rssi[3];
-}gsm_m6312_base_t;
-
-typedef struct
-{
-gsm_m6312_base_t base[3];
-}gsm_m6312_assist_base_t;
-
-typedef enum
-{
-GSM_M6312_STATUS_REGISTER,
-GSM_M6312_STATUS_NO_REGISTER
-}gsm_m6312_reg_status_t;
-
-typedef enum
-{
- GSM_M6312_REG_ECHO_OFF,
- GSM_M6312_REG_ECHO_ON
-}gsm_m6312_reg_echo_t;
-
-typedef struct
-{
- gsm_m6312_base_t base;
- gsm_m6312_reg_status_t status;
-}gsm_m6312_register_t;
-
 /* 函数名：gsm_m6312_pwr_on
 *  功能：  m6312 2g模块开机
 *  参数：  无 

@@ -1071,7 +1071,7 @@
             <group>
                 <name>at</name>
                 <file>
-                    <name>$PROJ_DIR$\..\Src\at\at_cmd.c</name>
+                    <name>$PROJ_DIR$\..\Src\at\at.c</name>
                 </file>
             </group>
             <group>
