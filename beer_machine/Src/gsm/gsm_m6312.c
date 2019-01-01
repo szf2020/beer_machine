@@ -137,7 +137,7 @@ int gsm_m6312_get_sim_card_status(sim_card_status_t *sim_status)
  strcpy(gsm_at.send,"AT+CPIN?\r\n");
  gsm_at.send_size = strlen(gsm_at.send);
  gsm_at.send_timeout = 5;
- gsm_at.recv_timeout = 1000;
+ gsm_at.recv_timeout = 2000;
  ok.str = "OK\r\n";
  ok.code = GSM_ERR_OK;
  ok.next = NULL;
@@ -759,7 +759,7 @@ int gsm_m6312_get_operator(operator_name_t *operator_name)
  strcpy(gsm_at.send,"AT+CIMI\r\n");
  gsm_at.send_size = strlen(gsm_at.send);
  gsm_at.send_timeout = 5;
- gsm_at.recv_timeout = 1000;
+ gsm_at.recv_timeout = 2000;
  ok.str = "OK\r\n";
  ok.code = GSM_ERR_OK;
  ok.next = NULL;
@@ -1374,50 +1374,25 @@ int gsm_m6312_recv(int conn_id,char *buffer,const int size)
    goto err_exit;
  }
  
-
- /*读取对应的数据*/
- memset(&gsm_at,0,sizeof(gsm_at));
- buffer_size = buffer_size > size ? size : buffer_size;
- snprintf(gsm_at.send,AT_SEND_BUFFER_SIZE,"AT+CMRD=%1d,%d\r\n",conn_id,buffer_size); 
- gsm_at.recv_size = buffer_size;
- gsm_at.send_size = strlen(gsm_at.send);
- gsm_at.send_timeout = 10;
- gsm_at.recv_timeout = 2000;
+  /*读取对应的数据*/
+  memset(&gsm_at,0,sizeof(gsm_at));
+  buffer_size = buffer_size > size ? size : buffer_size;
+  snprintf(gsm_at.send,AT_SEND_BUFFER_SIZE,"AT+CMRD=%1d,%d\r\n",conn_id,buffer_size); 
+  gsm_at.send_size = strlen(gsm_at.send);
+  gsm_at.send_timeout = 10;
+  gsm_at.recv_timeout = 2000;
  
-  int recv_size;
-  utils_timer_t timer;
+  ok.str = "OK\r\n";
+  ok.code = GSM_ERR_OK;
+  err.str = "ERROR";
+  err.code = GSM_ERR_CMD_ERR;
+  at_err_code_add(&gsm_at.err_head,&ok);
+  at_err_code_add(&gsm_at.err_head,&err);
  
-  utils_timer_init(&timer,gsm_at.send_timeout,false);
-    
-  rc = at_send(gsm_m6312_serial_handle,gsm_at.send,gsm_at.send_size,utils_timer_value(&timer));
-  if(rc != AT_ERR_OK){
-     goto err_exit;
-  }
-  utils_timer_init(&timer,gsm_at.recv_timeout,false);  
-  /*发送完一帧数据的标志*/
-  //log_warning("++\r\n");
-  /*清空数据*/
-  serial_flush(gsm_m6312_serial_handle);
-
-  do{
-    recv_size = at_recv(gsm_m6312_serial_handle,gsm_at.recv + gsm_at.recv_size,AT_RECV_BUFFER_SIZE - gsm_at.recv_size,utils_timer_value(&timer));
-    if(recv_size < 0){
-       rc =AT_ERR_SERIAL_RECV;
-       goto err_exit;
-    }
-    
-    gsm_at.recv_size += recv_size;
-    if(strstr(gsm_at.recv - recv_size,"ERROR") || strstr(gsm_at.recv - recv_size,"CONNECTION CLOSED")){
-       rc = GSM_ERR_CMD_ERR;
-       goto err_exit;  
-    }
-  }while (utils_timer_value(&timer) && gsm_at.recv_size < buffer_size );
-  
-  if(gsm_at.recv_size >= buffer_size){
-    memcpy(buffer,gsm_at.recv,buffer_size);
-    rc = buffer_size;  
-  }else{
-    rc = GSM_ERR_CMD_ERR;
+  rc = at_excute(gsm_m6312_serial_handle,&gsm_at);
+  if(rc == GSM_ERR_OK){
+     memcpy(buffer,gsm_at.recv,buffer_size);
+     rc = buffer_size;  
   }
  }
  

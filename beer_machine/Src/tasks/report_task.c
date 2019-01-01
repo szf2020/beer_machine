@@ -20,7 +20,7 @@
 #include "device_config.h"
 #include "log.h"
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[net]"
+#define  LOG_MODULE_NAME     "[report]"
 
 
 osThreadId  report_task_handle;
@@ -65,6 +65,16 @@ typedef struct
   bool is_active;
 }report_active_t;
 
+typedef struct
+{  
+  uint32_t bin_size;
+  uint32_t version_code;
+  uint32_t download_size;
+  char     version_str[16];
+  char     download_url[100];
+  char     md5[33];
+}report_upgrade_t;
+
 
 typedef enum
 {
@@ -103,8 +113,11 @@ typedef struct
 static hal_fault_queue_t fault_queue;
 
 static uint32_t time_offset;
-static report_active_t report_active;
-static report_log_t    report_log;
+
+static report_active_t   report_active;
+static report_log_t      report_log;
+static report_upgrade_t  report_upgrade;
+
 static uint8_t active_event;
 
 static device_config_t device_default_config = {
@@ -147,8 +160,7 @@ static void report_task_active_timer_expired(void const *argument)
   report_task_msg_t msg;
   
   msg.type = *( uint8_t *) pvTimerGetTimerID( (void *)argument );
-  log_debug("0x%x 0x%x \r\n",(uint32_t) msg.type,pvTimerGetTimerID( (void *)argument ));
-  
+   
   status = osMessagePut(report_task_msg_q_id,*(uint32_t *)&msg,REPORT_TASK_PUT_MSG_TIMEOUT);
   if(status != osOK){
      log_error("put active msg error:%d\r\n",status);
@@ -332,7 +344,7 @@ int report_task_build_form_data(char *form_data,const int size,const char *bound
  snprintf(form_data + put_size,size - put_size,"--%s--\r\n",boundary);
  put_size = strlen(form_data);
  if(put_size >= size - 1){
- log_error("form data size :%d is too large.\r\n",temp_size);
+ log_error("form data size :%d is too large.\r\n",put_size);
  return -1;  
  }
  
@@ -496,7 +508,7 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
   }
   /*检查code值 200成功*/
   temp = cJSON_GetObjectItem(active_rsp_json,"code");
-  if(!cJSON_IsNumber(temp) || temp->valueint == NULL){
+  if(!cJSON_IsNumber(temp)){
      log_error("code is not num.\r\n");
      goto err_exit;  
   }
@@ -592,7 +604,7 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
      goto err_exit;  
   }
   config->pressure_high = temp->valueint;
-  
+  rc = 0;
   log_debug("active rsp [lock:%d infointerval:%d. t_low:%d t_high:%d p_low:%d p_high:%d.\r\n",
             config->lock,config->temperature_low,config->temperature_high,config->pressure_low,config->pressure_high);
   
@@ -723,7 +735,7 @@ static int report_task_report_fault(const char *url_origin,report_fault_t *fault
  
   char timestamp_str[14] = { 0 };
   char sign_str[33] = { 0 };
-  char req[300];
+  char req[320];
   char rsp[200] = { 0 };
   char url[200] = { 0 };
 
@@ -735,7 +747,7 @@ static int report_task_report_fault(const char *url_origin,report_fault_t *fault
   /*构建新的url*/
   report_task_build_url(url,200,url_origin,sn,sign_str,SOURCE,timestamp_str);  
    
-  report_task_build_fault_form_data_str(req,300,fault);
+  report_task_build_fault_form_data_str(req,320,fault);
 
  
   context.range_size = 200;
@@ -780,6 +792,7 @@ static int report_task_retry_delay(uint8_t retry)
 /*读取保存在ENV中的设备配置参数*/
 static int report_task_get_env_device_config(device_config_t *config)
 {
+#define  ENV_DEVICE_CONFIG_OFFSET             0
   int rc;
   bootloader_env_t env;
   
@@ -789,8 +802,7 @@ static int report_task_get_env_device_config(device_config_t *config)
      return -1;
    }
   
-  /*读取env成功*/
-  *config = *(device_config_t *)&env.reserved[0];
+  *config = *(device_config_t *)&env.reserved[ENV_DEVICE_CONFIG_OFFSET];
   return 0;
 }
 
@@ -957,17 +969,193 @@ int report_task_delete_fault_from_queue(hal_fault_queue_t *queue)
   }
   return 0;
 }
-         
+ 
+/*解析升级信息回应*/
+static int report_task_parse_upgrade_rsp_json(char *json_str,report_upgrade_t *report_upgrade)
+{
+  int rc = -1;
+  cJSON *upgrade_rsp_json;
+  cJSON *temp,*data,*upgrade;
+  
+  log_debug("parse active rsp.\r\n");
+  upgrade_rsp_json = cJSON_Parse(json_str);
+  if(upgrade_rsp_json == NULL){
+     log_error("rsp is not json.\r\n");
+     return -1;  
+  }
+  /*检查code值 200成功*/
+  temp = cJSON_GetObjectItem(upgrade_rsp_json,"code");
+  if(!cJSON_IsNumber(temp)){
+     log_error("code is not num.\r\n");
+     goto err_exit;  
+  }
+               
+  log_debug("code:%d\r\n", temp->valueint);
+  if(temp->valueint != 200 ){
+     log_error("active rsp err code:%d.\r\n",temp->valueint); 
+     goto err_exit;  
+  }  
+    
+  /*检查success值 true or false*/
+  temp = cJSON_GetObjectItem(upgrade_rsp_json,"success");
+  if(!cJSON_IsBool(temp) || !cJSON_IsTrue(temp)){
+     log_error("success is not bool or is not true.\r\n");
+     goto err_exit;  
+  }
+  log_debug("success:%s\r\n",temp->valueint ? "true" : "false"); 
+  
+  /*检查data */
+  data = cJSON_GetObjectItem(upgrade_rsp_json,"data");
+  if(!cJSON_IsObject(data) || data->valuestring == NULL ){
+     log_error("data is not obj or value is null.\r\n");
+     goto err_exit;  
+  }
+  /*检查upgrade */ 
+  upgrade = cJSON_GetObjectItem(data,"upgrade");
+  if(!cJSON_IsObject(upgrade) || upgrade->valuestring == NULL ){
+     log_error("upgrade is not obj or value is null.\r\n");
+     goto err_exit;  
+  }
+  /*检查url*/
+  temp = cJSON_GetObjectItem(upgrade,"upgradeUrl");
+  if(!cJSON_IsString(temp) || temp->valuestring == NULL){
+     log_error("upgradeUrl is not str or is null.\r\n");
+     goto err_exit;  
+  }
+  strcpy(report_upgrade->download_url,temp->valuestring);
+
+  /*检查version code*/
+  temp = cJSON_GetObjectItem(upgrade,"majorVersion");
+  if(!cJSON_IsNumber(temp)){
+     log_error("majorVersion is not num or is null.\r\n");
+     goto err_exit;  
+  }
+  report_upgrade->version_code = temp->valueint;
+  
+ /*检查version str*/
+  temp = cJSON_GetObjectItem(upgrade,"version");
+  if(!cJSON_IsString(temp) || temp->valuestring == NULL){
+     log_error("version is not str or is null.\r\n");
+     goto err_exit;  
+  }
+  strcpy(report_upgrade->version_str,temp->valuestring);
+  
+  /*检查md5*/
+  temp = cJSON_GetObjectItem(upgrade,"md5");
+  if(!cJSON_IsString(temp) || temp->valuestring == NULL){
+     log_error("md5 is not str or is null.\r\n");
+     goto err_exit;  
+  }
+  strcpy(report_upgrade->md5,temp->valuestring);
+  
+  log_debug("upgrade rsp:\r\n[dwn_url:%s ver_code:%d. ver_str:%s md5:%s.\r\n",
+            report_upgrade->download_url,
+            report_upgrade->version_code,
+            report_upgrade->version_str,
+            report_upgrade->md5);
+  rc = 0;
+  
+err_exit:
+  cJSON_Delete(upgrade_rsp_json);
+  return rc; 
+}
+
+/*执行获取升级信息*/  
+static int report_task_get_upgrade(const char *url_origin,const char *sn,report_upgrade_t *upgrade)
+{
+  int rc;
+  uint32_t timestamp;
+  http_client_context_t context;
+  char timestamp_str[14] = { 0 };
+  char sign_str[33] = { 0 };
+  char rsp[200] = { 0 };
+  char url[200] = { 0 };
+  /*计算时间戳字符串*/
+  timestamp = report_task_get_utc();
+  snprintf(timestamp_str,14,"%d",timestamp);
+  /*计算sign*/
+  report_task_build_sign(sign_str,4,KEY,sn,SOURCE,timestamp_str);
+  /*构建新的url*/
+  report_task_build_url(url,200,url_origin,sn,sign_str,SOURCE,timestamp_str);  
+ 
+  context.range_size = 200;
+  context.range_start = 0;
+  context.rsp_buffer = rsp;
+  context.rsp_buffer_size = 200;
+  context.url = url;
+  context.timeout = 10000;
+  context.user_data = NULL;
+  context.user_data_size = 0;
+  context.boundary = BOUNDARY;
+  context.is_form_data = false;
+  context.content_type = "application/Json";
+ 
+  rc = http_client_get(&context);
+ 
+  if(rc != 0){
+     log_error("get upgrade err.\r\n");  
+     return -1;
+  }
+ 
+  rc = report_task_parse_upgrade_rsp_json(context.rsp_buffer,upgrade);
+  if(rc != 0){
+     log_error("json parse upgrade rsp error.\r\n");  
+     return -1;
+  }
+  log_debug("get upgrade ok.\r\n");  
+  return 0;
+ }
+  
+static char bin_data[BOOTLOADER_FLASH_PAGE_SIZE + 1];
+
+static int report_task_download_upgrade_bin(char *url,char *buffer,uint32_t start,uint16_t size)
+{
+  int rc;
+
+  http_client_context_t context;
+
+  context.range_size = size;
+  context.range_start = start;
+  context.rsp_buffer = buffer;
+  context.rsp_buffer_size = size;
+  context.url = url;
+  context.timeout = 10000;
+  context.user_data = NULL;
+  context.user_data_size = 0;
+  context.boundary = BOUNDARY;
+  context.is_form_data = false;
+  context.content_type = "application/Json"; 
+  
+  rc = http_client_download(&context);
+  
+  if(rc != 0 ){
+     log_error("download bin err.\r\n");
+     return -1; 
+  }
+  if(context.content_size != size){
+     log_error("download bin size err.\r\n");
+     return -1; 
+  }
+  log_debug("download bin ok. size:%d.\r\n",size);
+  return 0;
+}
+
+
+
+
+
+
 
 
 /*上报任务*/
 void report_task(void const *argument)
 {
  int rc;
- int fault_retry = 0,active_retry = 0;
+ int fault_retry = 0,active_retry = 0,upgrade_retry = 0;
  osEvent os_event;
  report_task_msg_t msg;
- device_config_t config;
+ device_config_t device_config;
+ bootloader_env_t env;
 
 //char *msg_active= "{\"model\":\"jiuji\",\"sn\":\"129DP12399787777\",\"firmware\":\"1.0.1\",\"simId\":\"112233445566\",\"wifiMac\":\"aa:bb:cc:dd:ee:ff\"}";
  /*定时器初始化*/
@@ -975,13 +1163,23 @@ void report_task(void const *argument)
  report_task_log_timer_init();
  report_task_fault_timer_init();
  
+ rc = bootloader_get_env(&env);
+ /*必须保证env存在且有效*/
+ log_assert(rc == 0 && env.status == BOOTLOADER_ENV_STATUS_VALID);
+ 
+ if(env.boot_flag == BOOTLOADER_FLAG_BOOT_UPDATE_COMPLETE){
+    env.boot_flag = BOOTLOADER_FLAG_BOOT_UPDATE_OK;
+    rc = bootloader_save_env(&env);  
+    log_assert(rc == 0);
+ }
+
  /*分发默认的开机配置参数*/
- rc = report_task_get_env_device_config(&config);
- if(rc != 0  || config.status != DEVICE_CONFIG_STATUS_VALID){
-    config = device_default_config;
+ rc = report_task_get_env_device_config(&device_config);
+ if(rc != 0  || device_config.status != DEVICE_CONFIG_STATUS_VALID){
+    device_config = device_default_config;
  }
  
- report_task_dispatch_device_config(&config);
+ report_task_dispatch_device_config(&device_config);
 
  report_task_get_firmware_version(&report_active.fw_version);
  report_task_get_sn(report_active.sn);
@@ -1030,7 +1228,7 @@ void report_task(void const *argument)
     }
      /*设备激活消息*/
     if(msg.type == REPORT_TASK_MSG_ACTIVE){ 
-       rc = report_task_report_active(URL_ACTIVE,&report_active,&config);
+       rc = report_task_report_active(URL_ACTIVE,&report_active,&device_config);
        if(rc != 0){
           log_error("report task active timeout.%d S later retry.",report_task_retry_delay(active_retry) / 1000);
           report_task_start_active_timer(report_task_retry_delay(active_retry),REPORT_TASK_MSG_ACTIVE); 
@@ -1043,17 +1241,101 @@ void report_task(void const *argument)
          log_warning("device active ok.\r\n");
          
          /*分发激活后的配置参数*/
-         report_task_dispatch_device_config(&config);
-         /*比较保存新激活的参数，*/
-         report_task_save_env_device_config(&config);
- 
+         report_task_dispatch_device_config(&device_config);
+         
+         /*比较保存新激活的参数*/
+         report_task_save_env_device_config(&device_config);
+         
+         /*激活后获取升级信息*/
+         report_task_start_active_timer(0,REPORT_TASK_MSG_GET_UPGRADE); 
+             
          /*打开启日志上报定时器*/
-         report_task_start_log_timer(config.report_log_interval);
-         /*激活后，开启定时作为同步时间定时器*/
-         report_task_start_active_timer(REPORT_TASK_SYNC_UTC_DELAY,REPORT_TASK_MSG_SYNC_UTC);
+         report_task_start_log_timer(device_config.report_log_interval);
+         
        }
     }
+    /*获取更新信息消息*/
+    if(msg.type == REPORT_TASK_MSG_GET_UPGRADE){ 
+
+       rc = report_task_get_upgrade(URL_UPGRADE,report_active.sn,&report_upgrade);
+       if(rc != 0){
+          log_error("report task get upgrade timeout.%d S later retry.",report_task_retry_delay(upgrade_retry) / 1000);
+          report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_GET_UPGRADE); 
+          if(++upgrade_retry >= 3){
+             upgrade_retry = 0;
+          }
+       }else{
+        /*获取成功处理*/   
+         upgrade_retry = 0;
+         /*对比现在的版本号*/
+         if(report_upgrade.version_code > env.fw_origin.version.code){
+            log_warning("firmware need upgrade.start download upgrade.\r\n");
+            report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_DOWNLOAD_UPGRADE);                 
+         }else{
+            log_warning("firmware no upgrade.\r\n");  
+            /*开启定时作为同步时间定时器*/
+            report_task_start_active_timer(REPORT_TASK_SYNC_UTC_DELAY,REPORT_TASK_MSG_SYNC_UTC);       
+         }             
+       }
+    }
+    
+    
+    /*下载更新文件*/
+    if(msg.type == REPORT_TASK_MSG_DOWNLOAD_UPGRADE){
+       int size;
+       size = report_upgrade.bin_size - report_upgrade.download_size > BOOTLOADER_FLASH_PAGE_SIZE ? BOOTLOADER_FLASH_PAGE_SIZE : report_upgrade.bin_size - report_upgrade.download_size;
+       rc = report_task_download_upgrade_bin(report_upgrade.download_url,bin_data,report_upgrade.download_size,size);
+       if(rc != 0){
+          log_error("report task download upgrade fail.%d S later retry.",report_task_retry_delay(upgrade_retry) / 1000);
+          report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_DOWNLOAD_UPGRADE); 
+          if(++upgrade_retry >= 3){
+             upgrade_retry = 0;
+          }
+       }else{
+       /*保存下载的文件*/   
+       rc = bootloader_write_fw(BOOTLOADER_FLASH_BASE_ADDR + BOOTLOADER_FLASH_UPDATE_APPLICATION_ADDR_OFFSET + report_upgrade.download_size,
+                               (uint32_t)bin_data,
+                                size);
        
+       if(rc != 0){
+          /*中止本次升级*/
+          log_error("bin data save err.stop.\r\n")
+          /*开启定时作为同步时间定时器*/
+          report_task_start_active_timer(REPORT_TASK_SYNC_UTC_DELAY,REPORT_TASK_MSG_SYNC_UTC);  
+       }else{
+         /*保存成功判断是否下载完毕*/
+          report_upgrade.download_size += size;
+          if(report_upgrade.download_size == report_upgrade.bin_size){
+             /*下载完成 计算md5*/
+             char md5_hex[16];
+             char md5_str[33];
+             md5((const char *)(BOOTLOADER_FLASH_BASE_ADDR + BOOTLOADER_FLASH_UPDATE_APPLICATION_ADDR_OFFSET),report_upgrade.bin_size,md5_hex);
+             /*转换成hex字符串*/
+             bytes_to_hex_str(md5_hex,md5_str,16);
+             /*校验成功，启动升级*/
+             if(strcmp(md5_str,report_upgrade.md5) == 0){
+                /*设置更新标志 bootloader使用*/
+                env.boot_flag = BOOTLOADER_FLAG_BOOT_UPDATE;
+                env.fw_update.size = report_upgrade.bin_size;
+                strcpy(env.fw_update.md5.value,report_upgrade.md5);
+                env.fw_update.version.code = report_upgrade.version_code;
+                bootloader_save_env(&env);
+                /*启动bootloader，开始更新*/
+                bootloader_reset();                 
+             }else{
+               /*中止本次升级*/
+               log_error("md5 err.calculate:%s recv:%s.stop upgrade.\r\n",md5_str,report_upgrade.md5);
+               /*开启定时作为同步时间定时器*/
+               report_task_start_active_timer(REPORT_TASK_SYNC_UTC_DELAY,REPORT_TASK_MSG_SYNC_UTC);                
+             }           
+          }else{
+          /*没有下载完毕，继续下载*/
+          report_task_start_active_timer(0,REPORT_TASK_MSG_DOWNLOAD_UPGRADE);             
+          }        
+       }
+       }   
+    }
+          
     /*温度消息*/
     if(msg.type == REPORT_TASK_MSG_TEMPERATURE_VALUE){
        report_log.temperature = (int8_t)msg.value;
@@ -1132,7 +1414,7 @@ void report_task(void const *argument)
            log_error("  report log err.\r\n");
          }
          /*重置日志上报定时器*/
-           report_task_start_log_timer(config.report_log_interval); 
+         report_task_start_log_timer(device_config.report_log_interval); 
       }   
     }
 

@@ -6,6 +6,7 @@
 #define  URL_LOG                                    "http://mh1597193030.uicp.cn:35787/device/log/submit"
 #define  URL_ACTIVE                                 "http://mh1597193030.uicp.cn:35787/device/info/active"
 #define  URL_FAULT                                  "http://mh1597193030.uicp.cn:35787/device/fault/submit"
+#define  URL_UPGRADE                                "http://mh1597193030.uicp.cn:35787/device/info/getUpgradeInfo"
 #define  BOUNDARY                                   "##wkxboot##"
 #define  KEY                                        "meiling-beer"
 #define  SOURCE                                     "coolbeer"

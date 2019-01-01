@@ -14,7 +14,8 @@ static bootloader_env_t default_env = {
 .boot_flag = BOOTLOADER_FLAG_BOOT_NORMAL,
 .status = BOOTLOADER_ENV_STATUS_VALID,
 .swap_ctrl.step = SWAP_STEP_INIT,
-.fw_origin.size = BOOTLOADER_FLASH_USER_APPLICATION_SIZE
+.fw_origin.size = BOOTLOADER_FLASH_USER_APPLICATION_SIZE,
+.fw_origin.version.code = 10
 };
 
 static application_func_t application_func;

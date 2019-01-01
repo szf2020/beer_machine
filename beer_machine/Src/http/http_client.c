@@ -348,25 +348,25 @@ static int http_client_request(const char *method,http_client_context_t *context
  /*申请http缓存*/
  http_buffer = HTTP_CLIENT_MALLOC(HTTP_BUFFER_SIZE);
  if(http_buffer == NULL){
- log_error("http malloc buffer err.\r\n");
- return -1;
+    log_error("http malloc buffer err.\r\n");
+    return -1;
  }
  /*解析url*/
  rc = http_client_parse_url(context->url,context->host,&context->port,context->path);
  if(rc != 0){
- log_error("http client parse url error.\r\n");
- goto err_handler;
+    log_error("http client parse url error.\r\n");
+    goto err_handler;
  }
  /*构建http head缓存*/
  head_size = http_client_build_head(http_buffer,method,context,HTTP_BUFFER_SIZE);
  if(head_size < 0){
- log_error("http build head err.\r\n");
- goto err_handler;
+    log_error("http build head err.\r\n");
+    goto err_handler;
  }
  /*http建立连接*/
  rc = socket_connect(context->host,context->port,SOCKET_PROTOCOL_TCP);
  if(rc < 0){
- goto err_handler;
+    goto err_handler;
  }
  context->handle = rc;
  context->connected = true;
@@ -374,15 +374,17 @@ static int http_client_request(const char *method,http_client_context_t *context
  /*http head发送*/
  rc = socket_send(context->handle,http_buffer,head_size,utils_timer_value(&timer));
  if(rc != head_size){
- log_error("http head send err.\r\n");
- goto err_handler;
+    log_error("http head send err.\r\n");
+    goto err_handler;
  }
 
  /*http user data发送*/
- rc = socket_send(context->handle,context->user_data,context->user_data_size,utils_timer_value(&timer));
- if(rc != context->user_data_size){
- log_error("http user data send err.\r\n");
- goto err_handler;
+ if(context->user_data_size > 0){
+    rc = socket_send(context->handle,context->user_data,context->user_data_size,utils_timer_value(&timer));
+    if(rc != context->user_data_size){
+       log_error("http user data send err.\r\n");
+       goto err_handler;
+    }
  }
 
  /*清空http buffer 等待接收数据*/
@@ -391,27 +393,27 @@ static int http_client_request(const char *method,http_client_context_t *context
  rc = http_client_recv_head(context,http_buffer,HTTP_BUFFER_SIZE,utils_timer_value(&timer));
  /*接收head失败 返回*/
  if(rc != 0){
- goto err_handler;
+    goto err_handler;
  }
 
  /*编码是chunk处理*/
  if(context->is_chunked == true){
- rc = http_client_recv_chunk(context,utils_timer_value(&timer));
- if(rc != 0){
- goto err_handler;  
- }
+    rc = http_client_recv_chunk(context,utils_timer_value(&timer));
+    if(rc != 0){
+       goto err_handler;  
+    }
  }else{/*不是chunk处理*/
  if(context->content_size > context->rsp_buffer_size - 1){
- log_error("content size:%d large than free buffer size:%d.\r\n",context->content_size,context->rsp_buffer_size);   
+    log_error("content size:%d large than free buffer size:%d.\r\n",context->content_size,context->rsp_buffer_size);   
  return -1;
  }
  rc = socket_recv(context->handle,context->rsp_buffer,context->content_size,utils_timer_value(&timer));
  if(rc < 0){
- log_error("content recv err.\r\n");
+    log_error("content recv err.\r\n");
  goto err_handler;
  }
  if(rc != context->content_size){
- log_error("content recv timeout.\r\n");
+    log_error("content recv timeout.\r\n");
  goto err_handler; 
  }
  }
@@ -421,8 +423,8 @@ err_handler:
  /*释放http 缓存*/
  HTTP_CLIENT_FREE(http_buffer);
  if(context->connected == true){
- socket_disconnect(context->handle);
- context->connected = false;
+    socket_disconnect(context->handle);
+    context->connected = false;
  }
  
  return rc;

@@ -132,21 +132,19 @@ int at_recv(int handle,char *recv,const uint16_t size,const uint32_t timeout)
 /* 函数名：at_check_response
 *  功能：  检查回应
 *  参数：  rsp 回应数组 
+*  参数：  size 一帧数据的长度 
 *  参数：  err_head 错误头 
 *  参数：  complete 回应是否结束 
 *  返回：  AT_ERR_OK：成功 其他：失败 
 */
-static int at_check_response(const char *rsp,at_err_code_t *err_head,bool *complete)
+static int at_check_response(const char *rsp,int size,at_err_code_t *err_head,bool *complete)
 {
     at_err_code_t *err_node;
-    char *check_pos;
     
-    /*接受完一帧数据标志*/
-    //log_warning("**\r\n");
-
     err_node = err_head;
-    while(err_node){     
-         if(strstr(check_pos,err_node->str)){
+    while(err_node){   
+         /*前部或者后面查找*/
+         if(strstr(rsp,err_node->str) || strstr(rsp + size - 4,err_node->str)){
             *complete = true;
             return err_node->code;
          }
@@ -175,27 +173,30 @@ int at_excute(int handle,at_t *at)
   }
   utils_timer_init(&timer,at->recv_timeout,false);  
   /*发送完一帧数据的标志*/
-  //log_warning("++\r\n");
+  log_debug("at send:\r\n%s",at->send);
   /*清空数据*/
   serial_flush(handle);
 
   while (utils_timer_value(&timer)){
     recv_size = at_recv(handle,at->recv + at->recv_size,AT_RECV_BUFFER_SIZE - at->recv_size,utils_timer_value(&timer));
-    if (recv_size < 0){
-      rc = recv_size;
-      goto exit; 
+    if(recv_size < 0){
+       rc = recv_size;
+       goto exit; 
     }
+    /*接收完一帧数据*/
+    log_debug("at recv:\r\n%s",at->recv + at->recv_size);
     
-    at->recv_size += recv_size;
     /*校验回应数据*/
-    rc = at_check_response(at->recv,at->err_head,&at->complete);
+    rc = at_check_response(at->recv + at->recv_size,recv_size,at->err_head,&at->complete);
+    at->recv_size += recv_size;
+    
     if(at->complete){
-       rc = AT_ERR_OK;
        goto exit;
     }
   }
+  rc = AT_ERR_RECV_TIMEOUT;
 exit:
-  log_debug("send :%s recv:%s \r\n",at->send,at_recv);
 
-  return AT_ERR_ERR;
+
+  return rc;
 }

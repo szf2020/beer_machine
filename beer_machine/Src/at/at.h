@@ -6,7 +6,7 @@
 #define  AT_SEND_BUFFER_SIZE              2000
 #define  AT_RECV_BUFFER_SIZE              2000
 
-#define  AT_SELECT_TIMEOUT                5
+#define  AT_SELECT_TIMEOUT                2
 
 typedef struct 
 {
@@ -30,13 +30,12 @@ typedef struct
 
 enum
 {
-  AT_ERR_OK,
-  AT_ERR_ERR,
-  AT_ERR_SEND_TIMEOUT,
-  AT_ERR_RECV_TIMEOUT,
-  AT_ERR_SERIAL_RECV,
-  AT_ERR_SERIAL_SEND,
-  AT_ERR_RECV_NO_SPACE
+  AT_ERR_OK = 0,
+  AT_ERR_SEND_TIMEOUT = -100,
+  AT_ERR_RECV_TIMEOUT = -101,
+  AT_ERR_SERIAL_RECV = -102,
+  AT_ERR_SERIAL_SEND = -103,
+  AT_ERR_RECV_NO_SPACE = -104
 };
 /* 函数名：at_err_code_add
 *  功能：  添加比对的错误码

@@ -70,12 +70,14 @@ static uint16_t capacity_task_get_high(void)
   serial_flush(capacity_serial_handle);
   select_size = serial_select(capacity_serial_handle,3000);
   if(select_size <= 0){
-  return CAPACITY_TASK_SENSOR_ERR_VALUE;
+     log_error("capacity sensor no data.\r\n");
+     return CAPACITY_TASK_SENSOR_ERR_VALUE;
   }
   /*读到数据处理*/
   do{
   /*数据量异常处理*/
   if(select_size + read_total > 4){
+     log_error("capacity sensor data too large.\r\n");
      return CAPACITY_TASK_SENSOR_ERR_VALUE;    
   }
   read_size = serial_read(capacity_serial_handle,(uint8_t *) buffer + read_total,select_size); 

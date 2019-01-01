@@ -7,7 +7,7 @@
 #include "temperature_task.h"
 #include "display_task.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
+#define  LOG_MODULE_LEVEL    LOG_LEVEL_WARNING
 #define  LOG_MODULE_NAME     "[t_task]"
 
 osThreadId   temperature_task_handle;
@@ -57,11 +57,12 @@ static float get_fine_t(uint32_t r,uint8_t idx)
   r2 = t_r_map[idx + 1][1];
 
   t = t_r_map[idx][0] + (r1 - r) * 1.0 /(r1 - r2) + TEMPERATURE_COMPENSATION_VALUE;
-
+  
   snprintf(t_str,6,"%4f",t);
   log_debug("temperature: %s C.\r\n",t_str);
+  
   (void)t_str;
-
+  
   return t;  
 }
 /*获取四舍五入整数温度值*/
@@ -155,7 +156,7 @@ void temperature_task(void const *argument)
           t = ALARM_TASK_TEMPERATURE_ERR_VALUE;  
         }     
    
-       if(t == temperature.value){
+       if( t == (uint8_t)temperature.value){
           continue;  
        } 
        
@@ -173,10 +174,10 @@ void temperature_task(void const *argument)
        }
        if(temperature.change == true){
          
-          if(t == ALARM_TASK_TEMPERATURE_ERR_VALUE){
-             log_error("temperature err.code:0x%2x.\r\n",temperature.value);
+          if((uint8_t)temperature.value == ALARM_TASK_TEMPERATURE_ERR_VALUE){
+             log_error("temperature err.code:0x%2x.\r\n",(uint8_t)temperature.value);
            }
-          log_debug("teperature changed dir:%d value:%d C.\r\n",temperature.dir,temperature.value);
+          log_warning("teperature changed dir:%d value:%d C.\r\n",temperature.dir,temperature.value);
           temperature.change = false;  
           
           /*报警消息*/

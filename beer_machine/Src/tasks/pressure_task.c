@@ -5,7 +5,7 @@
 #include "alarm_task.h"
 #include "pressure_task.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
+#define  LOG_MODULE_LEVEL    LOG_LEVEL_WARNING
 #define  LOG_MODULE_NAME     "[pressure]"
 
 osThreadId   pressure_task_handle;
@@ -36,10 +36,10 @@ static uint8_t get_pressure(uint16_t adc)
  
   /*换算成 kg/cm2*/
   p= (p / PA_VALUE_PER_1KG_CM2);
-   
+  
   snprintf(p_str,6,"%4f",p);
   log_debug("v:%d mv p:%skg/cm2.\r\n",(uint16_t)(v*1000),p_str);
- 
+  
   /*放大10倍 按整数计算*/
   p *= 10;
   
@@ -113,7 +113,7 @@ void pressure_task(void const *argument)
            if(pressure.value == ALARM_TASK_PRESSURE_ERR_VALUE){
              log_error("pressure err.code:0x%2x.\r\n",pressure.value);
            }else{
-             log_debug("pressure change. dir :%d  value:%d kg/cm2.\r\n" ,pressure.dir,p); 
+             log_warning("pressure change. dir :%d  value:%d kg/cm2.\r\n" ,pressure.dir,p); 
            }
            pressure.change = false;
   
