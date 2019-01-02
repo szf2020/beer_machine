@@ -203,7 +203,7 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(capacity_task, capacity_task, osPriorityNormal, 0, 200);
   capacity_task_handle = osThreadCreate(osThread(capacity_task), NULL);
   
-  osThreadDef(net_task, net_task, osPriorityNormal, 0, 300);
+  osThreadDef(net_task, net_task, osPriorityNormal, 0, 400);
   net_task_handle = osThreadCreate(osThread(net_task), NULL);
   
   osThreadDef(report_task, report_task, osPriorityNormal, 0, 800);

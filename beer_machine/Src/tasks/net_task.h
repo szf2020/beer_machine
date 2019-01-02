@@ -10,11 +10,13 @@ extern osMessageQId net_task_msg_q_id;
 
 void net_task(void const *argument);
 
-
+/*wifi配置参数在env reserved中的偏移位置*/
+#define  NET_WIFI_CONFIG_ENV_OFFSET               4
 
 #define  NET_TASK_WIFI_INIT_TIMEOUT               3000
 #define  NET_TASK_GSM_INIT_TIMEOUT                20000
 #define  NET_TASK_INIT_RETRY_DELAY                10000
+#define  NET_WIFI_CONFIG_TIMEOUT                  (2 * 60 * 1000)/*wifi配网时间2分钟*/
 #define  NET_TASK_PUT_MSG_TIMEOUT                 5
 
 typedef struct
@@ -38,6 +40,20 @@ typedef struct
   uint32_t reserved:16;
 }net_task_msg_t;
 
+typedef enum
+{
+  NET_WIFI_CONFIG_STATUS_VALID = 0xCC,
+  NET_WIFI_CONFIG_STATUS_INVALID
+}net_wifi_config_status_t;
+
+typedef struct
+{
+  net_wifi_config_status_t status;
+  char ssid[WIFI_8710BX_SSID_STR_LEN + 1];
+  char passwd[WIFI_8710BX_PASSWD_STR_LEN + 1];
+}net_wifi_config_t;
+
+
 typedef struct
 {
 struct
@@ -46,8 +62,7 @@ struct
   bool is_config;
   int  rssi;
   int  level;
-  char ssid[WIFI_8710BX_SSID_STR_LEN + 1];
-  char passwd[WIFI_8710BX_PASSWD_STR_LEN + 1];
+  net_wifi_config_t config;
   char mac[WIFI_8710BX_MAC_STR_LEN + 1];
   char ip[WIFI_8710BX_IP_STR_LEN + 1];
   uint16_t err_cnt;

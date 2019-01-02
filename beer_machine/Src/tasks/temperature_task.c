@@ -176,8 +176,9 @@ void temperature_task(void const *argument)
          
           if((uint8_t)temperature.value == ALARM_TASK_TEMPERATURE_ERR_VALUE){
              log_error("temperature err.code:0x%2x.\r\n",(uint8_t)temperature.value);
-           }
-          log_warning("teperature changed dir:%d value:%d C.\r\n",temperature.dir,temperature.value);
+          }else{
+             log_warning("teperature changed dir:%d value:%d C.\r\n",temperature.dir,temperature.value);
+          }
           temperature.change = false;  
           
           /*报警消息*/

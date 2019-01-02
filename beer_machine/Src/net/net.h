@@ -78,6 +78,14 @@ int net_query_wifi_ap_ssid(char *ssid);
 */ 
 int net_wifi_connect_ap(char *ssid,char *passwd);
 
+
+/* 函数：net_wifi_config
+*  功能：wifi配网
+*  参数：无
+*  返回：0 成功 其他：失败
+*/ 
+int net_wifi_config(char *ssid,char* passwd,uint32_t timeout);
+
 /* 函数：net_query_wifi_rssi_level
 *  功能：询问WiFi的level值
 *  参数：rssi值指针

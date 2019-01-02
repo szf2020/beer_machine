@@ -107,7 +107,7 @@ int wifi_8710bx_set_mode(const wifi_8710bx_mode_t mode)
  strcpy(wifi_at.send,mode == WIFI_8710BX_STATION_MODE ? "ATPW=1\r\n" : "ATPW=2\r\n");
  wifi_at.send_size = strlen(wifi_at.send);
  wifi_at.send_timeout = 5;
- wifi_at.recv_timeout = 1000;
+ wifi_at.recv_timeout = 6000;
  ok.str = "[ATPW] OK";
  ok.code = WIFI_ERR_OK;
  ok.next = NULL;
@@ -176,7 +176,7 @@ int wifi_8710bx_config_ap(const wifi_8710bx_ap_config_t *ap)
  snprintf(wifi_at.send,WIFI_8710BX_SEND_BUFFER_SIZE,"ATPA=%s,%s,%d,%d\r\n",ap->ssid,ap->passwd,ap->chn,(int)ap->hidden);
  wifi_at.send_size = strlen(wifi_at.send);
  wifi_at.send_timeout = 5;
- wifi_at.recv_timeout = 1000;
+ wifi_at.recv_timeout = 5000;
  ok.str = "[ATPA] OK";
  ok.code = WIFI_ERR_OK;
  ok.next = NULL;
@@ -234,7 +234,7 @@ int wifi_8710bx_get_ap_rssi(const char *ssid,int *rssi)
  goto err_exit;
  }
  /*ssid后第3个tolon是rssi值*/
- str_rc = utils_get_str_addr_by_num((char*)ssid,",",3,&tolon_str);
+ str_rc = utils_get_str_addr_by_num((char*)ssid_str,",",3,&tolon_str);
  if(str_rc == 0){
     *rssi = atoi(tolon_str + 1);
  }else{
@@ -425,8 +425,8 @@ int wifi_8710bx_get_wifi_device(wifi_8710bx_device_t *wifi_device)
 static int wifi_8710bx_dump_connection_info(const char *buffer,wifi_8710bx_connection_list_t *connection_list)
 {
 
- char *pos;
- int  str_rc;
+ char *pos,*start,*end;
+ int  str_rc,size;
  char temp[8];
  
  connection_list->cnt = 0;
@@ -439,8 +439,8 @@ static int wifi_8710bx_dump_connection_info(const char *buffer,wifi_8710bx_conne
       }
     buffer = pos + strlen("con_id:");
     connection_list->connection[i].conn_id = atoi(buffer);
-    /*获取第2个break位置之后的字符串*/
-    str_rc = utils_get_str_value_by_num((char *)buffer,temp,",",2);
+    /*获取第1个break位置之后的字符串*/
+    str_rc = utils_get_str_value_by_num((char *)buffer,temp,",",1);
     if(str_rc != 0){
        return WIFI_ERR_UNKNOW;
     }
@@ -451,7 +451,7 @@ static int wifi_8710bx_dump_connection_info(const char *buffer,wifi_8710bx_conne
     }else {
        connection_list->connection[i].type = WIFI_8710BX_CONNECTION_TYPE_CLIENT;
     }
-    /*获取第3个break位置之后的字符串*/
+    /*获取第2个break位置之后的字符串*/
     str_rc = utils_get_str_value_by_num((char *)buffer,temp,",",2);
     if(str_rc != 0){
        return WIFI_ERR_UNKNOW;
@@ -462,22 +462,33 @@ static int wifi_8710bx_dump_connection_info(const char *buffer,wifi_8710bx_conne
        connection_list->connection[i].protocol = WIFI_8710BX_NET_PROTOCOL_UDP;
     }
     /*找到address的字符串*/
-    str_rc = utils_get_str_value_by_num((char *)buffer,connection_list->connection[i].ip,",",3);
-    if(str_rc != 0){
+    pos = strstr(buffer,"address:");
+    if(pos == NULL){
        return WIFI_ERR_UNKNOW;
     }
+    end = strstr(pos,",");
+    if(end == NULL){
+       return WIFI_ERR_UNKNOW;
+    }
+    start = pos + strlen("address:");
+    size = end - start > WIFI_8710BX_IP_STR_LEN -1 ? WIFI_8710BX_IP_STR_LEN -1 : end - start;
+    memcpy(connection_list->connection[i].ip,start,size);
+    connection_list->connection[i].ip[size] = '\0';   
+
    /*找到port的值*/
-    str_rc = utils_get_str_addr_by_num((char *)buffer,",",3,&pos);
-    if(str_rc != 0){
+    pos = strstr(buffer,"port:");
+    if(pos == NULL){
        return WIFI_ERR_UNKNOW;
     }
-    connection_list->connection[i].socket_id = atoi(pos + 1);
+    start = pos + strlen("port:");
+    connection_list->connection[i].port = atoi(start);
     /*找到socket的值*/
-    str_rc = utils_get_str_addr_by_num((char *)buffer,",",4,&pos);
-    if(str_rc != 0){
+    pos = strstr(buffer,"socket:");
+    if(pos == NULL){
        return WIFI_ERR_UNKNOW;
     }
-    connection_list->connection[i].socket_id = atoi(pos + 1);
+    start = pos + strlen("socket:");
+    connection_list->connection[i].socket_id = atoi(start);
     connection_list->cnt = i + 1;
    }
  
@@ -497,10 +508,10 @@ int wifi_8710bx_get_connection(wifi_8710bx_connection_list_t *connection_list)
  osMutexWait(wifi_mutex,osWaitForever);
  
  memset(&wifi_at,0,sizeof(wifi_at));
- strcpy(wifi_at.send,"ATW?\r\n");
+ strcpy(wifi_at.send,"ATPI\r\n");
  wifi_at.send_size = strlen(wifi_at.send);
  wifi_at.send_timeout = 5;
- wifi_at.recv_timeout = 1000;
+ wifi_at.recv_timeout = 2000;
  ok.str = "[ATPI] OK";
  ok.code = WIFI_ERR_OK;
  ok.next = NULL;

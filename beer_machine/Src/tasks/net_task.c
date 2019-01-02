@@ -6,9 +6,10 @@
 #include "display_task.h"
 #include "tasks_init.h"
 #include "utils.h"
+#include "bootloader_if.h"
 #include "log.h"
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[net_manage]"
+#define  LOG_MODULE_NAME     "[net_task]"
 
 
 osThreadId  net_task_handle;
@@ -143,13 +144,13 @@ static int net_task_wifi_init(uint32_t timeout)
   if(rc != 0){
      return -1;
   }             
-  /*通信接口初始化*/
+  /*获取mac地址*/
   rc = net_query_wifi_mac(net.wifi.mac);
   if(rc != 0){
      return -1;
   } 
   
-  log_error("net task wifi init ok.\r\n");
+  log_debug("net task wifi init ok.\r\n");
   return 0; 
 }
 
@@ -201,11 +202,36 @@ static int net_task_gsm_init(uint32_t timeout)
   return 0; 
 }
 
-static void net_task_config_wifi()
+static void net_task_config_wifi(uint32_t timeout)
 {
-  strcpy(net.wifi.ssid,SSID);
-  strcpy(net.wifi.passwd,PASSWD);
-  net.wifi.is_config = true;  
+  int rc;
+  net_wifi_config_t wifi_new_config;
+  bootloader_env_t  env;
+  
+  rc = bootloader_get_env(&env);
+  log_assert(rc == 0 && env.status == BOOTLOADER_ENV_STATUS_VALID);
+  
+  net.wifi.config = *(net_wifi_config_t *)&env.reserved[NET_WIFI_CONFIG_ENV_OFFSET];
+  /*启动配网router*/
+  rc = net_wifi_config(wifi_new_config.ssid,wifi_new_config.passwd,timeout); 
+  if(rc == 0){
+    log_debug("wifi new config ok.ssid:%s passwd:%s.\r\n",wifi_new_config.ssid,wifi_new_config.passwd);
+    if(strcmp(net.wifi.config.ssid,wifi_new_config.ssid) != 0 ||
+       strcmp(net.wifi.config.passwd,wifi_new_config.passwd) != 0){
+       log_debug("config is different save.\r\n");
+       wifi_new_config.status = NET_WIFI_CONFIG_STATUS_VALID;
+       *(net_wifi_config_t *)&env.reserved[NET_WIFI_CONFIG_ENV_OFFSET] = wifi_new_config;
+       bootloader_save_env(&env);
+       net.wifi.config = wifi_new_config;
+    }else{
+       log_debug("config is same.skip.\r\n");
+    }
+  }
+
+  if(net.wifi.config.status == NET_WIFI_CONFIG_STATUS_VALID && strlen(net.wifi.config.ssid) > 0){
+     log_warning("wifi will connect ssid:%s passwd:%s.\r\n",net.wifi.config.ssid,net.wifi.config.passwd);
+  }
+   net.wifi.is_config = true;
 }
 
 static void net_task_send_hal_info_to_report_task()
@@ -266,6 +292,12 @@ init:
     log_error("wifi module is err.\r\n"); 
  }else{
     net.wifi.is_initial = true;
+    if(net.wifi.is_config == false){
+    net_task_config_wifi(NET_WIFI_CONFIG_TIMEOUT);
+    /*重新初始化*/
+    net.wifi.is_initial = false;
+    goto init;
+    }
  }
  
  rc = net_task_gsm_init(NET_TASK_GSM_INIT_TIMEOUT);
@@ -284,10 +316,6 @@ init:
 
  /*向上报任务提供设备信息 sim id 和 wifi mac*/
  net_task_send_hal_info_to_report_task();
- 
- if(net.wifi.is_initial == true){
-    net_task_config_wifi();
- }
  
  /*等待任务同步*/
  xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_NET_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
@@ -311,32 +339,41 @@ init:
   /*如果收到检查WIFI网络状态*/
   if(msg.type == NET_TASK_MSG_QUERY_WIFI){ 
      /*wifi初始化完成和配网后才轮询wifi状态*/
-     if(net.wifi.is_initial == true && net.wifi.is_config == true){
-        rc = net_query_wifi_rssi_level(net.wifi.ssid,&net.wifi.rssi,&net.wifi.level);
-        if(rc != 0){
-           net.wifi.err_cnt ++;
-        }else{
-           net.wifi.err_cnt = 0;
-           if(net.wifi.rssi != 0){
-              memset(ssid_temp,0,33);
-              rc = net_query_wifi_ap_ssid(ssid_temp);
-              if(rc != 0){
-                 net.wifi.err_cnt = 0;
+     if(net.wifi.is_initial == true && net.wifi.is_config == true && net.wifi.config.status == NET_WIFI_CONFIG_STATUS_VALID){
+       /*查询wifi当前的连接的ssid*/
+       memset(ssid_temp,0,33);
+       rc = net_query_wifi_ap_ssid(ssid_temp);
+       if(rc != 0){
+          net.wifi.err_cnt = 0;
+       }else{
+         /*如果wifi当前的连接的ssid不是配置的或者不存在*/
+          if(strcmp(ssid_temp,net.wifi.config.ssid) != 0){
+            /*扫描配置的ssid是否存在*/
+            rc = net_query_wifi_rssi_level(net.wifi.config.ssid,&net.wifi.rssi,&net.wifi.level);
+            if(rc != 0){
+               net.wifi.err_cnt ++;
+            }else{
+              net.wifi.err_cnt = 0;
+              /*如果存在配置的ssid，尝试连接*/
+              if(net.wifi.rssi != 0){
+                 log_debug("wifi start conenct to %s\r\n",net.wifi.config.ssid);
+                 rc = net_wifi_connect_ap(net.wifi.config.ssid,net.wifi.config.passwd);
+                 /*连接结果处理*/
+                 if(rc != 0){
+                    net.wifi.status = NET_STATUS_OFFLINE;
+                    net.wifi.err_cnt ++; 
+                 }else{
+                   net.wifi.status = NET_STATUS_ONLINE;
+                }
               }else{
-                 if(strcmp(ssid_temp,net.wifi.ssid) != 0){
-                    log_debug("wifi start conenct to %s\r\n",net.wifi.ssid);
-                    rc = net_wifi_connect_ap(net.wifi.ssid,net.wifi.passwd);
-                    if(rc != 0){
-                       net.wifi.status = NET_STATUS_OFFLINE;
-                       net.wifi.err_cnt ++; 
-                    }else{
-                       net.wifi.status = NET_STATUS_ONLINE;
-                    }
-                 }
+                 net.wifi.status = NET_STATUS_OFFLINE;
+                 log_debug("wifi ssid:%s is not exsit.\r\n",net.wifi.config.ssid);
               }
           }
+        }
        }
     }
+    
     display_msg.type = DISPLAY_TASK_MSG_WIFI;
     if(net.wifi.level == 0){
        display_msg.value = 3;

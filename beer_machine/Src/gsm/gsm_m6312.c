@@ -185,7 +185,7 @@ int gsm_m6312_get_sim_card_id(char *sim_id)
  strcpy(gsm_at.send,"AT+CCID?\r\n");
  gsm_at.send_size = strlen(gsm_at.send);
  gsm_at.send_timeout = 5;
- gsm_at.recv_timeout = 1000;
+ gsm_at.recv_timeout = 2000;
  ok.str = "OK\r\n";
  ok.code = GSM_ERR_OK;
  ok.next = NULL;
@@ -759,7 +759,7 @@ int gsm_m6312_get_operator(operator_name_t *operator_name)
  strcpy(gsm_at.send,"AT+CIMI\r\n");
  gsm_at.send_size = strlen(gsm_at.send);
  gsm_at.send_timeout = 5;
- gsm_at.recv_timeout = 2000;
+ gsm_at.recv_timeout = 5000;
  ok.str = "OK\r\n";
  ok.code = GSM_ERR_OK;
  ok.next = NULL;

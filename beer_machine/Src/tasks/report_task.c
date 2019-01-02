@@ -119,7 +119,7 @@ static report_log_t      report_log;
 static report_upgrade_t  report_upgrade;
 
 static uint8_t active_event;
-
+const static uint32_t fw_version_code = (FIRMWARE_VERSION_MAJOR_CODE << 16 | FIRMWARE_VERSION_MINOR_CODE << 8 | FIRMWARE_VERSION_REVISION_CODE);
 static device_config_t device_default_config = {
   
 .temperature_low = DEFAULT_COMPRESSOR_LOW_TEMPERATURE,
@@ -548,7 +548,7 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
      log_error("logSubmitDur is not num or is null.\r\n");
      goto err_exit;  
   }
-  config->report_log_interval = temp->valueint;
+  config->report_log_interval = temp->valueint * 60;/*配置的单位是分钟，定时器使用秒*/
   
   /*检查lock*/
   temp = cJSON_GetObjectItem(run_config,"lock");
@@ -596,14 +596,16 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
      log_error("p min is not num or is null.\r\n");
      goto err_exit;  
   }
-  config->pressure_low = temp->valueint;
+ /*把浮点数*10转换成uint8_t*/
+  config->pressure_low = (uint8_t)temp->valuedouble * 10;
  /*检查pressure max */ 
   temp = cJSON_GetObjectItem(pressure,"max");
   if(!cJSON_IsNumber(temp)){
      log_error("p max is not num or is null.\r\n");
      goto err_exit;  
   }
-  config->pressure_high = temp->valueint;
+  /*把浮点数*10转换成uint8_t*/
+  config->pressure_high = (uint8_t)temp->valuedouble * 10;
   rc = 0;
   log_debug("active rsp [lock:%d infointerval:%d. t_low:%d t_high:%d p_low:%d p_high:%d.\r\n",
             config->lock,config->temperature_low,config->temperature_high,config->pressure_low,config->pressure_high);
@@ -743,7 +745,7 @@ static int report_task_report_fault(const char *url_origin,report_fault_t *fault
   timestamp = report_task_get_utc();
   snprintf(timestamp_str,14,"%d",timestamp);
   /*计算sign*/
-  report_task_build_sign(sign_str,4,fault->code,fault->msg,fault->time,fault->status,KEY,sn,SOURCE,timestamp_str);
+  report_task_build_sign(sign_str,8,fault->code,fault->msg,fault->time,KEY,sn,SOURCE,fault->status,timestamp_str);
   /*构建新的url*/
   report_task_build_url(url,200,url_origin,sn,sign_str,SOURCE,timestamp_str);  
    
@@ -914,7 +916,7 @@ static void report_task_get_sn(char *sn)
   }
   
   /*测试*/
-  strcpy(sn,"129DP12399787777");
+  strcpy(sn,"testsn20181218");
 }
 /*读取版本号*/
 static void report_task_get_firmware_version(char **fw_version)
@@ -1006,14 +1008,14 @@ static int report_task_parse_upgrade_rsp_json(char *json_str,report_upgrade_t *r
   
   /*检查data */
   data = cJSON_GetObjectItem(upgrade_rsp_json,"data");
-  if(!cJSON_IsObject(data) || data->valuestring == NULL ){
-     log_error("data is not obj or value is null.\r\n");
+  if(!cJSON_IsObject(data) ){
+     log_error("data is not obj .\r\n");
      goto err_exit;  
   }
   /*检查upgrade */ 
   upgrade = cJSON_GetObjectItem(data,"upgrade");
-  if(!cJSON_IsObject(upgrade) || upgrade->valuestring == NULL ){
-     log_error("upgrade is not obj or value is null.\r\n");
+  if(!cJSON_IsObject(upgrade)){
+     log_error("upgrade is not obj .\r\n");
      goto err_exit;  
   }
   /*检查url*/
@@ -1068,7 +1070,7 @@ static int report_task_get_upgrade(const char *url_origin,const char *sn,report_
   http_client_context_t context;
   char timestamp_str[14] = { 0 };
   char sign_str[33] = { 0 };
-  char rsp[200] = { 0 };
+  char rsp[300] = { 0 };
   char url[200] = { 0 };
   /*计算时间戳字符串*/
   timestamp = report_task_get_utc();
@@ -1081,7 +1083,7 @@ static int report_task_get_upgrade(const char *url_origin,const char *sn,report_
   context.range_size = 200;
   context.range_start = 0;
   context.rsp_buffer = rsp;
-  context.rsp_buffer_size = 200;
+  context.rsp_buffer_size = 300;
   context.url = url;
   context.timeout = 10000;
   context.user_data = NULL;
@@ -1268,7 +1270,7 @@ void report_task(void const *argument)
         /*获取成功处理*/   
          upgrade_retry = 0;
          /*对比现在的版本号*/
-         if(report_upgrade.version_code > env.fw_origin.version.code){
+         if(report_upgrade.version_code > fw_version_code){
             log_warning("firmware need upgrade.start download upgrade.\r\n");
             report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_DOWNLOAD_UPGRADE);                 
          }else{
@@ -1319,6 +1321,7 @@ void report_task(void const *argument)
                 env.fw_update.size = report_upgrade.bin_size;
                 strcpy(env.fw_update.md5.value,report_upgrade.md5);
                 env.fw_update.version.code = report_upgrade.version_code;
+                
                 bootloader_save_env(&env);
                 /*启动bootloader，开始更新*/
                 bootloader_reset();                 
