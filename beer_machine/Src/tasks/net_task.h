@@ -16,7 +16,7 @@ void net_task(void const *argument);
 #define  NET_TASK_WIFI_INIT_TIMEOUT               3000
 #define  NET_TASK_GSM_INIT_TIMEOUT                20000
 #define  NET_TASK_INIT_RETRY_DELAY                10000
-#define  NET_WIFI_CONFIG_TIMEOUT                  (2 * 60 * 1000)/*wifi配网时间2分钟*/
+#define  NET_WIFI_CONFIG_TIMEOUT                  (0)/*wifi配网时间2分钟*/
 #define  NET_TASK_PUT_MSG_TIMEOUT                 5
 
 typedef struct

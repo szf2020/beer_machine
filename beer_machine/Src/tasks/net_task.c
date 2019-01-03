@@ -218,7 +218,7 @@ static void net_task_config_wifi(uint32_t timeout)
     log_debug("wifi new config ok.ssid:%s passwd:%s.\r\n",wifi_new_config.ssid,wifi_new_config.passwd);
     if(strcmp(net.wifi.config.ssid,wifi_new_config.ssid) != 0 ||
        strcmp(net.wifi.config.passwd,wifi_new_config.passwd) != 0){
-       log_debug("config is different save.\r\n");
+       log_debug("config is different.save.\r\n");
        wifi_new_config.status = NET_WIFI_CONFIG_STATUS_VALID;
        *(net_wifi_config_t *)&env.reserved[NET_WIFI_CONFIG_ENV_OFFSET] = wifi_new_config;
        bootloader_save_env(&env);
@@ -245,7 +245,7 @@ static void net_task_send_hal_info_to_report_task()
  
  status = osMessagePut(report_task_net_hal_info_msg_q_id,(uint32_t)&hal_info,NET_TASK_PUT_MSG_TIMEOUT);
  if(status !=osOK){
- log_error("put report task msg error:%d\r\n",status);
+    log_error("put report task msg error:%d\r\n",status);
  } 
 
 }
@@ -281,6 +281,10 @@ void net_task(void const *argument)
  net_task_msg_t msg;
  display_task_msg_t display_msg;
  char ssid_temp[33];
+ 
+ /*wifi和gsm轮询定时器*/
+ wifi_query_timer_init();
+ gsm_query_timer_init();
  
  /*上电处理流程*/
  /*网络连接初始化*/
@@ -318,16 +322,13 @@ init:
  net_task_send_hal_info_to_report_task();
  
  /*等待任务同步*/
+ /*
  xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_NET_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
  log_debug("net task sync ok.\r\n");
-
-
- wifi_query_timer_init();
- wifi_query_timer_start();
+ */
  
- gsm_query_timer_init();
  gsm_query_timer_start();
-
+ wifi_query_timer_start();
  
  
   while(1){
@@ -340,39 +341,40 @@ init:
   if(msg.type == NET_TASK_MSG_QUERY_WIFI){ 
      /*wifi初始化完成和配网后才轮询wifi状态*/
      if(net.wifi.is_initial == true && net.wifi.is_config == true && net.wifi.config.status == NET_WIFI_CONFIG_STATUS_VALID){
-       /*查询wifi当前的连接的ssid*/
+       /*扫描配置的ssid是否存在，同时获取信号强度*/
+       rc = net_query_wifi_rssi_level(net.wifi.config.ssid,&net.wifi.rssi,&net.wifi.level);      
+       if(rc != 0){
+          net.wifi.err_cnt ++;
+       }
+      /*查询wifi当前的连接的ssid*/
        memset(ssid_temp,0,33);
        rc = net_query_wifi_ap_ssid(ssid_temp);
        if(rc != 0){
-          net.wifi.err_cnt = 0;
+          net.wifi.err_cnt ++;
        }else{
-         /*如果wifi当前的连接的ssid不是配置的或者不存在*/
-          if(strcmp(ssid_temp,net.wifi.config.ssid) != 0){
-            /*扫描配置的ssid是否存在*/
-            rc = net_query_wifi_rssi_level(net.wifi.config.ssid,&net.wifi.rssi,&net.wifi.level);
-            if(rc != 0){
-               net.wifi.err_cnt ++;
-            }else{
-              net.wifi.err_cnt = 0;
-              /*如果存在配置的ssid，尝试连接*/
-              if(net.wifi.rssi != 0){
-                 log_debug("wifi start conenct to %s\r\n",net.wifi.config.ssid);
-                 rc = net_wifi_connect_ap(net.wifi.config.ssid,net.wifi.config.passwd);
+          net.wifi.err_cnt = 0;
+          /*如果wifi当前的连接的ssid是配置*/
+          if(strcmp(ssid_temp,net.wifi.config.ssid) == 0){
+             net.wifi.status = NET_STATUS_ONLINE;
+          }else{
+             net.wifi.status = NET_STATUS_OFFLINE;
+             /*如果wifi当前的连接的ssid不是配置的或者不存在*/
+             /*如果存在配置的ssid，尝试连接*/
+             if(net.wifi.rssi != 0){
+                log_debug("wifi start conenct to %s\r\n",net.wifi.config.ssid);
+                rc = net_wifi_connect_ap(net.wifi.config.ssid,net.wifi.config.passwd);
                  /*连接结果处理*/
                  if(rc != 0){
-                    net.wifi.status = NET_STATUS_OFFLINE;
-                    net.wifi.err_cnt ++; 
+                    net.wifi.err_cnt ++;                    
                  }else{
-                   net.wifi.status = NET_STATUS_ONLINE;
+                    net.wifi.status = NET_STATUS_ONLINE;
                 }
               }else{
-                 net.wifi.status = NET_STATUS_OFFLINE;
                  log_debug("wifi ssid:%s is not exsit.\r\n",net.wifi.config.ssid);
               }
           }
         }
-       }
-    }
+      }
     
     display_msg.type = DISPLAY_TASK_MSG_WIFI;
     if(net.wifi.level == 0){
@@ -391,9 +393,8 @@ init:
       net.wifi.err_cnt = 0;
       net.wifi.status = NET_STATUS_OFFLINE;
       net.wifi.is_initial = false;
-      if(net_task_wifi_init(NET_TASK_WIFI_INIT_TIMEOUT) == 0 ){
-         net.wifi.is_initial = true;
-      }
+      /*需要重新初始化*/
+      goto init;
    }
    /*重新启动wifi检查定时器*/
    wifi_query_timer_start(); 
@@ -404,6 +405,8 @@ init:
   if(msg.type == NET_TASK_MSG_QUERY_GSM){ 
      /*存在sim卡才轮询gsm的基站信息*/
      if(net.gsm.is_sim_exsit == true){
+       /*清空上次基站信息*/
+        memset(&net.gsm.location,0,sizeof(net_location_t));
         rc = net_query_gsm_location(&net.gsm.location.base_main,4);
         if(rc != 0){
            net.gsm.err_cnt ++;
@@ -421,10 +424,8 @@ init:
       net.gsm.err_cnt = 0;
       net.gsm.status = NET_STATUS_OFFLINE;
       net.gsm.is_initial = false;
-      if(net_task_gsm_init(NET_TASK_GSM_INIT_TIMEOUT) == 0){
-         net.gsm.status = NET_STATUS_ONLINE;
-         net.gsm.is_initial = true; 
-      }
+      /*需要重新初始化*/
+      goto init;
    }
  /*重新启动GSM检查定时器*/
   gsm_query_timer_start(); 

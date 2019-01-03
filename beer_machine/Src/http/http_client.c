@@ -43,7 +43,6 @@ return -1;                                      \
 */
 static int http_client_parse_url(const char *url,char *host,uint16_t *port,char *path)
 {
-  char *pos;
   char *host_str;
   char *port_str;
   char *path_str;
@@ -54,26 +53,39 @@ static int http_client_parse_url(const char *url,char *host,uint16_t *port,char 
   log_error("null pointer.\r\n");
   } 
   /*找到host*/
-  pos = strstr(url,"http://");
-  HTTP_CLIENT_ASSERT_NULL_POINTER(pos);
-  host_str = pos + strlen("http://");
-  pos = strstr(host_str,":");
-  HTTP_CLIENT_ASSERT_NULL_POINTER(pos);
-  host_str_len = pos - host_str;
-  if(host_str_len > HTTP_CLIENT_HOST_STR_LEN){
-  log_error("host str len:%d is too large.\r\n",host_str_len);
-  return -1;
+  if(strncmp(url,"http://",7) != 0){
+     log_error("url not start with http://.\r\n");
+     return -1;
   }
-  memcpy(host,host_str,host_str_len);
-  host[host_str_len]= '\0';
-  /*找到port*/
-  port_str =  pos + strlen(":");
-  *port = strtol(port_str,NULL,10);
+  host_str = (char *)url + 7;
+  
   /*找到path*/
-  path_str = strstr(port_str,"/");
-  HTTP_CLIENT_ASSERT_NULL_POINTER(path_str);
+  path_str = strstr(host_str,"/");
+  if(path_str == NULL){
+     log_error("url path has no /.\r\n");
+     return -1;
+  }
+  /*找到port*/
+  port_str = strstr(host_str,":");
+  if(port_str == NULL){
+     /*默认端口*/
+     *port = 80;
+     port_str = path_str;
+  }else{
+    *port = strtol(port_str + 1,NULL,10);
+  }
+  
+  /*复制host*/
+   host_str_len = port_str - host_str;
+   if(host_str_len > HTTP_CLIENT_HOST_STR_LEN){
+      log_error("host str len:%d is too large.\r\n",host_str_len);
+      return -1;
+   }
+   memcpy(host,host_str,host_str_len);
+   host[host_str_len]= '\0';
+  /*找到path*/
   path_str_len = strlen(path_str);
-  if(path_str_len > HTTP_CLIENT_PATH_STR_LEN){
+  if(path_str_len > HTTP_CLIENT_PATH_STR_LEN - 1){
   log_error("path str len:%d is too large.\r\n",path_str_len);
   return -1;
   } 
@@ -403,7 +415,7 @@ static int http_client_request(const char *method,http_client_context_t *context
        goto err_handler;  
     }
  }else{/*不是chunk处理*/
- if(context->content_size > context->rsp_buffer_size - 1){
+ if(context->content_size > context->rsp_buffer_size){
     log_error("content size:%d large than free buffer size:%d.\r\n",context->content_size,context->rsp_buffer_size);   
  return -1;
  }
@@ -470,5 +482,5 @@ int http_client_download(http_client_context_t *context)
   log_error("null pointer.\r\n");
   return -1;
   }  
- return  http_client_request("POST",context);
+ return  http_client_request("GET",context);
 }

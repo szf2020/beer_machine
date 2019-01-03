@@ -506,12 +506,12 @@ int net_query_gsm_location(gsm_base_t *base,uint8_t cnt)
  gsm_m6312_register_t register_info;
  gsm_m6312_assist_base_t assist_base;
  
-  /*SIM卡是否注册*/  
+ /*SIM卡是否注册*/  
  rc = gsm_m6312_get_reg_location(&register_info);
  if(rc != 0){
     goto err_exit; 
  }
-/*没有注册直接返回*/ 
+ /*没有注册直接返回*/ 
  if(register_info.status == GSM_M6312_STATUS_NO_REGISTER){
     return 0;
  }

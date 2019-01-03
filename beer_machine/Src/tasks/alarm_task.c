@@ -260,8 +260,8 @@ void alarm_task(void const *argument)
    if(msg.type == ALARM_TASK_MSG_COMPRESSOR_TEMPERATURE_CONFIG){
       int8_t temp_high,temp_low;
       /*判断温度的合法性*/
-      temp_high = (int8_t)msg.reserved >> 8;
-      temp_low = (int8_t)msg.reserved & 0xFF;
+      temp_high = (int8_t)(msg.reserved >> 8);
+      temp_low = (int8_t)(msg.reserved & 0xFF);
       if(temp_high > DEFAULT_COMPRESSOR_HIGH_TEMPERATURE_LIMIT || temp_low < DEFAULT_COMPRESSOR_LOW_TEMPERATURE_LIMIT){
         log_error("config compressor t is invalid. high:%d low:%d \r\n",temp_high,temp_low);
       }else{

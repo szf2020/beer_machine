@@ -468,7 +468,6 @@ err_exit:
     log_error("json parse log rsp error.\r\n");  
     return -1;
  }
- log_debug("report log ok.\r\n");  
  
  return 0;
  }
@@ -518,10 +517,7 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
      log_error("active rsp err code:%d.\r\n",temp->valueint); 
      goto err_exit;  
   }  
-    /*测试*/
-    rc = 0;
-    goto err_exit;
-    
+ 
   /*检查success值 true or false*/
   temp = cJSON_GetObjectItem(active_rsp_json,"success");
   if(!cJSON_IsBool(temp) || !cJSON_IsTrue(temp)){
@@ -532,14 +528,14 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
   
   /*检查data */
   data = cJSON_GetObjectItem(active_rsp_json,"data");
-  if(!cJSON_IsObject(data) || data->valuestring == NULL ){
+  if(!cJSON_IsObject(data)){
      log_error("data is not obj or value is null.\r\n");
      goto err_exit;  
   }
   /*检查runConfig */ 
   run_config = cJSON_GetObjectItem(data,"runConfig");
-  if(!cJSON_IsObject(run_config) || run_config->valuestring == NULL ){
-     log_error("run config is not obj or value is null.\r\n");
+  if(!cJSON_IsObject(run_config)){
+     log_error("run config is not obj.\r\n");
      goto err_exit;  
   }
   /*检查log submit interval*/
@@ -565,8 +561,8 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
 
   /*检查temperature */ 
   temperature = cJSON_GetObjectItem(run_config,"temp");
-  if(!cJSON_IsObject(temperature) || temperature->valuestring == NULL ){
-     log_error("temperature is not obj or value is null.\r\n");
+  if(!cJSON_IsObject(temperature)){
+     log_error("temperature is not obj.\r\n");
      goto err_exit;  
   }
   /*检查temperature min */ 
@@ -586,8 +582,8 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
   
   /*检查pressure*/ 
   pressure = cJSON_GetObjectItem(run_config,"pressure");
-  if(!cJSON_IsObject(pressure) || pressure->valuestring == NULL ){
-     log_error("pressure is not obj or value is null.\r\n");
+  if(!cJSON_IsObject(pressure)  ){
+     log_error("pressure is not obj .\r\n");
      goto err_exit;  
   }
   /*检查pressure min */ 
@@ -608,7 +604,7 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
   config->pressure_high = (uint8_t)temp->valuedouble * 10;
   rc = 0;
   log_debug("active rsp [lock:%d infointerval:%d. t_low:%d t_high:%d p_low:%d p_high:%d.\r\n",
-            config->lock,config->temperature_low,config->temperature_high,config->pressure_low,config->pressure_high);
+            config->lock,config->report_log_interval,config->temperature_low,config->temperature_high,config->pressure_low,config->pressure_high);
   
 
 err_exit:
@@ -1042,6 +1038,14 @@ static int report_task_parse_upgrade_rsp_json(char *json_str,report_upgrade_t *r
   }
   strcpy(report_upgrade->version_str,temp->valuestring);
   
+  /*检查size*/
+  temp = cJSON_GetObjectItem(upgrade,"size");
+  if(!cJSON_IsNumber(temp)){
+     log_error("size is not num.\r\n");
+     goto err_exit;  
+  }
+  report_upgrade->bin_size = temp->valueint;
+  
   /*检查md5*/
   temp = cJSON_GetObjectItem(upgrade,"md5");
   if(!cJSON_IsString(temp) || temp->valuestring == NULL){
@@ -1050,11 +1054,12 @@ static int report_task_parse_upgrade_rsp_json(char *json_str,report_upgrade_t *r
   }
   strcpy(report_upgrade->md5,temp->valuestring);
   
-  log_debug("upgrade rsp:\r\n[dwn_url:%s ver_code:%d. ver_str:%s md5:%s.\r\n",
+  log_debug("upgrade rsp:\r\ndwn_url:%s\r\nver_code:%d.\r\nver_str:%s\r\nmd5:%s.\r\nsize:%d.\r\n",
             report_upgrade->download_url,
             report_upgrade->version_code,
             report_upgrade->version_str,
-            report_upgrade->md5);
+            report_upgrade->md5,
+            report_upgrade->bin_size);
   rc = 0;
   
 err_exit:
@@ -1188,9 +1193,10 @@ void report_task(void const *argument)
  
  report_task_start_active_timer(0,REPORT_TASK_MSG_NET_HAL_INFO);
  /*等待任务同步*/
- 
+ /*
  xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_REPORT_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
  log_debug("report task sync ok.\r\n");
+*/
  //snprintf(msg_log,200,"{\"source\":\"coolbeer\",\"pressure\":\"1.1\",\"capacity\":\"1\",\"temp\":4,\"location\":{\"lac\":%s,\"ci\":%s}}",reg.location.lac,reg.location.ci);
  
  
@@ -1207,7 +1213,7 @@ void report_task(void const *argument)
        /*获取失败 设备离线 无法激活和进行下面的步骤 继续尝试*/
        if(rc != 0){
           log_error("report task get net hal info timeout.%d S later retry.",REPORT_TASK_RETRY_DELAY / 1000);
-          report_task_start_active_timer(REPORT_TASK_RETRY_DELAY,REPORT_TASK_MSG_NET_HAL_INFO); 
+          report_task_start_active_timer(REPORT_TASK_RETRY_DELAY/30,REPORT_TASK_MSG_NET_HAL_INFO); 
        }else{
           report_task_start_active_timer(0,REPORT_TASK_MSG_SYNC_UTC); 
        }
@@ -1272,7 +1278,7 @@ void report_task(void const *argument)
          /*对比现在的版本号*/
          if(report_upgrade.version_code > fw_version_code){
             log_warning("firmware need upgrade.start download upgrade.\r\n");
-            report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_DOWNLOAD_UPGRADE);                 
+            report_task_start_active_timer(0,REPORT_TASK_MSG_DOWNLOAD_UPGRADE);                 
          }else{
             log_warning("firmware no upgrade.\r\n");  
             /*开启定时作为同步时间定时器*/

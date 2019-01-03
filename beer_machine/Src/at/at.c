@@ -110,6 +110,7 @@ int at_recv(int handle,char *recv,const uint16_t size,const uint32_t timeout)
  
  do{
    if(read_total + select_size > size){
+      log_error("rsp too large.\r\n");
       return AT_ERR_RECV_NO_SPACE;
   }
   read_size = serial_read(handle,(uint8_t *)recv + read_total,select_size); 
@@ -123,7 +124,7 @@ int at_recv(int handle,char *recv,const uint16_t size,const uint32_t timeout)
   } 
   }while(select_size != 0);
  
-  recv[read_total] = '\0';
+  //recv[read_total] = '\0';
   
   return read_total;
   

@@ -11,7 +11,6 @@
 #define  KEY                                        "meiling-beer"
 #define  SOURCE                                     "coolbeer"
 #define  MODEL                                      "pijiuji"
-#define  FW_VERSION                                 "v1.0.0"
 
 /*啤酒机默认运行配置参数表*/
 #define  DEFAULT_COMPRESSOR_LOW_TEMPERATURE         2

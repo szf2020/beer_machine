@@ -3,7 +3,7 @@
 #include "stdint.h"
 #include "stdbool.h"
 
-#define  AT_SEND_BUFFER_SIZE              2000
+#define  AT_SEND_BUFFER_SIZE              1000
 #define  AT_RECV_BUFFER_SIZE              2000
 
 #define  AT_SELECT_TIMEOUT                2

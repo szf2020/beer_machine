@@ -395,7 +395,7 @@ int wifi_8710bx_get_wifi_device(wifi_8710bx_device_t *wifi_device)
  snprintf(wifi_at.send,WIFI_8710BX_SEND_BUFFER_SIZE,"ATW?\r\n");
  wifi_at.send_size = strlen(wifi_at.send);
  wifi_at.send_timeout = 5;
- wifi_at.recv_timeout = 2000;
+ wifi_at.recv_timeout = 5000;
  ok.str = "[ATW?] OK";
  ok.code = WIFI_ERR_OK;
  ok.next = NULL;

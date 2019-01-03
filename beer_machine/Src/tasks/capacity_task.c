@@ -125,6 +125,7 @@ void capacity_task(void const *argument)
   beer_capacity.value = 88;
   
   while(1){
+  log_warning("free: %d.\r\n",xPortGetFreeHeapSize()) 
   high = capacity_task_get_high(); 
   /*如果液位高度没有变化就继续*/
   if(high == beer_capacity.high){
@@ -157,7 +158,7 @@ void capacity_task(void const *argument)
        beer_capacity.value = int_capacity;
     }
   }
-  
+
   if(beer_capacity.change == true){
      beer_capacity.change = false;
      /*发送报警消息*/   

@@ -345,7 +345,7 @@ int socket_connect(const char *host,uint16_t remote_port,socket_protocol_t proto
  log_error("gsm handle :%d connect fail.\r\n",handle);    
  }
  }else{
- log_debug("gsm is not ready.\r\n");    
+ log_warning("gsm is not ready.\r\n");    
  }
  }else{
  log_debug("wifi connect ok handle:%d.\r\n",rc);    
@@ -455,9 +455,9 @@ int socket_recv(const int socket_handle,char *buffer,int size,uint32_t timeout)
  if(buffer_size < 0){
  return -1;
  }
- /*先从缓存读出*/
+ /*如果缓存数据足够例如，直接从缓存读出*/
  if(buffer_size + read_size >= size){
- socket_read_buffer(socket_handle,buffer, size - read_size);
+ socket_read_buffer(socket_handle,buffer + read_size, size - read_size);
  return size;
  }
 
