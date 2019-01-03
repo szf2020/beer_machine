@@ -173,7 +173,7 @@ int wifi_8710bx_config_ap(const wifi_8710bx_ap_config_t *ap)
  osMutexWait(wifi_mutex,osWaitForever);
  
  memset(&wifi_at,0,sizeof(wifi_at));
- snprintf(wifi_at.send,WIFI_8710BX_SEND_BUFFER_SIZE,"ATPA=%s,%s,%d,%d\r\n",ap->ssid,ap->passwd,ap->chn,(int)ap->hidden);
+ snprintf(wifi_at.send,AT_SEND_BUFFER_SIZE,"ATPA=%s,%s,%d,%d\r\n",ap->ssid,ap->passwd,ap->chn,(int)ap->hidden);
  wifi_at.send_size = strlen(wifi_at.send);
  wifi_at.send_timeout = 5;
  wifi_at.recv_timeout = 5000;
@@ -262,7 +262,7 @@ int wifi_8710bx_connect_ap(const char *ssid,const char *passwd)
  osMutexWait(wifi_mutex,osWaitForever);
  
  memset(&wifi_at,0,sizeof(wifi_at));
- snprintf(wifi_at.send,WIFI_8710BX_SEND_BUFFER_SIZE,"ATPN=%s,%s\r\n",ssid,passwd);
+ snprintf(wifi_at.send,AT_SEND_BUFFER_SIZE,"ATPN=%s,%s\r\n",ssid,passwd);
  wifi_at.send_size = strlen(wifi_at.send);
  wifi_at.send_timeout = 5;
  wifi_at.recv_timeout = 10000;
@@ -296,7 +296,7 @@ int wifi_8710bx_disconnect_ap(void)
  osMutexWait(wifi_mutex,osWaitForever);
  
  memset(&wifi_at,0,sizeof(wifi_at));
- snprintf(wifi_at.send,WIFI_8710BX_SEND_BUFFER_SIZE,"ATWD\r\n");
+ snprintf(wifi_at.send,AT_SEND_BUFFER_SIZE,"ATWD\r\n");
  wifi_at.send_size = strlen(wifi_at.send);
  wifi_at.send_timeout = 5;
  wifi_at.recv_timeout = 2000;
@@ -392,7 +392,7 @@ int wifi_8710bx_get_wifi_device(wifi_8710bx_device_t *wifi_device)
  osMutexWait(wifi_mutex,osWaitForever);
  
  memset(&wifi_at,0,sizeof(wifi_at));
- snprintf(wifi_at.send,WIFI_8710BX_SEND_BUFFER_SIZE,"ATW?\r\n");
+ snprintf(wifi_at.send,AT_SEND_BUFFER_SIZE,"ATW?\r\n");
  wifi_at.send_size = strlen(wifi_at.send);
  wifi_at.send_timeout = 5;
  wifi_at.recv_timeout = 5000;
@@ -565,7 +565,7 @@ int wifi_8710bx_open_server(const uint16_t port,const wifi_8710bx_net_protocol_t
  osMutexWait(wifi_mutex,osWaitForever);
  
  memset(&wifi_at,0,sizeof(wifi_at));
- snprintf(wifi_at.send,WIFI_8710BX_SEND_BUFFER_SIZE,"ATPS=%s,%d\r\n",protocol == WIFI_8710BX_NET_PROTOCOL_TCP ? "0" : "1",port);
+ snprintf(wifi_at.send,AT_SEND_BUFFER_SIZE,"ATPS=%s,%d\r\n",protocol == WIFI_8710BX_NET_PROTOCOL_TCP ? "0" : "1",port);
  wifi_at.send_size = strlen(wifi_at.send);
  wifi_at.send_timeout = 5;
  wifi_at.recv_timeout = 10000;
@@ -604,7 +604,7 @@ int wifi_8710bx_open_client(const char *host,const uint16_t remote_port,const wi
  osMutexWait(wifi_mutex,osWaitForever);
  
  memset(&wifi_at,0,sizeof(wifi_at));
- snprintf(wifi_at.send,WIFI_8710BX_SEND_BUFFER_SIZE,"ATPC=%s,%s,%d\r\n",protocol == WIFI_8710BX_NET_PROTOCOL_TCP ? "0" : "1",host,remote_port);
+ snprintf(wifi_at.send,AT_SEND_BUFFER_SIZE,"ATPC=%s,%s,%d\r\n",protocol == WIFI_8710BX_NET_PROTOCOL_TCP ? "0" : "1",host,remote_port);
  wifi_at.send_size = strlen(wifi_at.send);
  wifi_at.send_timeout = 5;
  wifi_at.recv_timeout = 10000;
@@ -641,7 +641,7 @@ int wifi_8710bx_close(const int conn_id)
  osMutexWait(wifi_mutex,osWaitForever);
  
  memset(&wifi_at,0,sizeof(wifi_at));
- snprintf(wifi_at.send,WIFI_8710BX_SEND_BUFFER_SIZE,"ATPD=%d\r\n",conn_id);
+ snprintf(wifi_at.send,AT_SEND_BUFFER_SIZE,"ATPD=%d\r\n",conn_id);
  wifi_at.send_size = strlen(wifi_at.send);
  wifi_at.send_timeout = 5;
  wifi_at.recv_timeout = 2000;
@@ -679,9 +679,9 @@ int wifi_8710bx_send(int conn_id,const char *data,const int size)
  osMutexWait(wifi_mutex,osWaitForever);
  
  memset(&wifi_at,0,sizeof(wifi_at));
- snprintf(wifi_at.send,WIFI_8710BX_SEND_BUFFER_SIZE,"ATPT=%d,%d:",size,conn_id);
+ snprintf(wifi_at.send,AT_SEND_BUFFER_SIZE,"ATPT=%d,%d:",size,conn_id);
  used_size = strlen(wifi_at.send);
- space_size = WIFI_8710BX_SEND_BUFFER_SIZE - used_size;
+ space_size = AT_SEND_BUFFER_SIZE - used_size;
  send_size = space_size < size ? space_size :size;
  memcpy(wifi_at.send + used_size,data,send_size);
  wifi_at.send_size = used_size + send_size;
@@ -724,7 +724,7 @@ int wifi_8710bx_recv(const int conn_id,char *buffer,int size)
  osMutexWait(wifi_mutex,osWaitForever);
  
  memset(&wifi_at,0,sizeof(wifi_at));
- snprintf(wifi_at.send,WIFI_8710BX_SEND_BUFFER_SIZE,"ATPR=%d,%d\r\n",conn_id,size);
+ snprintf(wifi_at.send,AT_SEND_BUFFER_SIZE,"ATPR=%d,%d\r\n",conn_id,size);
  wifi_at.send_size = strlen(wifi_at.send);
  wifi_at.send_timeout = 5;
  wifi_at.recv_timeout = 2000;
@@ -740,17 +740,17 @@ int wifi_8710bx_recv(const int conn_id,char *buffer,int size)
  
  rc = at_excute(wifi_8710bx_serial_handle,&wifi_at);
  if(rc == WIFI_ERR_OK){
- size_str = strstr(wifi_at.recv,"[ATPR] OK") + strlen("[ATPR] OK") + 1;
- data_size = atoi(size_str);
- data_size = data_size > size ? size : data_size ;
+    size_str = strstr(wifi_at.recv,"[ATPR] OK") + strlen("[ATPR] OK") + 1;
+    data_size = atoi(size_str);
+    data_size = data_size > size ? size : data_size ;
  if(data_size > 0){
- data_start_str = strstr(size_str,":");
- if(data_start_str){
- memcpy(buffer,data_start_str + 1,data_size);
- }else{
- rc = WIFI_ERR_UNKNOW;
- goto err_exit;
- }
+    data_start_str = strstr(size_str,":");
+    if(data_start_str){
+       memcpy(buffer,data_start_str + 1,data_size);
+    }else{
+       rc = WIFI_ERR_UNKNOW;
+       goto err_exit;
+    }
  }
  rc = data_size;  
  }

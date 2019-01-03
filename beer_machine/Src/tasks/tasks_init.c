@@ -25,11 +25,11 @@ int tasks_init(void)
  tasks_sync_evt_group_hdl=xEventGroupCreate(); 
  log_assert(tasks_sync_evt_group_hdl);
  /*创建报警消息队列*/
- osMessageQDef(alarm_msg_q,6,uint32_t);
+ osMessageQDef(alarm_msg_q,10,uint32_t);
  alarm_task_msg_q_id = osMessageCreate(osMessageQ(alarm_msg_q),alarm_task_handle);
  log_assert(alarm_task_msg_q_id);
  /*创建压缩机消息队列*/
- osMessageQDef(compressor_msg_q,6,uint32_t);
+ osMessageQDef(compressor_msg_q,8,uint32_t);
  compressor_task_msg_q_id = osMessageCreate(osMessageQ(compressor_msg_q),compressor_task_handle);
  log_assert(compressor_task_msg_q_id);
  /*创建显示消息队列*/
@@ -37,7 +37,7 @@ int tasks_init(void)
  display_task_msg_q_id = osMessageCreate(osMessageQ(display_msg_q),display_task_handle);
  log_assert(display_task_msg_q_id);
  /*创建压力消息队列*/
- osMessageQDef(pressure_msg_q,6,uint32_t);
+ osMessageQDef(pressure_msg_q,8,uint32_t);
  pressure_task_msg_q_id = osMessageCreate(osMessageQ(pressure_msg_q),pressure_task_handle);
  log_assert(pressure_task_msg_q_id);
  /*创建网络管理消息队列*/
@@ -45,12 +45,12 @@ int tasks_init(void)
  net_task_msg_q_id = osMessageCreate(osMessageQ(net_task_msg_q),net_task_handle);
  log_assert(net_task_msg_q_id);
  /*创建温度消息队列*/
- osMessageQDef(temperature_msg_q,6,uint32_t);
+ osMessageQDef(temperature_msg_q,4,uint32_t);
  temperature_task_msg_q_id = osMessageCreate(osMessageQ(temperature_msg_q),temperature_task_handle);
  log_assert(temperature_task_msg_q_id);
  
  /*信息上报消息队列*/
- osMessageQDef(report_task_msg_q,10,report_task_msg_t*);
+ osMessageQDef(report_task_msg_q,20,report_task_msg_t*);
  report_task_msg_q_id = osMessageCreate(osMessageQ(report_task_msg_q),report_task_handle);
  log_assert(report_task_msg_q_id); 
  /*信息上报位置消息队列*/

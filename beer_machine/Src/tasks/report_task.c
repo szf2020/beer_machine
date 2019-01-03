@@ -119,7 +119,7 @@ static report_log_t      report_log;
 static report_upgrade_t  report_upgrade;
 
 static uint8_t active_event;
-const static uint32_t fw_version_code = (FIRMWARE_VERSION_MAJOR_CODE << 16 | FIRMWARE_VERSION_MINOR_CODE << 8 | FIRMWARE_VERSION_REVISION_CODE);
+const static uint32_t fw_version_code = FIRMWARE_VERSION_HEX;
 static device_config_t device_default_config = {
   
 .temperature_low = DEFAULT_COMPRESSOR_LOW_TEMPERATURE,
@@ -529,7 +529,7 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
   /*检查data */
   data = cJSON_GetObjectItem(active_rsp_json,"data");
   if(!cJSON_IsObject(data)){
-     log_error("data is not obj or value is null.\r\n");
+     log_error("data is not obj.\r\n");
      goto err_exit;  
   }
   /*检查runConfig */ 
@@ -541,7 +541,7 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
   /*检查log submit interval*/
   temp = cJSON_GetObjectItem(run_config,"logSubmitDur");
   if(!cJSON_IsNumber(temp)){
-     log_error("logSubmitDur is not num or is null.\r\n");
+     log_error("logSubmitDur is not num.\r\n");
      goto err_exit;  
   }
   config->report_log_interval = temp->valueint * 60;/*配置的单位是分钟，定时器使用秒*/
@@ -568,14 +568,14 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
   /*检查temperature min */ 
   temp = cJSON_GetObjectItem(temperature,"min");
   if(!cJSON_IsNumber(temp)){
-     log_error("t min is not num or is null.\r\n");
+     log_error("t min is not num.\r\n");
      goto err_exit;  
   }
   config->temperature_low = temp->valueint;
  /*检查temperature max */ 
   temp = cJSON_GetObjectItem(temperature,"max");
   if(!cJSON_IsNumber(temp)){
-     log_error("t max is not num or is null.\r\n");
+     log_error("t max is not num.\r\n");
      goto err_exit;  
   }
   config->temperature_high = temp->valueint;
@@ -583,13 +583,13 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
   /*检查pressure*/ 
   pressure = cJSON_GetObjectItem(run_config,"pressure");
   if(!cJSON_IsObject(pressure)  ){
-     log_error("pressure is not obj .\r\n");
+     log_error("pressure is not obj.\r\n");
      goto err_exit;  
   }
   /*检查pressure min */ 
   temp = cJSON_GetObjectItem(pressure,"min");
   if(!cJSON_IsNumber(temp)){
-     log_error("p min is not num or is null.\r\n");
+     log_error("p min is not num.\r\n");
      goto err_exit;  
   }
  /*把浮点数*10转换成uint8_t*/
@@ -597,13 +597,18 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
  /*检查pressure max */ 
   temp = cJSON_GetObjectItem(pressure,"max");
   if(!cJSON_IsNumber(temp)){
-     log_error("p max is not num or is null.\r\n");
+     log_error("p max is not num.\r\n");
      goto err_exit;  
   }
   /*把浮点数*10转换成uint8_t*/
   config->pressure_high = (uint8_t)temp->valuedouble * 10;
+  
+  /*液位暂不可配,填写默认值*/
+  config->capacity_low = DEFAULT_LOW_CAPACITY;
+  config->capacity_high = DEFAULT_HIGH_CAPACITY;
+  
   rc = 0;
-  log_debug("active rsp [lock:%d infointerval:%d. t_low:%d t_high:%d p_low:%d p_high:%d.\r\n",
+  log_info("active rsp [lock:%d log interval:%dS. t_low:%d t_high:%d p_low:%d p_high:%d.\r\n",
             config->lock,config->report_log_interval,config->temperature_low,config->temperature_high,config->pressure_low,config->pressure_high);
   
 
@@ -617,7 +622,6 @@ err_exit:
 /*执行激活信息数据上报*/  
 static int report_task_report_active(const char *url_origin,report_active_t *active,device_config_t *config)
 {
-   //report_task_build_sign(sign,5,/*errorCOde*/"2010",/*errorMsg*/"",sn,source,timestamp);
  int rc;
  uint32_t timestamp;
  http_client_context_t context;
@@ -1005,7 +1009,7 @@ static int report_task_parse_upgrade_rsp_json(char *json_str,report_upgrade_t *r
   /*检查data */
   data = cJSON_GetObjectItem(upgrade_rsp_json,"data");
   if(!cJSON_IsObject(data) ){
-     log_error("data is not obj .\r\n");
+     log_error("data is not obj.\r\n");
      goto err_exit;  
   }
   /*检查upgrade */ 
@@ -1025,7 +1029,7 @@ static int report_task_parse_upgrade_rsp_json(char *json_str,report_upgrade_t *r
   /*检查version code*/
   temp = cJSON_GetObjectItem(upgrade,"majorVersion");
   if(!cJSON_IsNumber(temp)){
-     log_error("majorVersion is not num or is null.\r\n");
+     log_error("majorVersion is not num.\r\n");
      goto err_exit;  
   }
   report_upgrade->version_code = temp->valueint;
@@ -1148,12 +1152,6 @@ static int report_task_download_upgrade_bin(char *url,char *buffer,uint32_t star
 }
 
 
-
-
-
-
-
-
 /*上报任务*/
 void report_task(void const *argument)
 {
@@ -1164,7 +1162,8 @@ void report_task(void const *argument)
  device_config_t device_config;
  bootloader_env_t env;
 
-//char *msg_active= "{\"model\":\"jiuji\",\"sn\":\"129DP12399787777\",\"firmware\":\"1.0.1\",\"simId\":\"112233445566\",\"wifiMac\":\"aa:bb:cc:dd:ee:ff\"}";
+ log_info("\r\n##    firmware version: %s       ##\r\n",FIRMWARE_VERSION_STR);
+ 
  /*定时器初始化*/
  report_task_active_timer_init(&active_event);
  report_task_log_timer_init();
@@ -1197,8 +1196,6 @@ void report_task(void const *argument)
  xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_REPORT_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
  log_debug("report task sync ok.\r\n");
 */
- //snprintf(msg_log,200,"{\"source\":\"coolbeer\",\"pressure\":\"1.1\",\"capacity\":\"1\",\"temp\":4,\"location\":{\"lac\":%s,\"ci\":%s}}",reg.location.lac,reg.location.ci);
- 
  
  while(1){
  osDelay(REPORT_TASK_GET_MSG_INTERVAL);
@@ -1225,7 +1222,7 @@ void report_task(void const *argument)
           log_error("report task sync utc timeout.%d S later retry.",REPORT_TASK_RETRY_DELAY / 1000);
           report_task_start_active_timer(REPORT_TASK_RETRY_DELAY,REPORT_TASK_MSG_SYNC_UTC); 
        }else{
-          log_warning("report task sync utc ok.\r\n");
+          log_info("report task sync utc ok.\r\n");
           /*为了后面的定时同步时间*/
           if(report_active.is_active == false){
              report_task_start_active_timer(0,REPORT_TASK_MSG_ACTIVE);
@@ -1246,7 +1243,7 @@ void report_task(void const *argument)
        }else{
          active_retry = 0;
          report_active.is_active = true;
-         log_warning("device active ok.\r\n");
+         log_info("device active ok.\r\n");
          
          /*分发激活后的配置参数*/
          report_task_dispatch_device_config(&device_config);
@@ -1264,7 +1261,6 @@ void report_task(void const *argument)
     }
     /*获取更新信息消息*/
     if(msg.type == REPORT_TASK_MSG_GET_UPGRADE){ 
-
        rc = report_task_get_upgrade(URL_UPGRADE,report_active.sn,&report_upgrade);
        if(rc != 0){
           log_error("report task get upgrade timeout.%d S later retry.",report_task_retry_delay(upgrade_retry) / 1000);
@@ -1277,10 +1273,11 @@ void report_task(void const *argument)
          upgrade_retry = 0;
          /*对比现在的版本号*/
          if(report_upgrade.version_code > fw_version_code){
-            log_warning("firmware need upgrade.start download upgrade.\r\n");
+           log_info("firmware need upgrade.ver_code:%d size:%d md5:%s.start download...\r\n",
+                    report_upgrade.version_code,report_upgrade.bin_size,report_upgrade.md5);
             report_task_start_active_timer(0,REPORT_TASK_MSG_DOWNLOAD_UPGRADE);                 
          }else{
-            log_warning("firmware no upgrade.\r\n");  
+            log_info("firmware is latest.\r\n");  
             /*开启定时作为同步时间定时器*/
             report_task_start_active_timer(REPORT_TASK_SYNC_UTC_DELAY,REPORT_TASK_MSG_SYNC_UTC);       
          }             
@@ -1418,9 +1415,9 @@ void report_task(void const *argument)
       if(report_active.is_active == true){       
          rc = report_task_report_log(URL_LOG,&report_log,report_active.sn);
          if(rc == 0){
-           log_warning("report log ok.\r\n");
+           log_info("report log ok.\r\n");
          }else{
-           log_error("  report log err.\r\n");
+           log_error("report log err.\r\n");
          }
          /*重置日志上报定时器*/
          report_task_start_log_timer(device_config.report_log_interval); 

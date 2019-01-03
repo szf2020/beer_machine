@@ -13,10 +13,15 @@ void net_task(void const *argument);
 /*wifi配置参数在env reserved中的偏移位置*/
 #define  NET_WIFI_CONFIG_ENV_OFFSET               4
 
-#define  NET_TASK_WIFI_INIT_TIMEOUT               3000
-#define  NET_TASK_GSM_INIT_TIMEOUT                20000
-#define  NET_TASK_INIT_RETRY_DELAY                10000
-#define  NET_WIFI_CONFIG_TIMEOUT                  (0)/*wifi配网时间2分钟*/
+#define  NET_TASK_QUERY_WIFI_TIMEOUT              10000         /*查询wifi状态间隔 ms*/
+#define  NET_TASK_QUERY_GSM_TIMEOUT               1 * 60 * 1000 /*查询基站间隔 ms*/
+
+
+#define  NET_TASK_ERR_CNT_MAX                     10            /*硬件错误次数，到达后复位*/
+#define  NET_TASK_WIFI_INIT_TIMEOUT               3000          /*WIFI初始化超时时间ms*/
+#define  NET_TASK_GSM_INIT_TIMEOUT                20000         /*GSM初始化超时时间ms*/
+#define  NET_TASK_INIT_RETRY_DELAY                10000         /*初始化超时后等待重试间隔时间ms*/
+#define  NET_WIFI_CONFIG_TIMEOUT                  (0)           /*wifi配网时间ms*/
 #define  NET_TASK_PUT_MSG_TIMEOUT                 5
 
 typedef struct

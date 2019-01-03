@@ -22,29 +22,6 @@
 
 #define  WIFI_8710BX_CONNECTION_CNT_MAX   5
 
-#define  WIFI_8710BX_SEND_BUFFER_SIZE      2000
-#define  WIFI_8710BX_RECV_BUFFER_SIZE      2000
-
-typedef struct 
-{
-    char *str;
-    int code;
-    void *next;
-}wifi_8710bx_err_code_t;
-
-
-typedef struct
-{
-    char send[WIFI_8710BX_SEND_BUFFER_SIZE];
-    char recv[WIFI_8710BX_RECV_BUFFER_SIZE];
-    uint16_t send_size;
-    uint16_t recv_size;
-    uint16_t send_timeout;
-    uint32_t recv_timeout;
-    wifi_8710bx_err_code_t *err_head;
-    bool complete;
-}wifi_8710bx_at_cmd_t;
-
 enum  {
  WIFI_ERR_OK = 0,
  WIFI_ERR_MALLOC_FAIL = -1,

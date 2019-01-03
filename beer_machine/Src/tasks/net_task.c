@@ -19,14 +19,6 @@ static osTimerId    wifi_query_timer_id;
 static osTimerId    gsm_query_timer_id;
 
 
-#define  NET_TASK_QUERY_WIFI_TIMEOUT              10000
-#define  NET_TASK_QUERY_GSM_TIMEOUT               10000
-
-
-#define  NET_TASK_ERR_CNT_MAX                     10
-#define  SSID                                     "wkxboot"
-#define  PASSWD                                   "wkxboot6666"
-
 static void wifi_query_timer_init(void);
 static void wifi_query_timer_start(void);
 //static void wifi_query_timer_stop(void);
@@ -298,7 +290,7 @@ init:
     net.wifi.is_initial = true;
     if(net.wifi.is_config == false){
     net_task_config_wifi(NET_WIFI_CONFIG_TIMEOUT);
-    /*重新初始化*/
+    /*重新初始化wifi*/
     net.wifi.is_initial = false;
     goto init;
     }
@@ -353,7 +345,7 @@ init:
           net.wifi.err_cnt ++;
        }else{
           net.wifi.err_cnt = 0;
-          /*如果wifi当前的连接的ssid是配置*/
+          /*如果wifi当前的连接的ssid是配置的ssid*/
           if(strcmp(ssid_temp,net.wifi.config.ssid) == 0){
              net.wifi.status = NET_STATUS_ONLINE;
           }else{

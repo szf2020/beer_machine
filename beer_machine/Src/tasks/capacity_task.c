@@ -125,7 +125,7 @@ void capacity_task(void const *argument)
   beer_capacity.value = 88;
   
   while(1){
-  log_warning("free: %d.\r\n",xPortGetFreeHeapSize()) 
+  log_info("free mem size: %dbytes.\r\n",xPortGetFreeHeapSize()) 
   high = capacity_task_get_high(); 
   /*如果液位高度没有变化就继续*/
   if(high == beer_capacity.high){
@@ -152,7 +152,7 @@ void capacity_task(void const *argument)
           capacity = 20.0;  
        }
        snprintf(capacity_str,4,"%3f",capacity);
-       log_debug("capacity value:%s\r\n",capacity_str);
+       log_info("capacity value:%s\r\n",capacity_str);
        int_capacity = (uint8_t)capacity;
        int_capacity += capacity - int_capacity >= 0.5 ? 1 : 0;
        beer_capacity.value = int_capacity;

@@ -7,8 +7,8 @@
 #define  LOG_MODULE_NAME     "[socket]"
 
 
-#define  BUFFER_CNT                           2
-#define  BUFFER_SIZE                          1024 /*必须是2的x次方*/
+#define  BUFFER_CNT                           1
+#define  BUFFER_SIZE                          2048 /*必须是2的x次方*/
 #define  SOCKET_GSM_HANDLE_BASE               10
 #define  SOCKET_GSM_HANDLE_MAX                5
 
@@ -31,9 +31,9 @@ uint32_t read;
 uint32_t write;
 }socket_buffer_t;
 
-socket_buffer_t socket_buffer[BUFFER_CNT];
-
-socket_gsm_handle_t   gsm_handle[SOCKET_GSM_HANDLE_MAX];
+static  socket_buffer_t socket_buffer[BUFFER_CNT];
+static  char hal_socket_recv_buffer[BUFFER_SIZE];
+static  socket_gsm_handle_t   gsm_handle[SOCKET_GSM_HANDLE_MAX];
 
 osMutexId mutex;
 
@@ -428,8 +428,6 @@ int socket_send(const int socket_handle,const char *buffer,int size,uint32_t tim
  return send_total;
 }
 
-
-static  char hal_socket_recv_buffer[BUFFER_SIZE];
 /* 函数名：socket_recv
 *  功能：  网络接收
 *  参数：  socket_handle 连接句柄
@@ -444,49 +442,45 @@ int socket_recv(const int socket_handle,char *buffer,int size,uint32_t timeout)
  utils_timer_t timer;
  
  if(size == 0){
- return 0;
+    return 0;
  }
  utils_timer_init(&timer,timeout,false);
  
  read_size = 0;
  
  while(read_size < size && utils_timer_value(&timer) > 0){
- buffer_size = socket_get_used_size(socket_handle);
- if(buffer_size < 0){
- return -1;
- }
- /*如果缓存数据足够例如，直接从缓存读出*/
- if(buffer_size + read_size >= size){
- socket_read_buffer(socket_handle,buffer + read_size, size - read_size);
- return size;
- }
+    buffer_size = socket_get_used_size(socket_handle);
+    if(buffer_size < 0){
+       return -1;
+    }
+    /*如果缓存数据足够，直接从缓存读出*/
+    if(buffer_size + read_size >= size){
+       socket_read_buffer(socket_handle,buffer + read_size, size - read_size);
+       return size;
+    }
 
- /*如果本地缓存不够 先读出所有本地缓存*/
- socket_read_buffer(socket_handle,buffer + read_size,buffer_size);
- read_size += buffer_size;
+    /*如果本地缓存不够 先读出所有本地缓存*/
+    socket_read_buffer(socket_handle,buffer + read_size,buffer_size);
+    read_size += buffer_size;
  
- free_size = socket_get_free_size(socket_handle);
+    free_size = socket_get_free_size(socket_handle);
 
- /*再读出硬件所有缓存*/
- /*此连接handle是GSM网络*/
- if(socket_handle >= SOCKET_GSM_HANDLE_BASE){
-
- recv_size = gsm_m6312_recv(socket_handle - SOCKET_GSM_HANDLE_BASE,hal_socket_recv_buffer,free_size);
-
- }else{
- /*此连接handle是WIFI网络*/
-
- recv_size = wifi_8710bx_recv(socket_handle,hal_socket_recv_buffer,free_size);
+    /*再读出硬件所有缓存*/
+    /*此连接handle是GSM网络*/
+    if(socket_handle >= SOCKET_GSM_HANDLE_BASE){
+       recv_size = gsm_m6312_recv(socket_handle - SOCKET_GSM_HANDLE_BASE,hal_socket_recv_buffer,free_size);
+    }else{
+      /*此连接handle是WIFI网络*/
+       recv_size = wifi_8710bx_recv(socket_handle,hal_socket_recv_buffer,free_size);
+    }
  
- }
+    if(recv_size >= 0){
+       socket_write_buffer(socket_handle,hal_socket_recv_buffer,recv_size);
+    }else{
+       return -1;  
+    }
+  }
  
- if(recv_size >= 0){
- socket_write_buffer(socket_handle,hal_socket_recv_buffer,recv_size);
- }else{
- return -1;  
- }
- }
- 
- log_debug("read data size:%d .\r\n",read_size);
- return read_size;
+  log_debug("read data size:%d .\r\n",read_size);
+  return read_size;
 }

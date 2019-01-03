@@ -318,7 +318,7 @@ void alarm_task(void const *argument)
   /*蜂鸣器报警消息处理*/ 
   if(msg.type == ALARM_TASK_MSG_TIMER_TIMEOUT){
   /*如果有任意一个报警状态存在 就继续操作蜂鸣器*/
-    /*
+   
   if(alarm.temperature.alarm == true || alarm.pressure.alarm == true || alarm.capacity.alarm == true){
   if(alarm.is_pwr_on == true){
   alarm.is_pwr_on = false;
@@ -331,7 +331,7 @@ void alarm_task(void const *argument)
   alarm.is_pwr_on = false;
   alarm_buzzer_pwr_turn_off();     
   }
- */
+ 
   }
 
   }
