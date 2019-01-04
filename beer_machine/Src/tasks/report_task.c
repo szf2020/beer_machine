@@ -544,7 +544,7 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
      log_error("logSubmitDur is not num.\r\n");
      goto err_exit;  
   }
-  config->report_log_interval = temp->valueint * 60;/*配置的单位是分钟，定时器使用秒*/
+  config->report_log_interval = temp->valueint * 60 * 1000;/*配置的单位是分钟，定时器使用毫秒*/
   
   /*检查lock*/
   temp = cJSON_GetObjectItem(run_config,"lock");
@@ -914,9 +914,6 @@ static void report_task_get_sn(char *sn)
      memcpy(sn,(char *)sn_str,SN_LEN);
      sn[SN_LEN] = '\0';  
   }
-  
-  /*测试*/
-  strcpy(sn,"testsn20181218");
 }
 /*读取版本号*/
 static void report_task_get_firmware_version(char **fw_version)
@@ -1162,7 +1159,7 @@ void report_task(void const *argument)
  device_config_t device_config;
  bootloader_env_t env;
 
- log_info("\r\n##    firmware version: %s       ##\r\n",FIRMWARE_VERSION_STR);
+ log_info("\r\n##     firmware version: %s         ##\r\n\r\n",FIRMWARE_VERSION_STR);
  
  /*定时器初始化*/
  report_task_active_timer_init(&active_event);
@@ -1198,9 +1195,7 @@ void report_task(void const *argument)
 */
  
  while(1){
- osDelay(REPORT_TASK_GET_MSG_INTERVAL);
- 
- os_event = osMessageGet(report_task_msg_q_id,0);
+ os_event = osMessageGet(report_task_msg_q_id,osWaitForever);
  if(os_event.status == osEventMessage){
     msg = *(report_task_msg_t*)&os_event.value.v; 
     
@@ -1210,7 +1205,7 @@ void report_task(void const *argument)
        /*获取失败 设备离线 无法激活和进行下面的步骤 继续尝试*/
        if(rc != 0){
           log_error("report task get net hal info timeout.%d S later retry.",REPORT_TASK_RETRY_DELAY / 1000);
-          report_task_start_active_timer(REPORT_TASK_RETRY_DELAY/30,REPORT_TASK_MSG_NET_HAL_INFO); 
+          report_task_start_active_timer(REPORT_TASK_RETRY_DELAY,REPORT_TASK_MSG_NET_HAL_INFO); 
        }else{
           report_task_start_active_timer(0,REPORT_TASK_MSG_SYNC_UTC); 
        }
@@ -1255,7 +1250,7 @@ void report_task(void const *argument)
          report_task_start_active_timer(0,REPORT_TASK_MSG_GET_UPGRADE); 
              
          /*打开启日志上报定时器*/
-         report_task_start_log_timer(device_config.report_log_interval);
+         report_task_start_log_timer(device_config.report_log_interval/1000);
          
        }
     }
@@ -1453,13 +1448,15 @@ void report_task(void const *argument)
           }
        }
    }
-   }
- 
    /*处理位置信息队列消息*/
-   os_event = osMessageGet(report_task_location_msg_q_id,0);
-   if(os_event.status == osEventMessage){
-      report_log.location  = *(net_location_t*)os_event.value.v; 
-   }                     
- 
+   if(msg.type == REPORT_TASK_MSG_LOCATION){ 
+      os_event = osMessageGet(report_task_location_msg_q_id,0);
+      if(os_event.status == osEventMessage){
+         report_log.location  = *(net_location_t*)os_event.value.v; 
+      }  
+   
+   }
+                   
+   }
   }
 }

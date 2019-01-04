@@ -27,6 +27,7 @@ void report_task(void const * argument);
 typedef enum
 {
   REPORT_TASK_MSG_NET_HAL_INFO,
+  REPORT_TASK_MSG_LOCATION,
   REPORT_TASK_MSG_SYNC_UTC,
   REPORT_TASK_MSG_ACTIVE,
   REPORT_TASK_MSG_REPORT_LOG,

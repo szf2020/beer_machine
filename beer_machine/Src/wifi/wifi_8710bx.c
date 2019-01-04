@@ -724,7 +724,7 @@ int wifi_8710bx_recv(const int conn_id,char *buffer,int size)
  osMutexWait(wifi_mutex,osWaitForever);
  
  memset(&wifi_at,0,sizeof(wifi_at));
- snprintf(wifi_at.send,AT_SEND_BUFFER_SIZE,"ATPR=%d,%d\r\n",conn_id,size);
+ snprintf(wifi_at.send,AT_SEND_BUFFER_SIZE,"ATPR=%d,%d\r\n",conn_id,size > 1600 ? 1600 : size);
  wifi_at.send_size = strlen(wifi_at.send);
  wifi_at.send_timeout = 5;
  wifi_at.recv_timeout = 2000;

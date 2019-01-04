@@ -10,7 +10,7 @@
   * inserted by the user or by software development tools
   * are owned by their respective copyright owners.
   *
-  * Copyright (c) 2018 STMicroelectronics International N.V. 
+  * Copyright (c) 2019 STMicroelectronics International N.V. 
   * All rights reserved.
   *
   * Redistribution and use in source and binary forms, with or without 
@@ -77,10 +77,10 @@
 #define BSP_YW_UART_RX_POS_GPIO_Port GPIOB
 #define BSP_TM1629A_CS_POS_Pin GPIO_PIN_12
 #define BSP_TM1629A_CS_POS_GPIO_Port GPIOB
-#define BSP_2G_STATUS_POS_Pin GPIO_PIN_9
-#define BSP_2G_STATUS_POS_GPIO_Port GPIOC
 #define BSP_2G_PWR_CTRL_POS_Pin GPIO_PIN_8
 #define BSP_2G_PWR_CTRL_POS_GPIO_Port GPIOC
+#define BSP_2G_STATUS_POS_Pin GPIO_PIN_9
+#define BSP_2G_STATUS_POS_GPIO_Port GPIOC
 #define BSP_2G_UART_TX_POS_Pin GPIO_PIN_9
 #define BSP_2G_UART_TX_POS_GPIO_Port GPIOA
 #define BSP_2G_UART_RX_POS_Pin GPIO_PIN_10
