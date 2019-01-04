@@ -1187,7 +1187,7 @@ void report_task(void const *argument)
  report_task_get_firmware_version(&report_active.fw_version);
  report_task_get_sn(report_active.sn);
  
- report_task_start_active_timer(0,REPORT_TASK_MSG_NET_HAL_INFO);
+ //report_task_start_active_timer(0,REPORT_TASK_MSG_NET_HAL_INFO);
  /*等待任务同步*/
  /*
  xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_REPORT_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);

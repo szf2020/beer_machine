@@ -235,25 +235,31 @@ static void net_task_send_hal_info_to_report_task()
  static net_hal_information_t hal_info;
  report_task_msg_t report_msg;
 
+ hal_info.mac = net.wifi.mac;
+ hal_info.sim_id = net.gsm.sim_id;
+ /*发送硬件消息*/
+ status = osMessagePut(report_task_net_hal_info_msg_q_id,(uint32_t)&hal_info,NET_TASK_PUT_MSG_TIMEOUT);
+ if(status !=osOK){
+    log_error("put report hal info  msg error:%d\r\n",status);
+ } 
+ 
  report_msg.type = REPORT_TASK_MSG_NET_HAL_INFO;
  status = osMessagePut(report_task_msg_q_id,*(uint32_t *)&report_msg,NET_TASK_PUT_MSG_TIMEOUT);
  if(status !=osOK){
     log_error("put report hal info notify msg error:%d\r\n",status);
  } 
  
- hal_info.mac = net.wifi.mac;
- hal_info.sim_id = net.gsm.sim_id;
- 
- status = osMessagePut(report_task_net_hal_info_msg_q_id,(uint32_t)&hal_info,NET_TASK_PUT_MSG_TIMEOUT);
- if(status !=osOK){
-    log_error("put report hal info  msg error:%d\r\n",status);
- } 
-
 }
 
 static void net_task_send_location_msg_to_report_task()
 {
   osStatus status;
+              
+  /*发送位置消息*/
+  status = osMessagePut(report_task_location_msg_q_id,(uint32_t)&net.gsm.location.base_main,NET_TASK_PUT_MSG_TIMEOUT);
+  if(status !=osOK){
+     log_error("put loaction msg error:%d\r\n",status);
+  }  
   
   /*发送位置通知消息*/
   report_task_msg_t report_msg;
@@ -261,13 +267,8 @@ static void net_task_send_location_msg_to_report_task()
   status = osMessagePut(report_task_msg_q_id,*(uint32_t *)&report_msg,NET_TASK_PUT_MSG_TIMEOUT);
   if(status !=osOK){
      log_error("put loaction notify msg error:%d\r\n",status);
-   } 
-           
-  /*发送位置消息*/
-  status = osMessagePut(report_task_location_msg_q_id,(uint32_t)&net.gsm.location.base_main,NET_TASK_PUT_MSG_TIMEOUT);
-  if(status !=osOK){
-     log_error("put loaction msg error:%d\r\n",status);
-   }  
+  } 
+
   
   
 }
