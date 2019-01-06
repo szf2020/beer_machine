@@ -906,7 +906,6 @@ static void report_task_get_sn(char *sn)
   
   uint32_t sn_str[SN_LEN / 4 + 1];
   
-  flash_utils_init();
   rc = flash_utils_read(sn_str,SN_ADDR,SN_LEN / 4 + 1);
   if(rc != 0){
      sn[0] = 0; 
@@ -1157,7 +1156,7 @@ void report_task(void const *argument)
  osEvent os_event;
  report_task_msg_t msg;
  device_config_t device_config;
- bootloader_env_t env;
+ bootloader_env_t env1;
 
  log_info("\r\n##     firmware version: %s         ##\r\n\r\n",FIRMWARE_VERSION_STR);
  
@@ -1165,14 +1164,16 @@ void report_task(void const *argument)
  report_task_active_timer_init(&active_event);
  report_task_log_timer_init();
  report_task_fault_timer_init();
- 
- rc = bootloader_get_env(&env);
+
+ flash_utils_init();
+ rc = bootloader_get_env(&env1);
  /*必须保证env存在且有效*/
- log_assert(rc == 0 && env.status == BOOTLOADER_ENV_STATUS_VALID);
  
- if(env.boot_flag == BOOTLOADER_FLAG_BOOT_UPDATE_COMPLETE){
-    env.boot_flag = BOOTLOADER_FLAG_BOOT_UPDATE_OK;
-    rc = bootloader_save_env(&env);  
+ log_assert(rc == 0 && env1.status == BOOTLOADER_ENV_STATUS_VALID);
+ 
+ if(env1.boot_flag == BOOTLOADER_FLAG_BOOT_UPDATE_COMPLETE){
+    env1.boot_flag = BOOTLOADER_FLAG_BOOT_UPDATE_OK;
+    rc = bootloader_save_env(&env1);  
     log_assert(rc == 0);
  }
 
@@ -1315,12 +1316,12 @@ void report_task(void const *argument)
              /*校验成功，启动升级*/
              if(strcmp(md5_str,report_upgrade.md5) == 0){
                 /*设置更新标志 bootloader使用*/
-                env.boot_flag = BOOTLOADER_FLAG_BOOT_UPDATE;
-                env.fw_update.size = report_upgrade.bin_size;
-                strcpy(env.fw_update.md5.value,report_upgrade.md5);
-                env.fw_update.version.code = report_upgrade.version_code;
+                env1.boot_flag = BOOTLOADER_FLAG_BOOT_UPDATE;
+                env1.fw_update.size = report_upgrade.bin_size;
+                strcpy(env1.fw_update.md5.value,report_upgrade.md5);
+                env1.fw_update.version.code = report_upgrade.version_code;
                 
-                bootloader_save_env(&env);
+                bootloader_save_env(&env1);
                 /*启动bootloader，开始更新*/
                 bootloader_reset();                 
              }else{

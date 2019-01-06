@@ -295,7 +295,7 @@ void alarm_task(void const *argument)
    }  
 
    /*容量配置消息处理*/ 
-   if(msg.type == ALARM_TASK_MSG_TEMPERATURE_CONFIG){
+   if(msg.type == ALARM_TASK_MSG_CAPACITY_CONFIG){
       alarm.capacity.high = msg.reserved >> 8;
       alarm.capacity.low =  msg.reserved & 0xFF;
       if(alarm.capacity.value != ALARM_TASK_CAPACITY_ERR_VALUE){
