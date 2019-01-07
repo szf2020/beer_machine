@@ -361,6 +361,7 @@
                     <state>$PROJ_DIR$/../Src/board</state>
                     <state>$PROJ_DIR$/../Src/utils</state>
                     <state>$PROJ_DIR$/../Src/debug/log</state>
+                    <state>$PROJ_DIR$/../Src/debug/cpu</state>
                     <state>$PROJ_DIR$/../Src/debug/log/SEGGER_RTT_V612j/RTT</state>
                     <state>$PROJ_DIR$/../Src/debug/log/SEGGER_RTT_V612j/Syscalls</state>
                     <state>$PROJ_DIR$/../Src/serial</state>
@@ -1100,7 +1101,7 @@
                 <group>
                     <name>cpu</name>
                     <file>
-                        <name>$PROJ_DIR$\..\Src\debug\CPU\cpu_utils.c</name>
+                        <name>$PROJ_DIR$\..\Src\debug\cpu\cpu_utils.c</name>
                     </file>
                 </group>
                 <group>

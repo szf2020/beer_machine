@@ -14,7 +14,7 @@ void report_task(void const * argument);
 #define  REPORT_TASK_PUT_MSG_TIMEOUT                5
 #define  REPORT_TASK_GET_MSG_INTERVAL               100            /*任务运行间隔时间ms*/
 
-#define  REPORT_TASK_RETRY_DELAY                    (1 * 60 * 1000)/*重试间隔时间ms*/
+#define  REPORT_TASK_RETRY_DELAY                    (0.2 * 60 * 1000)/*重试间隔时间ms*/
 #define  REPORT_TASK_RETRY1_DELAY                   (1 * 60 * 1000)/*第一次重试间隔时间ms*/
 #define  REPORT_TASK_RETRY2_DELAY                   (1 * 60 * 1000)/*第二次重试间隔时间ms*/
 #define  REPORT_TASK_RETRY3_DELAY                   (1 * 60 * 1000)/*第三次重试间隔时间ms*/

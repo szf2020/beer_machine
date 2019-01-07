@@ -1177,12 +1177,12 @@ void report_task(void const *argument)
     log_assert(rc == 0);
  }
 
- /*分发默认的开机配置参数*/
  rc = report_task_get_env_device_config(&device_config);
  if(rc != 0  || device_config.status != DEVICE_CONFIG_STATUS_VALID){
     device_config = device_default_config;
  }
  
+ /*分发默认的开机配置参数*/
  report_task_dispatch_device_config(&device_config);
 
  report_task_get_firmware_version(&report_active.fw_version);
@@ -1205,7 +1205,7 @@ void report_task(void const *argument)
        rc = report_task_get_net_hal_info(report_active.wifi_mac,report_active.sim_id,0);
        /*获取失败 设备离线 无法激活和进行下面的步骤 继续尝试*/
        if(rc != 0){
-          log_error("report task get net hal info timeout.%d S later retry.",REPORT_TASK_RETRY_DELAY / 1000);
+          log_error("report task get net hal info timeout.%d S later retry.\r\n",REPORT_TASK_RETRY_DELAY / 1000);
           report_task_start_active_timer(REPORT_TASK_RETRY_DELAY,REPORT_TASK_MSG_NET_HAL_INFO); 
        }else{
           report_task_start_active_timer(0,REPORT_TASK_MSG_SYNC_UTC); 
@@ -1215,7 +1215,7 @@ void report_task(void const *argument)
     if(msg.type == REPORT_TASK_MSG_SYNC_UTC){ 
        rc = report_task_sync_utc(&time_offset);
        if(rc != 0){
-          log_error("report task sync utc timeout.%d S later retry.",REPORT_TASK_RETRY_DELAY / 1000);
+          log_error("report task sync utc timeout.%d S later retry.\r\n",REPORT_TASK_RETRY_DELAY / 1000);
           report_task_start_active_timer(REPORT_TASK_RETRY_DELAY,REPORT_TASK_MSG_SYNC_UTC); 
        }else{
           log_info("report task sync utc ok.\r\n");
@@ -1231,7 +1231,7 @@ void report_task(void const *argument)
     if(msg.type == REPORT_TASK_MSG_ACTIVE){ 
        rc = report_task_report_active(URL_ACTIVE,&report_active,&device_config);
        if(rc != 0){
-          log_error("report task active timeout.%d S later retry.",report_task_retry_delay(active_retry) / 1000);
+          log_error("report task active timeout.%d S later retry.\r\n",report_task_retry_delay(active_retry) / 1000);
           report_task_start_active_timer(report_task_retry_delay(active_retry),REPORT_TASK_MSG_ACTIVE); 
           if(++active_retry >= 3){
              active_retry = 0;
@@ -1259,7 +1259,7 @@ void report_task(void const *argument)
     if(msg.type == REPORT_TASK_MSG_GET_UPGRADE){ 
        rc = report_task_get_upgrade(URL_UPGRADE,report_active.sn,&report_upgrade);
        if(rc != 0){
-          log_error("report task get upgrade timeout.%d S later retry.",report_task_retry_delay(upgrade_retry) / 1000);
+          log_error("report task get upgrade timeout.%d S later retry.\r\n",report_task_retry_delay(upgrade_retry) / 1000);
           report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_GET_UPGRADE); 
           if(++upgrade_retry >= 3){
              upgrade_retry = 0;
@@ -1287,7 +1287,7 @@ void report_task(void const *argument)
        size = report_upgrade.bin_size - report_upgrade.download_size > BOOTLOADER_FLASH_PAGE_SIZE ? BOOTLOADER_FLASH_PAGE_SIZE : report_upgrade.bin_size - report_upgrade.download_size;
        rc = report_task_download_upgrade_bin(report_upgrade.download_url,bin_data,report_upgrade.download_size,size);
        if(rc != 0){
-          log_error("report task download upgrade fail.%d S later retry.",report_task_retry_delay(upgrade_retry) / 1000);
+          log_error("report task download upgrade fail.%d S later retry.\r\n",report_task_retry_delay(upgrade_retry) / 1000);
           report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_DOWNLOAD_UPGRADE); 
           if(++upgrade_retry >= 3){
              upgrade_retry = 0;
@@ -1436,7 +1436,7 @@ void report_task(void const *argument)
             }
             rc = report_task_report_fault(URL_FAULT,&report_fault,report_active.sn);
             if(rc != 0){
-               log_error("report task report fault timeout.%d S later retry.",report_task_retry_delay(fault_retry) / 1000);
+               log_error("report task report fault timeout.%d S later retry.\r\n",report_task_retry_delay(fault_retry) / 1000);
                report_task_start_fault_timer(report_task_retry_delay(fault_retry)); 
                if(++fault_retry >= 3){
                   fault_retry = 0;

@@ -91,7 +91,7 @@ int ntp_sync_time(uint32_t *new_time)
 
   sockfd = socket_connect(host_name,portno,SOCKET_PROTOCOL_UDP);; // Create a UDP socket.
   if(sockfd < 0 ){
-  log_error( "ERROR opening socket" );
+  log_error( "ERROR opening socket\r\n" );
   return -1;
   }
   /*系统时间 单位S*/
@@ -102,7 +102,7 @@ int ntp_sync_time(uint32_t *new_time)
  // Send it the NTP packet it wants. If n == -1, it failed.
   n = socket_send(sockfd, ( char* ) &packet, sizeof( ntp_packet ) ,NTP_TIMEOUT);
   if( n < 0 ){
-  log_error( "ERROR writing to socket" );
+  log_error( "ERROR writing to socket\r\n" );
   /*关闭socket*/
   socket_disconnect(sockfd);
   return -1;
@@ -111,7 +111,7 @@ int ntp_sync_time(uint32_t *new_time)
   // Wait and receive the packet back from the server. If n == -1, it failed.
   n = socket_recv(sockfd, ( char* ) &packet, sizeof( ntp_packet ) ,NTP_TIMEOUT);
   if ( n < 0 ){
-  log_error( "ERROR reading from socket" );
+  log_error( "ERROR reading from socket\r\n" );
   /*关闭socket*/
   socket_disconnect(sockfd); 
   return -1;

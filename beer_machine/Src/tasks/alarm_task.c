@@ -20,6 +20,7 @@ typedef struct
 {
   bool     alarm;  
   bool     warning;
+  bool     config;
   uint8_t   value;
   uint8_t   high;
   uint8_t   low;
@@ -33,14 +34,7 @@ typedef struct
   alarm_unit_t capacity;
 }alarm_t;
 
-static  alarm_t  alarm = {
-.temperature.high = DEFAULT_COMPRESSOR_HIGH_TEMPERATURE + 1,
-.temperature.low = DEFAULT_COMPRESSOR_LOW_TEMPERATURE - 1,
-.pressure.high = DEFAULT_HIGH_PRESSURE,
-.pressure.low = DEFAULT_LOW_PRESSURE,
-.capacity.high = DEFAULT_HIGH_CAPACITY,
-.capacity.low = DEFAULT_LOW_CAPACITY
-};
+static  alarm_t  alarm;
 
 
 /*蜂鸣器通电断电时间 单位:ms*/
@@ -155,7 +149,7 @@ void alarm_task(void const *argument)
            }else{
               report_msg.type = REPORT_TASK_MSG_TEMPERATURE_VALUE;  
            }
-           if((int8_t)alarm.temperature.value > (int8_t)alarm.temperature.high || (int8_t)alarm.temperature.value < (int8_t)alarm.temperature.low){
+           if(alarm.temperature.config == true && ((int8_t)alarm.temperature.value > (int8_t)alarm.temperature.high || (int8_t)alarm.temperature.value < (int8_t)alarm.temperature.low)){
              alarm.temperature.warning = true;             
              display_msg.blink = true;
            }else{
@@ -198,7 +192,7 @@ void alarm_task(void const *argument)
               report_msg.type = REPORT_TASK_MSG_PRESSURE_VALUE;      
            }
              
-           if(alarm.pressure.value > alarm.pressure.high || alarm.pressure.value < alarm.pressure.low){
+           if(alarm.pressure.config == true && (alarm.pressure.value > alarm.pressure.high || alarm.pressure.value < alarm.pressure.low)){
              alarm.pressure.warning = true;             
              display_msg.blink = true;       
            }else{
@@ -238,7 +232,7 @@ void alarm_task(void const *argument)
               report_msg.type = REPORT_TASK_MSG_CAPACITY_VALUE;     
            }
              
-           if(alarm.capacity.value > alarm.capacity.high || alarm.capacity.value < alarm.capacity.low){
+           if(alarm.capacity.config == true && (alarm.capacity.value > alarm.capacity.high || alarm.capacity.value < alarm.capacity.low)){
              alarm.pressure.warning = true;             
              display_msg.blink = true;       
            }else{
@@ -257,7 +251,7 @@ void alarm_task(void const *argument)
      } 
      
    /*压缩机的温度配置消息处理*/ 
-   if(msg.type == ALARM_TASK_MSG_COMPRESSOR_TEMPERATURE_CONFIG){
+   if(msg.type == ALARM_TASK_MSG_TEMPERATURE_CONFIG){
       int8_t temp_high,temp_low;
       /*判断温度的合法性*/
       temp_high = (int8_t)(msg.reserved >> 8);
@@ -268,13 +262,14 @@ void alarm_task(void const *argument)
         /*这个是温度报警的值*/
         alarm.temperature.high = temp_high + 1;
         alarm.temperature.low = temp_low - 1;  
+        alarm.temperature.config = true;
         if(alarm.temperature.value != ALARM_TASK_TEMPERATURE_ERR_VALUE){
            /*发给自己的温度报警配置消息，以便更新报警状态*/
            alarm_msg.type = ALARM_TASK_MSG_TEMPERATURE;
            alarm_msg.value = alarm.temperature.value;
            alarm_task_send_msg(alarm_task_msg_q_id,*(uint32_t*)&alarm_msg);
     
-           /*这个是压缩机工作的温度值*/
+           /*这个是压缩机工作的温度值配置*/
            compressor_task_msg_t compressor_msg;
            compressor_msg.type = COMPRESSOR_TASK_MSG_TEMPERATURE_CONFIG;
            compressor_msg.reserved = temp_high << 8 | temp_low ;
@@ -286,6 +281,7 @@ void alarm_task(void const *argument)
    if(msg.type == ALARM_TASK_MSG_PRESSURE_CONFIG){
       alarm.pressure.high = msg.reserved >> 8;
       alarm.pressure.low =  msg.reserved & 0xFF;
+      alarm.pressure.config = true;
       if(alarm.pressure.value != ALARM_TASK_PRESSURE_ERR_VALUE){
          /*发给自己的压力消息*/
          alarm_msg.type = ALARM_TASK_MSG_PRESSURE;
@@ -298,6 +294,7 @@ void alarm_task(void const *argument)
    if(msg.type == ALARM_TASK_MSG_CAPACITY_CONFIG){
       alarm.capacity.high = msg.reserved >> 8;
       alarm.capacity.low =  msg.reserved & 0xFF;
+      alarm.capacity.config = true;
       if(alarm.capacity.value != ALARM_TASK_CAPACITY_ERR_VALUE){
          /*发给自己的容量消息*/
          alarm_msg.type = ALARM_TASK_MSG_CAPACITY;

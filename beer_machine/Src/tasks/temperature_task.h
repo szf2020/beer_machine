@@ -42,7 +42,6 @@ void temperature_task(void const *argument);
 typedef enum
 {
 TEMPERATURE_TASK_MSG_ADC_COMPLETED,
-TEMPERATURE_TASK_MSG_CONFIG
 }temperature_task_msg_type_t;
 
 typedef struct

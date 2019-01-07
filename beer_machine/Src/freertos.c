@@ -67,6 +67,7 @@
 #include "capacity_task.h"
 #include "net_task.h"
 #include "report_task.h"
+#include "cpu_utils.h"
 
 #include "log.h"
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
@@ -105,6 +106,7 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* Hook prototypes */
 void vApplicationIdleHook(void);
+void vApplicationTickHook(void);
 void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName);
 void vApplicationMallocFailedHook(void);
 
@@ -122,6 +124,17 @@ __weak void vApplicationIdleHook( void )
    memory allocated by the kernel to any task that has since been deleted. */
 }
 /* USER CODE END 2 */
+
+/* USER CODE BEGIN 3 */
+__weak void vApplicationTickHook( void )
+{
+   /* This function will be called by each tick interrupt if
+   configUSE_TICK_HOOK is set to 1 in FreeRTOSConfig.h. User code can be
+   added here, but the tick hook is called from an interrupt context, so
+   code must not attempt to block, and only the interrupt safe FreeRTOS API
+   functions can be used (those that end in FromISR()). */
+}
+/* USER CODE END 3 */
 
 /* USER CODE BEGIN 4 */
 __weak void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
@@ -232,6 +245,7 @@ void StartDefaultTask(void const * argument)
   for(;;)
   {
     sys_feed_dog();
+    log_debug("cpu:%d%%.\r\n",osGetCPUUsage());
     osDelay(1000);
   }
   /* USER CODE END StartDefaultTask */

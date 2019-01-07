@@ -26,7 +26,8 @@ void compressor_task(void const *argument);
 
 #define  COMPRESSOR_TASK_PUT_MSG_TIMEOUT        5             /*发送消息超时时间 单位:ms*/
 
-#define  COMPRESSOT_TASK_WAIT_RDY_TIMEOUT      (2*60*1000)   /*压缩机上电后等待就绪的时间 单位:ms*/
+#define  COMPRESSOR_TASK_PWR_WAIT_TIMEOUT      (2*60*1000)   /*压缩机上电后等待就绪的时间 单位:ms*/
+
 
 typedef enum
 {
@@ -35,7 +36,7 @@ typedef enum
   COMPRESSOR_TASK_MSG_WORK_TIMEOUT,
   COMPRESSOR_TASK_MSG_WAIT_TIMEOUT,
   COMPRESSOR_TASK_MSG_REST_TIMEOUT,
-  COMPRESSOR_TASK_MSG_WORK_PARAM,
+  COMPRESSOR_TASK_MSG_PWR_WAIT_TIMEOUT,
   COMPRESSOR_TASK_MSG_TEMPERATURE_CONFIG,
   COMPRESSOR_TASK_MSG_LOCK_CONFIG,
 }compressor_task_msg_type_t;

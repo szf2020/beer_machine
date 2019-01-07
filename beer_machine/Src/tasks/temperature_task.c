@@ -95,29 +95,29 @@ int16_t get_t(uint16_t adc)
  r=get_r(adc);
  
  if(r <= LOW_ERR_R){
- log_error("NTC 低过最高温度阻值！r=%d\r\n",r); 
- return TEMPERATURE_ERR_VALUE_SENSOR;
+    log_error("NTC 低过最高温度阻值！r=%d\r\n",r); 
+    return TEMPERATURE_ERR_VALUE_SENSOR;
  }else if(r >= HIGH_ERR_R){
- log_error("NTC 高过最低温度阻值！r=%d\r\n",r); 
+    log_error("NTC 高过最低温度阻值！r=%d\r\n",r); 
  return TEMPERATURE_ERR_VALUE_SENSOR;
  }
  
  while (low <= high) {  
- mid = (low + high) / 2;  
+    mid = (low + high) / 2;  
  if(r > t_r_map[mid][1]){
- if(r <= t_r_map[mid-1][1]){
- /*返回指定精度的温度*/
- return get_approximate_t(get_fine_t(r, mid - 1));
+    if(r <= t_r_map[mid-1][1]){
+       /*返回指定精度的温度*/
+       return get_approximate_t(get_fine_t(r, mid - 1));
+    }else{
+       high = mid - 1;  
+    }
  }else{
- high = mid - 1;  
- }
- }else{
- if(r > t_r_map[mid+1][1]){
- /*返回带有温度补偿值的温度*/
- return get_approximate_t(get_fine_t(r, mid));
- } else{
- low = mid + 1;   
- }
+   if(r > t_r_map[mid+1][1]){
+     /*返回带有温度补偿值的温度*/
+     return get_approximate_t(get_fine_t(r, mid));
+   } else{
+      low = mid + 1;   
+   }
  }  
 }
 
@@ -142,6 +142,7 @@ void temperature_task(void const *argument)
   log_debug("temperature task sync ok.\r\n");
   */
   temperature.value = 88;
+
   while(1){
   os_msg = osMessageGet(temperature_task_msg_q_id,TEMPERATURE_TASK_MSG_WAIT_TIMEOUT);
   if(os_msg.status == osEventMessage){

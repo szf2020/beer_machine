@@ -226,7 +226,7 @@ void display_task(void const *argument)
   
     if(display.capacity.blink == true){
        led_display_capacity(display.capacity.value);
-       led_display_capacity_icon_level(display.capacity.value > 20 ? 5 : display.capacity.value / 4);
+       led_display_capacity_icon_level(display.capacity.value >= 20 ? 5 : display.capacity.value / 4);
        display.is_update = true;
     }
     
