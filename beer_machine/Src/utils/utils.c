@@ -2,24 +2,22 @@
 #include "string.h"
 #include "stdint.h"
 #include "stdbool.h"
-#include "md5.h"
 #include "utils.h"
 #include "cmsis_os.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[utils]"
+
 
 /*字节转换成HEX字符串*/
  void bytes_to_hex_str(const char *src,char *dest,uint16_t src_len)
  {
- char temp;
- char hex_digital[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
- for (uint16_t i = 0; i < src_len; i++){  
- temp = src[i];  
- dest[2 * i] = hex_digital[(temp >> 4) & 0x0f ];  
- dest[2 * i + 1] = hex_digital[temp & 0x0f];  
- }
- dest[src_len * 2] = '\0';
+    char temp;
+    char hex_digital[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+    for (uint16_t i = 0; i < src_len; i++){  
+        temp = src[i];  
+        dest[2 * i] = hex_digital[(temp >> 4) & 0x0f ];  
+        dest[2 * i + 1] = hex_digital[temp & 0x0f];  
+    }
+    dest[src_len * 2] = '\0';
 }
 
 
@@ -32,15 +30,15 @@
 */ 
 int utils_timer_init(utils_timer_t *timer,uint32_t timeout,bool up)
 {
-if(timer == NULL){
-return -1;
-}
+    if(timer == NULL){
+        return -1;
+    }
 
-timer->up = up;
-timer->start = osKernelSysTick();  
-timer->value = timeout;  
+    timer->up = up;
+    timer->start = osKernelSysTick();  
+    timer->value = timeout;  
 
-return 0;
+    return 0;
 }
 
 /* 函数：utils_timer_value
@@ -49,18 +47,18 @@ return 0;
 */ 
 int utils_timer_value(utils_timer_t *timer)
 {
-uint32_t time_elapse;
+    uint32_t time_elapse;
 
-if(timer == NULL){
-   return -1;
-}  
-time_elapse = osKernelSysTick() - timer->start; 
+    if (timer == NULL){
+        return -1;
+    }  
+    time_elapse = osKernelSysTick() - timer->start; 
 
-if(timer->up == true){
-   return  timer->value > time_elapse ? time_elapse : timer->value;
-}
+    if (timer->up == true) {
+        return  timer->value > time_elapse ? time_elapse : timer->value;
+    }
 
-return  timer->value > time_elapse ? timer->value - time_elapse : 0; 
+    return  timer->value > time_elapse ? timer->value - time_elapse : 0; 
 }
 
 /* 函数：utils_get_str_addr_by_num
@@ -73,25 +71,25 @@ return  timer->value > time_elapse ? timer->value - time_elapse : 0;
 */ 
 int utils_get_str_addr_by_num(char *buffer,const char *str,const uint8_t num,char **addr)
 {
- uint8_t cnt = 0;
- uint16_t str_size;
+    uint8_t cnt = 0;
+    uint16_t str_size;
  
- char *search,*temp;
+    char *search,*temp;
  
- temp = buffer;
- str_size = strlen(str);
+    temp = buffer;
+    str_size = strlen(str);
  
- while(cnt < num ){
-       search = strstr(temp,str);
-       if(search == NULL){
-          return -1;
- }
- temp = search + str_size;
- cnt ++;
- }
- *addr = search;
+    while (cnt < num ){
+        search = strstr(temp,str);
+        if (search == NULL) {
+            return -1;
+    }
+    temp = search + str_size;
+    cnt ++;
+    }
+    *addr = search;
  
- return 0; 
+    return 0; 
 }
 
 /* 函数：utils_get_str_value_by_num
@@ -104,33 +102,34 @@ int utils_get_str_addr_by_num(char *buffer,const char *str,const uint8_t num,cha
 */
 int utils_get_str_value_by_num(char *buffer,char *dst,const char *str,uint8_t num)
 {
- int rc;
- uint16_t str_size,str_start_size;
+    int rc;
+    uint16_t str_size,str_start_size;
  
- char *addr_start,*addr_end;
+
+    char *addr_start,*addr_end;
  
- rc = utils_get_str_addr_by_num(buffer,str,num,&addr_start);
- if(rc != 0){
-    return -1;
- }
- /*先查找原来的字符串，没有就查询结束符*/
- rc = utils_get_str_addr_by_num(buffer,str,num + 1,&addr_end);
- if(rc != 0){
-    rc = utils_get_str_addr_by_num(addr_start,"\r\n",1,&addr_end);
-    if(rc != 0){
-       return -1;
+    rc = utils_get_str_addr_by_num(buffer,str,num,&addr_start);
+    if (rc != 0) {
+        return -1;
     }
- }
+    /*先查找原来的字符串，没有就查询结束符*/
+    rc = utils_get_str_addr_by_num(buffer,str,num + 1,&addr_end);
+    if (rc != 0) {
+        rc = utils_get_str_addr_by_num(addr_start,"\r\n",1,&addr_end);
+        if (rc != 0) {
+            return -1;
+        }
+    }
  
- str_start_size = strlen(str);
- if(addr_end < addr_start + str_start_size){
-    return -1;
- }
+    str_start_size = strlen(str);
+    if (addr_end < addr_start + str_start_size) {
+        return -1;
+    }
  
- str_size = addr_end - addr_start - str_start_size;
+    str_size = addr_end - addr_start - str_start_size;
  
- memcpy(dst,addr_start + str_start_size,str_size);
- dst[str_size] = '\0';
+    memcpy(dst,addr_start + str_start_size,str_size);
+    dst[str_size] = '\0';
  
- return 0; 
+    return 0; 
 }

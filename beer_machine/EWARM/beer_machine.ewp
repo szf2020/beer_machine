@@ -302,11 +302,11 @@
                 </option>
                 <option>
                     <name>IExtraOptionsCheck</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>IExtraOptions</name>
-                    <state></state>
+                    <state>--no_path_in_file_macros</state>
                 </option>
                 <option>
                     <name>CCLangConformance</name>
@@ -360,11 +360,14 @@
                     <state>$PROJ_DIR$/../Drivers/CMSIS/Include</state>
                     <state>$PROJ_DIR$/../Src/board</state>
                     <state>$PROJ_DIR$/../Src/utils</state>
+                    <state>$PROJ_DIR$/../Src/circle_buffer</state>
                     <state>$PROJ_DIR$/../Src/debug/log</state>
+                    <state>$PROJ_DIR$/../Src/debug/log/serial_uart</state>
                     <state>$PROJ_DIR$/../Src/debug/cpu</state>
                     <state>$PROJ_DIR$/../Src/debug/log/SEGGER_RTT_V612j/RTT</state>
                     <state>$PROJ_DIR$/../Src/debug/log/SEGGER_RTT_V612j/Syscalls</state>
                     <state>$PROJ_DIR$/../Src/serial</state>
+                    <state>$PROJ_DIR$/../Src/serial_uart_hal</state>
                     <state>$PROJ_DIR$/../Src/http</state>
                     <state>$PROJ_DIR$/../Src/net</state>
                     <state>$PROJ_DIR$/../Src/tasks</state>
@@ -1080,20 +1083,17 @@
                 <file>
                     <name>$PROJ_DIR$\..\Src\board\beer_machine.c</name>
                 </file>
-                <file>
-                    <name>$PROJ_DIR$\..\Src\board\st_capacity_serial.c</name>
-                </file>
-                <file>
-                    <name>$PROJ_DIR$\..\Src\board\st_gsm_serial.c</name>
-                </file>
-                <file>
-                    <name>$PROJ_DIR$\..\Src\board\st_wifi_serial.c</name>
-                </file>
             </group>
             <group>
                 <name>bootloader_if</name>
                 <file>
                     <name>$PROJ_DIR$\..\Src\bootloader_if\bootloader_if.c</name>
+                </file>
+            </group>
+            <group>
+                <name>circle_buffer</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Src\circle_buffer\circle_buffer.c</name>
                 </file>
             </group>
             <group>
@@ -1178,6 +1178,12 @@
                 <name>serial</name>
                 <file>
                     <name>$PROJ_DIR$\..\Src\serial\serial.c</name>
+                </file>
+            </group>
+            <group>
+                <name>serial_uart_hal</name>
+                <file>
+                    <name>$PROJ_DIR$\..\Src\serial_uart_hal\st_serial_uart_hal_driver.c</name>
                 </file>
             </group>
             <group>

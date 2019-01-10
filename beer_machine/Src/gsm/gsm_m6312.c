@@ -5,11 +5,13 @@
 #include "gsm_m6312.h"
 #include "cmsis_os.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[gsm]"
 
-extern int gsm_m6312_serial_handle;
-extern serial_hal_driver_t gsm_m6312_serial_driver;
+
+int gsm_m6312_serial_handle;
+
+static serial_hal_driver_t *gsm_m6312_serial_uart_driver = &st_serial_uart_hal_driver;
+
+
 static osMutexId gsm_mutex;
 
 
@@ -95,7 +97,7 @@ int gsm_m6312_serial_hal_init(void)
     }
     log_debug("m6312 create serial hal ok.\r\n");
    
-    rc = serial_register_hal_driver(gsm_m6312_serial_handle,&gsm_m6312_serial_driver);
+    rc = serial_register_hal_driver(gsm_m6312_serial_handle,gsm_m6312_serial_uart_driver);
 	if (rc != 0) {
        log_error("m6312 register serial hal driver err.\r\n");
        return -1;

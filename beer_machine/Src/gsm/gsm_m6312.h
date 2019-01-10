@@ -7,7 +7,9 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
+#include "st_serial_uart_hal_driver.h"
 
+extern int gsm_m6312_serial_handle;
 
 #define  GSM_M6312_BUFFER_SIZE                   256
 #define  GSM_M6312_SERIAL_PORT                   1

@@ -2,8 +2,7 @@
 #include "serial.h"
 #include "usart.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[st_capacity_serial]"
+
 
 int st_capacity_serial_init(uint8_t port,uint32_t bauds,uint8_t data_bit,uint8_t stop_bit);
 int st_capacity_serial_deinit(uint8_t port);

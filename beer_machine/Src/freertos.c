@@ -191,29 +191,29 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 300);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  osThreadDef(adc_task, adc_task, osPriorityNormal, 0, 200);
+  osThreadDef(adc_task, adc_task, osPriorityNormal, 0, 300);
   adc_task_handle = osThreadCreate(osThread(adc_task), NULL);
   
-  osThreadDef(temperature_task, temperature_task, osPriorityNormal, 0, 200);
+  osThreadDef(temperature_task, temperature_task, osPriorityNormal, 0, 300);
   temperature_task_handle = osThreadCreate(osThread(temperature_task), NULL);
   
-  osThreadDef(pressure_task, pressure_task, osPriorityNormal, 0, 200);
+  osThreadDef(pressure_task, pressure_task, osPriorityNormal, 0, 300);
   pressure_task_handle = osThreadCreate(osThread(pressure_task), NULL);
   
-  osThreadDef(compressor_task, compressor_task, osPriorityNormal, 0, 200);
+  osThreadDef(compressor_task, compressor_task, osPriorityNormal, 0, 300);
   compressor_task_handle = osThreadCreate(osThread(compressor_task), NULL);
   
-  osThreadDef(alarm_task, alarm_task, osPriorityNormal, 0, 200);
+  osThreadDef(alarm_task, alarm_task, osPriorityNormal, 0, 300);
   alarm_task_handle = osThreadCreate(osThread(alarm_task), NULL);
   
-  osThreadDef(display_task, display_task, osPriorityNormal, 0, 200);
+  osThreadDef(display_task, display_task, osPriorityNormal, 0, 300);
   display_task_handle = osThreadCreate(osThread(display_task), NULL);
   
-  osThreadDef(capacity_task, capacity_task, osPriorityNormal, 0, 200);
+  osThreadDef(capacity_task, capacity_task, osPriorityNormal, 0, 300);
   capacity_task_handle = osThreadCreate(osThread(capacity_task), NULL);
   
   osThreadDef(net_task, net_task, osPriorityNormal, 0, 400);

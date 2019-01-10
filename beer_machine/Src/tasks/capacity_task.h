@@ -1,6 +1,9 @@
 #ifndef  __CAPACITY_TASK_H__
 #define  __CAPACITY_TASK_H__
 
+#include "st_serial_uart_hal_driver.h"
+
+extern int capacity_serial_handle;
 
 extern osThreadId   capacity_task_handle;
 void capacity_task(void const *argument);

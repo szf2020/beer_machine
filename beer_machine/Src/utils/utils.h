@@ -1,19 +1,19 @@
 #ifndef  __TOOL_H__
 #define  __TOOL_H__
-
-
+#include "stdbool.h"
+#include "stdint.h"
 
 typedef struct
 {
-const char *name;
-const char *value;
+    const char *name;
+    const char *value;
 }form_data_t;
 
 typedef struct
 {
-bool up;
-uint32_t start;
-uint32_t value;
+    bool up;
+    uint32_t start;
+    uint32_t value;
 }utils_timer_t;
 
 

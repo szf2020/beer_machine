@@ -8,8 +8,10 @@
 #define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
 #define  LOG_MODULE_NAME     "[wifi]"
 
-extern int wifi_8710bx_serial_handle;
-extern serial_hal_driver_t wifi_8710bx_serial_driver;
+int wifi_8710bx_serial_handle;
+
+static serial_hal_driver_t *wifi_8710bx_serial_uart_driver = &st_serial_uart_hal_driver;
+
 static osMutexId wifi_mutex;
 
 #define  WIFI_8710BX_MALLOC(x)      pvPortMalloc((x))
@@ -31,7 +33,7 @@ int wifi_8710bx_serial_hal_init()
      return -1;
   }
   log_debug("wifi create serial hal ok.\r\n");
-  rc = serial_register_hal_driver(wifi_8710bx_serial_handle,&wifi_8710bx_serial_driver);
+  rc = serial_register_hal_driver(wifi_8710bx_serial_handle,wifi_8710bx_serial_uart_driver);
   if(rc != 0){
     log_error("wifi register serial hal driver err.\r\n");
     return -1;

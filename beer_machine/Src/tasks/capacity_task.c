@@ -14,8 +14,9 @@
 osThreadId   capacity_task_handle;
 osMessageQId capacity_task_msg_q_id;
 
-extern int capacity_serial_handle;
-extern serial_hal_driver_t capacity_serial_driver;
+int capacity_serial_handle;
+
+static serial_hal_driver_t *capacity_serial_uart_driver = &st_serial_uart_hal_driver;
 
 
 typedef struct
@@ -44,7 +45,7 @@ static int capacity_serial_hal_init(void)
     }
     log_debug("capacity create serial hal ok.\r\n");
    
-    rc = serial_register_hal_driver(capacity_serial_handle,&capacity_serial_driver);
+    rc = serial_register_hal_driver(capacity_serial_handle,capacity_serial_uart_driver);
 	if (rc != 0) {
       log_error("capacity register serial hal driver err.\r\n");
       return -1;
@@ -80,7 +81,7 @@ static uint16_t capacity_task_get_high(void)
      log_error("capacity sensor data too large.\r\n");
      return CAPACITY_TASK_SENSOR_ERR_VALUE;    
   }
-  read_size = serial_read(capacity_serial_handle,(uint8_t *) buffer + read_total,select_size); 
+  read_size = serial_read(capacity_serial_handle,buffer + read_total,select_size); 
   if(read_size < 0){
      return CAPACITY_TASK_SENSOR_ERR_VALUE;
   }

@@ -56,7 +56,7 @@ void at_err_code_add(at_err_code_t **err_head,at_err_code_t *err_code)
  utils_timer_init(&timer,timeout,false);
 
  do{
-   write_len = serial_write(handle,(uint8_t *)send + write_total,remain_total);
+   write_len = serial_write(handle,send + write_total,remain_total);
    if(write_len == -1){
       log_error("at cmd write err.\r\n");
       return AT_ERR_SERIAL_SEND;  
@@ -113,7 +113,7 @@ int at_recv(int handle,char *recv,const uint16_t size,const uint32_t timeout)
       log_error("rsp too large.\r\n");
       return AT_ERR_RECV_NO_SPACE;
   }
-  read_size = serial_read(handle,(uint8_t *)recv + read_total,select_size); 
+  read_size = serial_read(handle,recv + read_total,select_size); 
   if(read_size < 0){
      return AT_ERR_SERIAL_RECV;  
   }

@@ -7,6 +7,9 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
+#include "st_serial_uart_hal_driver.h"
+
+extern int wifi_8710bx_serial_handle;
 
 #define  WIFI_8710BX_BUFFER_SIZE           256
 

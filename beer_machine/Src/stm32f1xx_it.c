@@ -37,7 +37,9 @@
 #include "cmsis_os.h"
 
 /* USER CODE BEGIN 0 */
-
+#include "gsm_m6312.h"
+#include "wifi_8710bx.h"
+#include "capacity_task.h"
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -190,8 +192,7 @@ void DMA1_Channel1_IRQHandler(void)
 void USART1_IRQHandler(void)
 {
   /* USER CODE BEGIN USART1_IRQn 0 */
-void st_gsm_m6312_serial_isr(void);
-st_gsm_m6312_serial_isr();
+st_serial_uart_hal_isr(gsm_m6312_serial_handle);
 #if 0
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);
@@ -206,8 +207,7 @@ st_gsm_m6312_serial_isr();
 void USART2_IRQHandler(void)
 {
   /* USER CODE BEGIN USART2_IRQn 0 */
-void st_wifi_8710bx_serial_isr(void);
-st_wifi_8710bx_serial_isr();
+st_serial_uart_hal_isr(wifi_8710bx_serial_handle);
 #if 0
   /* USER CODE END USART2_IRQn 0 */
   HAL_UART_IRQHandler(&huart2);
@@ -222,8 +222,7 @@ st_wifi_8710bx_serial_isr();
 void USART3_IRQHandler(void)
 {
   /* USER CODE BEGIN USART3_IRQn 0 */
-void st_capacity_serial_isr(void);
-st_capacity_serial_isr();
+st_serial_uart_hal_isr(capacity_serial_handle);
 #if 0
   /* USER CODE END USART3_IRQn 0 */
   HAL_UART_IRQHandler(&huart3);
