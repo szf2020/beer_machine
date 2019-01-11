@@ -1,3 +1,23 @@
+/*****************************************************************************
+*  网络管理                                                          
+*  Copyright (C) 2019 wkxboot 1131204425@qq.com.                             
+*                                                                            
+*                                                                            
+*  This program is free software; you can redistribute it and/or modify      
+*  it under the terms of the GNU General Public License version 3 as         
+*  published by the Free Software Foundation.                                
+*                                                                            
+*  @file     net.c                                                   
+*  @brief    网络管理                                                                                                                                                                                             
+*  @author   wkxboot                                                      
+*  @email    1131204425@qq.com                                              
+*  @version  v1.0.0                                                  
+*  @date     2019/1/11                                            
+*  @license  GNU General Public License (GPL)                                
+*                                                                            
+*                                                                            
+*****************************************************************************/
+
 #include "stdbool.h"
 #include "stddef.h"
 #include "stdint.h"
@@ -11,8 +31,6 @@
 #include "socket.h"
 #include "net.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[net]"
 
 /* 函数：net_init
 *  功能：网络初始化

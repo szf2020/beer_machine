@@ -37,7 +37,7 @@ void pressure_task(void const *argument);
 #define  PRESSURE_SENSOR_OUTPUT_VOLTAGE_MAX        4.5   /*压力传感器最大输出电压 单位:V*/
 
 #define  PRESSURE_SENSOR_INPUT_PA_MIN             (101325.0)/*压力传感器最小压力 单位:Pa*/
-#define  PRESSURE_SENSOR_INPUT_PA_MAX             (1*1000000.0 + 101325.0)/*压力传感器最大输入压力 单位:Pa*/
+#define  PRESSURE_SENSOR_INPUT_PA_MAX             (5*100000.0 + 101325.0)/*压力传感器最大输入压力 单位:Pa*/
 
 #define  PRESSURE_SENSOR_ADC_VALUE_MAX             4095/*AD转换最大数值*/    
 

@@ -1,13 +1,23 @@
-/*
- * ----------------------------------------------------------------------------
- * "THE BEER-WARE LICENSE" (Revision 42):
- * Martin d'Allens <martin.dallens@gmail.com> wrote this file. As long as you retain
- * this notice you can do whatever you want with this stuff. If we meet some day,
- * and you think this stuff is worth it, you can buy me a beer in return.
- * ----------------------------------------------------------------------------
- */
+/*****************************************************************************
+*  HTTP客户端                                                          
+*  Copyright (C) 2019 wkxboot 1131204425@qq.com.                             
+*                                                                            
+*                                                                            
+*  This program is free software; you can redistribute it and/or modify      
+*  it under the terms of the GNU General Public License version 3 as         
+*  published by the Free Software Foundation.                                
+*                                                                            
+*  @file     http_client.c                                                   
+*  @brief    HTTP客户端                                                                                                                                                                                             
+*  @author   wkxboot                                                      
+*  @email    1131204425@qq.com                                              
+*  @version  v1.0.0                                                  
+*  @date     2019/1/11                                            
+*  @license  GNU General Public License (GPL)                                
+*                                                                            
+*                                                                            
+*****************************************************************************/
 
-// FIXME: sprintf->snprintf everywhere.
 #include "stdbool.h"
 #include "stddef.h"
 #include "stdio.h"
@@ -19,8 +29,6 @@
 #include "utils.h"
 #include "cmsis_os.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[http_client]"
 
 
 #define  HTTP_CLIENT_ASSERT_NULL_POINTER(x)     \
@@ -126,7 +134,7 @@ static int http_client_build_head(char *buffer,const char *method,http_client_co
          context->user_data_size,
          context->range_start,context->range_start + context->range_size -1);
          head_size = strlen(buffer);
-         log_debug("head:%s\r\n",buffer);        
+         //log_debug("head:%s\r\n",buffer);        
   
  return head_size;     
 }

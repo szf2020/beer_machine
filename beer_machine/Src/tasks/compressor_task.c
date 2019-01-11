@@ -6,8 +6,6 @@
 #include "alarm_task.h"
 #include "device_config.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[compressor]"
 
 osThreadId   compressor_task_handle;
 osMessageQId compressor_task_msg_q_id;
@@ -271,8 +269,8 @@ void compressor_task(void const *argument)
    /*压缩机温度配置消息处理*/
   if(msg.type == COMPRESSOR_TASK_MSG_TEMPERATURE_CONFIG){ 
     /*缓存温度配置值*/
-     compressor.temperature_work = (int8_t)msg.reserved >> 8;
-     compressor.temperature_stop = (int8_t)msg.reserved & 0xFF;
+     compressor.temperature_work = (int8_t)(msg.reserved >> 8);
+     compressor.temperature_stop = (int8_t)(msg.reserved & 0xFF);
      compressor.config = true;
      compressor_task_send_temperature_msg_to_self();
    }
@@ -291,7 +289,7 @@ void compressor_task(void const *argument)
      if(compressor.lock == false && compressor.status != COMPRESSOR_STATUS_INIT && compressor.config == true){
 
      if(compressor.temperature <= compressor.temperature_stop  && compressor.status == COMPRESSOR_STATUS_WORK){
-        log_info("温度:%d 低于关机温度.\r\n",compressor.temperature);
+        log_info("温度:%d C低于关机温度:%d C.\r\n",compressor.temperature,compressor.temperature_stop );
         compressor.status = COMPRESSOR_STATUS_WAIT;
         log_info("compressor change status to wait.\r\n");  
         log_info("关压缩机.\r\n");
@@ -305,8 +303,7 @@ void compressor_task(void const *argument)
              (compressor.temperature > compressor.temperature_stop   && compressor.status == COMPRESSOR_STATUS_RDY_CONTINUE )){
         /*温度大于开机温度，同时是正常关机状态时，开机*/
         /*或者温度大于关机温度，同时是超时关机或者异常关机状态时，继续开机*/
-  
-        log_info("温度:%d 高于开机温度.\r\n",compressor.temperature);
+        log_info("温度:%d C高于开机温度1:%d C 温度2:%d C.\r\n",compressor.temperature,compressor.temperature_work,compressor.temperature_stop);
         log_info("开压缩机.\r\n");
         compressor.status = COMPRESSOR_STATUS_WORK;
         log_info("compressor change status to work.\r\n");  
@@ -326,7 +323,7 @@ void compressor_task(void const *argument)
      if(compressor.status == COMPRESSOR_STATUS_WORK){
         /*温度异常时，如果在工作,就变更为wait continue状态*/
         compressor.status = COMPRESSOR_STATUS_WAIT_CONTINUE;
-        log_info("温度错误.code:%d.\r\n",compressor.temperature); 
+        log_info("温度错误.\r\n"); 
         log_info("compressor change status to wait continue.\r\n");  
         log_info("关压缩机.\r\n");
         compressor.status_change = true;

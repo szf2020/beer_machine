@@ -1,9 +1,27 @@
+/*****************************************************************************
+*  LED驱动                                                          
+*  Copyright (C) 2019 wkxboot 1131204425@qq.com.                             
+*                                                                            
+*                                                                            
+*  This program is free software; you can redistribute it and/or modify      
+*  it under the terms of the GNU General Public License version 3 as         
+*  published by the Free Software Foundation.                                
+*                                                                            
+*  @file     led.c                                                   
+*  @brief    LED驱动                                                                                                                                                                                             
+*  @author   wkxboot                                                      
+*  @email    1131204425@qq.com                                              
+*  @version  v1.0.0                                                  
+*  @date     2019/1/11                                            
+*  @license  GNU General Public License (GPL)                                
+*                                                                            
+*                                                                            
+*****************************************************************************/
+
 #include "beer_machine.h"
 #include "tm1629a.h"
 #include "led.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[led]"
 
 
 tm1629a_hal_driver_t hal_driver={

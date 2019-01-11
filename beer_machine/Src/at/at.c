@@ -1,3 +1,22 @@
+/*****************************************************************************
+*  AT指令库                                                          
+*  Copyright (C) 2019 wkxboot 1131204425@qq.com.                             
+*                                                                            
+*                                                                            
+*  This program is free software; you can redistribute it and/or modify      
+*  it under the terms of the GNU General Public License version 3 as         
+*  published by the Free Software Foundation.                                
+*                                                                            
+*  @file     at.c                                                   
+*  @brief    AT指令库                                                                                                                                                                                             
+*  @author   wkxboot                                                      
+*  @email    1131204425@qq.com                                              
+*  @version  v1.0.0                                                  
+*  @date     2019/1/11                                            
+*  @license  GNU General Public License (GPL)                                
+*                                                                            
+*                                                                            
+*****************************************************************************/
 #include "stdbool.h"
 #include "stddef.h"
 #include "stdint.h"
@@ -9,10 +28,6 @@
 #include "cmsis_os.h"
 #include "utils.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[at]"
-
-
 
 /* 函数名：at_err_code_add
 *  功能：  添加比对的错误码
@@ -72,11 +87,11 @@ void at_err_code_add(at_err_code_t **err_head,at_err_code_t *err_code)
 
  rc = serial_complete(handle,utils_timer_value(&timer));
  if(rc < 0){
-    return AT_ERR_SERIAL_SEND;  ;
+    return AT_ERR_SERIAL_SEND;
  }
  
  if(rc > 0){
-    return AT_ERR_SEND_TIMEOUT;  ;
+    return AT_ERR_SEND_TIMEOUT;  
  }
  
   return AT_ERR_OK;
@@ -189,15 +204,13 @@ int at_excute(int handle,at_t *at)
     
     /*校验回应数据*/
     rc = at_check_response(at->recv + at->recv_size,recv_size,at->err_head,&at->complete);
-    at->recv_size += recv_size;
-    
+    at->recv_size += recv_size;  
     if(at->complete){
        goto exit;
     }
   }
   rc = AT_ERR_RECV_TIMEOUT;
 exit:
-
 
   return rc;
 }

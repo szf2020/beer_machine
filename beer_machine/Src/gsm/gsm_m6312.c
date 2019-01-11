@@ -1,3 +1,23 @@
+/*****************************************************************************
+*  GSM模块HAL                                                          
+*  Copyright (C) 2019 wkxboot 1131204425@qq.com.                             
+*                                                                            
+*                                                                            
+*  This program is free software; you can redistribute it and/or modify      
+*  it under the terms of the GNU General Public License version 3 as         
+*  published by the Free Software Foundation.                                
+*                                                                            
+*  @file     gsm_m6312.c                                                   
+*  @brief    GSM模块HAL                                                                                                                                                                                             
+*  @author   wkxboot                                                      
+*  @email    1131204425@qq.com                                              
+*  @version  v1.0.0                                                  
+*  @date     2019/1/11                                            
+*  @license  GNU General Public License (GPL)                                
+*                                                                            
+*                                                                            
+*****************************************************************************/
+
 #include "beer_machine.h"
 #include "serial.h"
 #include "utils.h"
@@ -90,7 +110,7 @@ int gsm_m6312_pwr_off(void)
 int gsm_m6312_serial_hal_init(void)
 {
 	int rc ;
-    rc = serial_create(&gsm_m6312_serial_handle,GSM_M6312_BUFFER_SIZE,GSM_M6312_BUFFER_SIZE);
+    rc = serial_create(&gsm_m6312_serial_handle,GSM_M6312_BUFFER_SIZE,GSM_M6312_BUFFER_SIZE * 4);
     if (rc != 0) {
        log_error("m6312 create serial hal err.\r\n");
        return -1;

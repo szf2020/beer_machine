@@ -5,10 +5,7 @@
 #include "temperature_task.h"
 #include "pressure_task.h"
 #include "beer_machine.h"
-
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[adc]"
 
 osThreadId   adc_task_handle;
 

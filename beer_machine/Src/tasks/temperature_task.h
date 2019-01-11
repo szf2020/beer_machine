@@ -33,10 +33,8 @@ void temperature_task(void const *argument);
 #define  TEMPERATURE_TASK_PUT_MSG_TIMEOUT          5   /*发送消息超时时间*/
 
 #define  TEMPERATURE_COMPENSATION_VALUE            0.0 /*温度补偿值,因为温度传感器位置温度与桶内实际温度有误差*/
-#define  TEMPERATURE_BLINK_VALUE_MIN               0   /*温度低值闪烁下限*/
-#define  TEMPERATURE_BLINK_VALUE_MAX               5   /*温度高值闪烁上限*/
-#define  TEMPERATURE_ALARM_VALUE_MAX               50  /*温度高值报警上限 >*/
-#define  TEMPERATURE_ALARM_VALUE_MIN               -9  /*温度低值报警下限 <*/
+#define  TEMPERATURE_ALARM_VALUE_MAX               50  /*软件温度高值异常上限 >*/
+#define  TEMPERATURE_ALARM_VALUE_MIN               -9  /*软件温度低值异常下限 <*/
 #define  TEMPERATURE_ERR_VALUE_SENSOR              0xFFF
 
 typedef enum

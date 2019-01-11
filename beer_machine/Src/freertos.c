@@ -68,10 +68,8 @@
 #include "net_task.h"
 #include "report_task.h"
 #include "cpu_utils.h"
-
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[freertos]"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -191,7 +189,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 300);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityBelowNormal, 0, 300);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -240,12 +238,25 @@ void StartDefaultTask(void const * argument)
 {
 
   /* USER CODE BEGIN StartDefaultTask */
-  void sys_feed_dog();
+    uint8_t read;
+    
+    uint8_t level;
+    char cmd_line[16];
+    void sys_feed_dog();
+
   /* Infinite loop */
   for(;;)
   {
     sys_feed_dog();
     log_debug("cpu:%d%%.\r\n",osGetCPUUsage());
+    log_info("free mem size: %dbytes.\r\n",xPortGetFreeHeapSize());
+    /*设置日志输出等级*/
+    read = log_read(cmd_line,16);
+    cmd_line[read] = 0;
+    if (strncmp(cmd_line,"set level ",strlen("set level ")) == 0) {
+        level = atoi(cmd_line + strlen("set level "));
+        log_set_level(level);
+    }
     osDelay(1000);
   }
   /* USER CODE END StartDefaultTask */
@@ -255,7 +266,7 @@ void StartDefaultTask(void const * argument)
 /* USER CODE BEGIN Application */
 uint32_t log_time()
 {
- return osKernelSysTick(); 
+    return osKernelSysTick(); 
 }
 /* USER CODE END Application */
 

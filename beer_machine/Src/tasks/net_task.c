@@ -9,12 +9,14 @@
 #include "utils.h"
 #include "bootloader_if.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[net_task]"
 
 
 osThreadId  net_task_handle;
 osMessageQId net_task_msg_q_id;
+
+static net_t net;
+
+
 
 static osTimerId    wifi_query_timer_id;
 static osTimerId    gsm_query_timer_id;
@@ -63,6 +65,7 @@ static void wifi_query_timer_expired(void const *argument)
 }
 
 
+
 static void gsm_query_timer_init()
 {
  osTimerDef(gsm_query_timer,gsm_query_timer_expired);
@@ -94,7 +97,6 @@ static void gsm_query_timer_expired(void const *argument)
   }
 }
 
-static net_t net;
 
 static int net_task_init(void)
 {
@@ -108,6 +110,7 @@ static int net_task_init(void)
   
   return 0;
 }
+
 
 /* 函数：net_task_wifi_init
 *  功能：初始化wifi
@@ -204,25 +207,26 @@ static void net_task_config_wifi(uint32_t timeout)
   rc = bootloader_get_env(&env);
   log_assert(rc == 0 && env.status == BOOTLOADER_ENV_STATUS_VALID);
   
-  net.wifi.config = *(net_wifi_config_t *)&env.reserved[NET_WIFI_CONFIG_ENV_OFFSET];
+  net.wifi.config = *(net_wifi_config_t *)&env.reserved[ENV_WIFI_CONFIG_OFFSET];
   /*启动配网router*/
   rc = net_wifi_config(wifi_new_config.ssid,wifi_new_config.passwd,timeout); 
   if(rc == 0){
     log_debug("wifi new config ok.ssid:%s passwd:%s.\r\n",wifi_new_config.ssid,wifi_new_config.passwd);
-    if(strcmp(net.wifi.config.ssid,wifi_new_config.ssid) != 0 ||
-       strcmp(net.wifi.config.passwd,wifi_new_config.passwd) != 0){
-       log_debug("config is different.save.\r\n");
+    if((strcmp(net.wifi.config.ssid,wifi_new_config.ssid) != 0      ||
+        strcmp(net.wifi.config.passwd,wifi_new_config.passwd) != 0) &&
+        strlen(net.wifi.config.ssid) > 0){
+       log_debug("config is different and valid.save.\r\n");
        wifi_new_config.status = NET_WIFI_CONFIG_STATUS_VALID;
-       *(net_wifi_config_t *)&env.reserved[NET_WIFI_CONFIG_ENV_OFFSET] = wifi_new_config;
+       *(net_wifi_config_t *)&env.reserved[ENV_WIFI_CONFIG_OFFSET] = wifi_new_config;
        bootloader_save_env(&env);
        net.wifi.config = wifi_new_config;
     }else{
-       log_debug("config is same.skip.\r\n");
+       log_debug("config is same or invalid.skip.\r\n");
     }
   }
 
-  if(net.wifi.config.status == NET_WIFI_CONFIG_STATUS_VALID && strlen(net.wifi.config.ssid) > 0){
-     log_warning("wifi will connect ssid:%s passwd:%s.\r\n",net.wifi.config.ssid,net.wifi.config.passwd);
+  if (net.wifi.config.status == NET_WIFI_CONFIG_STATUS_VALID) {
+      log_info("wifi will connect ssid:%s passwd:%s.\r\n",net.wifi.config.ssid,net.wifi.config.passwd);
   }
    net.wifi.is_config = true;
 }
@@ -251,6 +255,8 @@ static void net_task_send_hal_info_to_report_task()
  
 }
 
+
+
 static void net_task_send_location_msg_to_report_task()
 {
   osStatus status;
@@ -268,9 +274,7 @@ static void net_task_send_location_msg_to_report_task()
   if(status !=osOK){
      log_error("put loaction notify msg error:%d\r\n",status);
   } 
-
-  
-  
+ 
 }
 
 
@@ -306,7 +310,8 @@ void net_task(void const *argument)
  net_task_msg_t msg;
  display_task_msg_t display_msg;
  char ssid_temp[33];
- 
+
+
  /*wifi和gsm轮询定时器*/
  wifi_query_timer_init();
  gsm_query_timer_init();
@@ -316,6 +321,7 @@ void net_task(void const *argument)
  net_task_init();
  
 init:
+
  rc = net_task_wifi_init(NET_TASK_WIFI_INIT_TIMEOUT);
  if(rc != 0){
     log_error("wifi module is err.\r\n"); 
@@ -351,10 +357,9 @@ init:
  xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_NET_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
  log_debug("net task sync ok.\r\n");
  */
- 
+
  gsm_query_timer_start();
  wifi_query_timer_start();
- 
  
   while(1){
   os_event = osMessageGet(net_task_msg_q_id,osWaitForever);
@@ -404,7 +409,7 @@ init:
     display_msg.type = DISPLAY_TASK_MSG_WIFI;
     if(net.wifi.level == 0){
        display_msg.value = 3;
-       display_msg.blink = true;    
+       display_msg.blink = false;    
     }else{
        display_msg.value = net.wifi.level;
        display_msg.blink = false;         

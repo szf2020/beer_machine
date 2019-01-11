@@ -226,6 +226,7 @@
                     <name>CCDefines</name>
                     <state>USE_HAL_DRIVER</state>
                     <state>STM32F103xE</state>
+                    <state>DEVICE_ONLINE</state>
                 </option>
                 <option>
                     <name>CCPreprocFile</name>

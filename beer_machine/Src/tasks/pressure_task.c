@@ -5,8 +5,6 @@
 #include "alarm_task.h"
 #include "pressure_task.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_WARNING
-#define  LOG_MODULE_NAME     "[pressure]"
 
 osThreadId   pressure_task_handle;
 osMessageQId pressure_task_msg_q_id;
@@ -26,7 +24,6 @@ static uint8_t get_pressure(uint16_t adc)
 {
   float v,p;
   uint8_t int_pressure;
-  char p_str[6];
  
   if(adc == ADC_TASK_ADC_ERR_VALUE){
      return PRESSURE_ERR_VALUE_SENSOR;
@@ -37,8 +34,7 @@ static uint8_t get_pressure(uint16_t adc)
   /*换算成 kg/cm2*/
   p= (p / PA_VALUE_PER_1KG_CM2);
   
-  snprintf(p_str,6,"%4f",p);
-  log_debug("v:%d mv p:%skg/cm2.\r\n",(uint16_t)(v*1000),p_str);
+  log_debug("v:%d mv p:%.4fkg/cm2.\r\n",(uint16_t)(v*1000),p);
   
   /*放大10倍 按整数计算*/
   p *= 10;
@@ -102,7 +98,6 @@ void pressure_task(void const *argument)
         /*当满足条件时 接受数据变化*/
         if(pressure.dir > PRESSURE_TASK_PRESSURE_CHANGE_CNT ||
            pressure.dir < -PRESSURE_TASK_PRESSURE_CHANGE_CNT){
-           pressure.dir = 0;
            pressure.value = p;
            pressure.change = true; 
   
@@ -111,12 +106,12 @@ void pressure_task(void const *argument)
         /*状态变化处理*/
         if(pressure.change == true){
            if(pressure.value == ALARM_TASK_PRESSURE_ERR_VALUE){
-             log_error("pressure err.code:0x%2x.\r\n",pressure.value);
+             log_error("pressure err.code:E0.\r\n");
            }else{
-             log_warning("pressure change. dir :%d  value:%d kg/cm2.\r\n" ,pressure.dir,p); 
+             log_info("pressure change. dir :%d  value:%.2f kg/cm2.\r\n" ,pressure.dir,p / 10.0); 
            }
            pressure.change = false;
-  
+           pressure.dir = 0;
            /*报警消息*/
            alarm_msg.type = ALARM_TASK_MSG_PRESSURE;
            alarm_msg.value = pressure.value;

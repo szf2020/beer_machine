@@ -1,3 +1,23 @@
+/*****************************************************************************
+*  NTP同步UTC                                                          
+*  Copyright (C) 2019 wkxboot 1131204425@qq.com.                             
+*                                                                            
+*                                                                            
+*  This program is free software; you can redistribute it and/or modify      
+*  it under the terms of the GNU General Public License version 3 as         
+*  published by the Free Software Foundation.                                
+*                                                                            
+*  @file     ntp.c                                                   
+*  @brief    NTP同步UTC                                                                                                                                                                                             
+*  @author   wkxboot                                                      
+*  @email    1131204425@qq.com                                              
+*  @version  v1.0.0                                                  
+*  @date     2019/1/11                                            
+*  @license  GNU General Public License (GPL)                                
+*                                                                            
+*                                                                            
+*****************************************************************************/
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "cmsis_os.h"
@@ -6,9 +26,6 @@
 #include "ntp.h"
 #include "tasks_init.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[ntp]"
-
 
 #define  NTP_TIMEOUT                      5000
 

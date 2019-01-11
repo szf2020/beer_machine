@@ -7,8 +7,7 @@
 #include "temperature_task.h"
 #include "display_task.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_WARNING
-#define  LOG_MODULE_NAME     "[t_task]"
+
 
 osThreadId   temperature_task_handle;
 osMessageQId temperature_task_msg_q_id;
@@ -51,30 +50,28 @@ static float get_fine_t(uint32_t r,uint8_t idx)
   uint32_t r1,r2;
 
   float t;
-  char t_str[6];
 
   r1 = t_r_map[idx][1];
   r2 = t_r_map[idx + 1][1];
 
   t = t_r_map[idx][0] + (r1 - r) * 1.0 /(r1 - r2) + TEMPERATURE_COMPENSATION_VALUE;
   
-  snprintf(t_str,6,"%4f",t);
-  log_debug("temperature: %s C.\r\n",t_str);
-  
-  (void)t_str;
-  
+  log_debug("temperature: %.2f C.\r\n",t);
+   
   return t;  
 }
 /*获取四舍五入整数温度值*/
 static int16_t get_approximate_t(float t_float)
 {
-  int16_t t;
+  int16_t t = (int16_t)t_float;
 
-  t = (int16_t)t_float;
   t_float -= t;
-  if(t_float >= 0.5){
-     t +=1; 
-  } 
+
+  if(t_float >= 0.5 ) {
+     t += 1; 
+  } else if (t_float <= -0.5){
+     t -= 1;
+  }
   
   return t;  
 }
@@ -169,18 +166,18 @@ void temperature_task(void const *argument)
        /*当满足条件时 接受数据变化*/
        if(temperature.dir > TEMPERATURE_TASK_TEMPERATURE_CHANGE_CNT ||
           temperature.dir < -TEMPERATURE_TASK_TEMPERATURE_CHANGE_CNT){
-          temperature.dir = 0;
           temperature.value = t;
           temperature.change = true;
        }
        if(temperature.change == true){
          
           if((uint8_t)temperature.value == ALARM_TASK_TEMPERATURE_ERR_VALUE){
-             log_error("temperature err.code:0x%2x.\r\n",(uint8_t)temperature.value);
+             log_error("temperature err.code:E1.\r\n");
           }else{
              log_info("teperature changed dir:%d value:%d C.\r\n",temperature.dir,temperature.value);
           }
           temperature.change = false;  
+          temperature.dir = 0;
           
           /*报警消息*/
           alarm_msg.type = ALARM_TASK_MSG_TEMPERATURE;

@@ -5,8 +5,6 @@
 #include "cmsis_os.h"
 #include "utils.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[wifi]"
 
 int wifi_8710bx_serial_handle;
 
@@ -27,7 +25,7 @@ static at_t wifi_at;
 int wifi_8710bx_serial_hal_init()
 {
   int rc;
-  rc = serial_create(&wifi_8710bx_serial_handle,WIFI_8710BX_BUFFER_SIZE,WIFI_8710BX_BUFFER_SIZE);
+  rc = serial_create(&wifi_8710bx_serial_handle,WIFI_8710BX_BUFFER_SIZE,WIFI_8710BX_BUFFER_SIZE * 4);
   if(rc != 0){
      log_error("wifi create serial hal err.\r\n");
      return -1;

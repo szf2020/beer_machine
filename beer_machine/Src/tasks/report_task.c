@@ -19,8 +19,6 @@
 #include "cJSON.h"
 #include "device_config.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[report]"
 
 
 osThreadId  report_task_handle;
@@ -608,7 +606,7 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
   config->capacity_high = DEFAULT_HIGH_CAPACITY;
   
   rc = 0;
-  log_info("active rsp [lock:%d log interval:%dS. t_low:%d t_high:%d p_low:%d p_high:%d.\r\n",
+  log_info("active rsp [lock:%d log interval:%dmS. t_low:%d t_high:%d p_low:%d p_high:%d.\r\n",
             config->lock,config->report_log_interval,config->temperature_low,config->temperature_high,config->pressure_low,config->pressure_high);
   
 
@@ -794,17 +792,15 @@ static int report_task_retry_delay(uint8_t retry)
 /*读取保存在ENV中的设备配置参数*/
 static int report_task_get_env_device_config(device_config_t *config)
 {
-#define  ENV_DEVICE_CONFIG_OFFSET             0
   int rc;
   bootloader_env_t env;
   
   rc = bootloader_get_env(&env);
-  /*读取env失败*/
-  if(rc != 0 ){
-     return -1;
-   }
+  /*必须保证env读取成功*/
+  log_assert(rc == 0 && env.status == BOOTLOADER_ENV_STATUS_VALID);
   
   *config = *(device_config_t *)&env.reserved[ENV_DEVICE_CONFIG_OFFSET];
+
   return 0;
 }
 
@@ -939,7 +935,7 @@ static void report_task_build_fault(report_fault_t *fault,const char *code,const
 static int report_task_put_fault_to_queue(hal_fault_queue_t *queue,report_fault_t *fault)
 {      
   if(queue->write - queue->read >= REPORT_TASK_FAULT_QUEUE_SIZE){
-     log_error("fault queue is full.\r\n");
+     log_warning("fault queue is full.\r\n");
      return -1;
   }
   queue->fault[queue->write & (REPORT_TASK_FAULT_QUEUE_SIZE - 1)] = *fault;
@@ -1156,29 +1152,29 @@ void report_task(void const *argument)
  osEvent os_event;
  report_task_msg_t msg;
  device_config_t device_config;
- bootloader_env_t env1;
+ bootloader_env_t env;
 
- log_info("\r\n##     firmware version: %s         ##\r\n\r\n",FIRMWARE_VERSION_STR);
- 
+ log_info("\r\n       firmware version: %s           \r\n\r\n",FIRMWARE_VERSION_STR);
  /*定时器初始化*/
  report_task_active_timer_init(&active_event);
  report_task_log_timer_init();
  report_task_fault_timer_init();
 
  flash_utils_init();
- rc = bootloader_get_env(&env1);
+ 
+ rc = bootloader_get_env(&env);
  /*必须保证env存在且有效*/
+ log_assert(rc == 0 && env.status == BOOTLOADER_ENV_STATUS_VALID);
  
- log_assert(rc == 0 && env1.status == BOOTLOADER_ENV_STATUS_VALID);
- 
- if(env1.boot_flag == BOOTLOADER_FLAG_BOOT_UPDATE_COMPLETE){
-    env1.boot_flag = BOOTLOADER_FLAG_BOOT_UPDATE_OK;
-    rc = bootloader_save_env(&env1);  
+ if(env.boot_flag == BOOTLOADER_FLAG_BOOT_UPDATE_COMPLETE){
+    env.boot_flag = BOOTLOADER_FLAG_BOOT_UPDATE_OK;
+    rc = bootloader_save_env(&env);  
     log_assert(rc == 0);
  }
 
- rc = report_task_get_env_device_config(&device_config);
- if(rc != 0  || device_config.status != DEVICE_CONFIG_STATUS_VALID){
+ /*读取存储在ENV中的设备配置表参数*/
+ report_task_get_env_device_config(&device_config);
+ if(device_config.status != DEVICE_CONFIG_STATUS_VALID){
     device_config = device_default_config;
  }
  
@@ -1188,7 +1184,6 @@ void report_task(void const *argument)
  report_task_get_firmware_version(&report_active.fw_version);
  report_task_get_sn(report_active.sn);
  
- //report_task_start_active_timer(0,REPORT_TASK_MSG_NET_HAL_INFO);
  /*等待任务同步*/
  /*
  xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_REPORT_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
@@ -1251,8 +1246,10 @@ void report_task(void const *argument)
          report_task_start_active_timer(0,REPORT_TASK_MSG_GET_UPGRADE); 
              
          /*打开启日志上报定时器*/
-         report_task_start_log_timer(device_config.report_log_interval/1000);
+         report_task_start_log_timer(device_config.report_log_interval);
          
+         /*打开故障上报定时器*/
+         report_task_start_fault_timer(0);
        }
     }
     /*获取更新信息消息*/
@@ -1316,12 +1313,12 @@ void report_task(void const *argument)
              /*校验成功，启动升级*/
              if(strcmp(md5_str,report_upgrade.md5) == 0){
                 /*设置更新标志 bootloader使用*/
-                env1.boot_flag = BOOTLOADER_FLAG_BOOT_UPDATE;
-                env1.fw_update.size = report_upgrade.bin_size;
-                strcpy(env1.fw_update.md5.value,report_upgrade.md5);
-                env1.fw_update.version.code = report_upgrade.version_code;
+                env.boot_flag = BOOTLOADER_FLAG_BOOT_UPDATE;
+                env.fw_update.size = report_upgrade.bin_size;
+                strcpy(env.fw_update.md5.value,report_upgrade.md5);
+                env.fw_update.version.code = report_upgrade.version_code;
                 
-                bootloader_save_env(&env1);
+                bootloader_save_env(&env);
                 /*启动bootloader，开始更新*/
                 bootloader_reset();                 
              }else{

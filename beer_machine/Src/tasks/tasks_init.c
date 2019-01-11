@@ -9,8 +9,7 @@
 #include "temperature_task.h"
 #include "report_task.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[init]"
+
 
 EventGroupHandle_t tasks_sync_evt_group_hdl;
 

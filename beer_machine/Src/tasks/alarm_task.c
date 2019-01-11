@@ -9,8 +9,6 @@
 #include "report_task.h"
 #include "device_config.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_ERROR
-#define  LOG_MODULE_NAME     "[alarm]"
 
 osThreadId   alarm_task_handle;
 osMessageQId alarm_task_msg_q_id;
@@ -72,7 +70,6 @@ static void alarm_timer_init()
 static void alarm_timer_start(void)
 {
  osTimerStart(alarm_timer_id,ALARM_TASK_TIMER_TIMEOUT);  
- log_debug("报警定时器启动.\r\n");
 }
 
 static void alarm_timer_expired(void const *argument)
@@ -80,7 +77,6 @@ static void alarm_timer_expired(void const *argument)
  osStatus status;
  alarm_task_msg_t alarm_timeout_msg;
  
- log_debug("报警定时器到达.\r\n");
  alarm_timeout_msg.type = ALARM_TASK_MSG_TIMER_TIMEOUT;
  status = osMessagePut(alarm_task_msg_q_id,*(uint32_t*)&alarm_timeout_msg,ALARM_TASK_PUT_MSG_TIMEOUT);  
  if(status !=osOK){
@@ -315,7 +311,7 @@ void alarm_task(void const *argument)
   /*蜂鸣器报警消息处理*/ 
   if(msg.type == ALARM_TASK_MSG_TIMER_TIMEOUT){
   /*如果有任意一个报警状态存在 就继续操作蜂鸣器*/
-  /*
+  
   if(alarm.temperature.alarm == true || alarm.pressure.alarm == true || alarm.capacity.alarm == true){
   if(alarm.is_pwr_on == true){
   alarm.is_pwr_on = false;
@@ -328,7 +324,7 @@ void alarm_task(void const *argument)
   alarm.is_pwr_on = false;
   alarm_buzzer_pwr_turn_off();     
   }
-  */
+  
   }
 
   }

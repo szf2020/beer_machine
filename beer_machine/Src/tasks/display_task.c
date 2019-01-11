@@ -7,8 +7,6 @@
 #include "temperature_task.h"
 #include "display_task.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_ERROR
-#define  LOG_MODULE_NAME     "[display]"
 
 osThreadId   display_task_handle;
 osMessageQId display_task_msg_q_id;
@@ -17,7 +15,7 @@ osTimerId    display_timer_id;
 
 typedef struct
 {
-  uint8_t value;
+  int16_t value;
   bool    blink;
   bool    point;
 }display_unit_t;
@@ -56,7 +54,6 @@ static void display_timer_init()
 static void display_timer_start(uint16_t timeout)
 {
  osTimerStart(display_timer_id,timeout);  
- log_debug("显示定时器开始.\r\n");
 }
 /*
 static void display_timer_stop(void)
@@ -135,7 +132,7 @@ void display_task(void const *argument)
      msg = *(display_task_msg_t*)&os_msg.value.v;
      /*温度消息*/
      if(msg.type == DISPLAY_TASK_MSG_TEMPERATURE){
-        display.temperature.value = msg.value;
+        display.temperature.value = (uint8_t)msg.value == ALARM_TASK_TEMPERATURE_ERR_VALUE ? (uint8_t)msg.value : (int8_t)(msg.value);
         display.temperature.blink = msg.blink;  
         led_display_temperature(display.temperature.value);
         display.is_update = true;
@@ -245,11 +242,11 @@ void display_task(void const *argument)
  
   
   /*更新上述消息内容到芯片*/
-  if(display.is_update == true){
-  display.is_update = false;  
-  /*刷新到芯片RAM*/
-  led_display_refresh();  
-  }
+  if (display.is_update == true){
+      display.is_update = false;  
+      /*刷新到芯片RAM*/
+      led_display_refresh();  
+   }
   
   }
   }

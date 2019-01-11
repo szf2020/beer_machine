@@ -15,8 +15,8 @@
 #define  HTTP_CLIENT_FREE(x)             vPortFree((x))
 #define  HTTP_BUFFER_SIZE                1600
 
-#define  HTTP_CLIENT_HOST_STR_LEN             50
-#define  HTTP_CLIENT_PATH_STR_LEN             200
+#define  HTTP_CLIENT_HOST_STR_LEN        50
+#define  HTTP_CLIENT_PATH_STR_LEN        200
 
 typedef struct
 {

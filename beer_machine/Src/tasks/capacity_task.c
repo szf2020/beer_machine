@@ -8,8 +8,6 @@
 #include "report_task.h"
 #include "capacity_task.h"
 #include "log.h"
-#define  LOG_MODULE_LEVEL    LOG_LEVEL_DEBUG
-#define  LOG_MODULE_NAME     "[capacity]"
 
 osThreadId   capacity_task_handle;
 osMessageQId capacity_task_msg_q_id;
@@ -92,14 +90,22 @@ static uint16_t capacity_task_get_high(void)
   }
   }while(select_size != 0);
   
+  /*调试输出*/
+  for(uint8_t i = 0 ; i < read_total ; i++ ) {
+      log_array("%2X",buffer[i]);
+  }
+
   /*协议头错误 或者校验错误*/
   if(read_total != 4 || buffer[0] != 0xff || (( buffer[0] + buffer[1] + buffer[2]) & 0xff) != buffer[3]){
       log_error("液位传感器协议数据错误.\r\n");
       return CAPACITY_TASK_SENSOR_ERR_VALUE;  
   }
+
+
+
   /*计算液位*/
   high = (buffer[1] * 256 + buffer[2]) & 0xFFFF;
-  log_debug("当前液位：%d mm.\r\n",high);
+
   return high;
 }
 
@@ -108,9 +114,7 @@ static uint16_t capacity_task_get_high(void)
 void capacity_task(void const *argument)
 {
   osStatus status;
-  uint16_t high;
   float    capacity;
-  char     capacity_str[4];
   uint16_t int_capacity;
 
   alarm_task_msg_t      alarm_msg; 
@@ -126,42 +130,49 @@ void capacity_task(void const *argument)
   beer_capacity.value = 88;
   
   while(1){
-  log_info("free mem size: %dbytes.\r\n",xPortGetFreeHeapSize()) 
-  high = capacity_task_get_high(); 
-  /*如果液位高度没有变化就继续*/
-  if(high == beer_capacity.high){
-     continue;
-  }
-  
-  /*如果传感器异常一定时间打开报警和闪烁*/
-  if(high == CAPACITY_TASK_SENSOR_ERR_VALUE){
+
+  beer_capacity.high = capacity_task_get_high(); 
+
+  /*如果传感器异常一定时间就设定错误*/
+  if(beer_capacity.high == CAPACITY_TASK_SENSOR_ERR_VALUE){
      beer_capacity.err_cnt ++;
      if(beer_capacity.err_cnt >= CAPACITY_TASK_ERR_CNT){
         beer_capacity.err_cnt = 0;
-        beer_capacity.change = true;
-        beer_capacity.high = high;
-        beer_capacity.value = ALARM_TASK_CAPACITY_ERR_VALUE;
+        int_capacity = ALARM_TASK_CAPACITY_ERR_VALUE;
      }
   }else{
     beer_capacity.err_cnt = 0;
-    high > beer_capacity.high ? beer_capacity.dir ++ : beer_capacity.dir --;
-    if(beer_capacity.dir > CAPACITY_TASK_DIR_CHANGE_CNT || beer_capacity.dir < -CAPACITY_TASK_DIR_CHANGE_CNT ){
-       beer_capacity.change = true;
-       beer_capacity.high = high;
-       capacity = beer_capacity.high * S / 1000000.0 ;/*单位L*/ 
-       if(capacity > 20.0 || capacity < 0){
-          capacity = 20.0;  
-       }
-       snprintf(capacity_str,4,"%3f",capacity);
-       log_info("capacity value:%s\r\n",capacity_str);
-       int_capacity = (uint8_t)capacity;
-       int_capacity += capacity - int_capacity >= 0.5 ? 1 : 0;
-       beer_capacity.value = int_capacity;
-    }
-  }
+    capacity = beer_capacity.high * S / 1000000.0 ;/*单位L*/ 
+    if (capacity > 20.0 || capacity < 0){
+        capacity = 20.0;  
+     }
+    
+    log_debug("beer high:%dmm.capacity:%.2fL.\r\n",beer_capacity.high,capacity);
 
-  if(beer_capacity.change == true){
+    int_capacity = (uint8_t)capacity;
+    int_capacity += capacity - int_capacity >= 0.5 ? 1 : 0;
+   }
+
+   /*当前整数容量没有变化，继续*/
+   if (int_capacity == beer_capacity.value) {
+        continue;
+    }
+   
+    int_capacity > beer_capacity.value ? beer_capacity.dir ++ : beer_capacity.dir --;
+    if (beer_capacity.dir > CAPACITY_TASK_DIR_CHANGE_CNT || beer_capacity.dir < -CAPACITY_TASK_DIR_CHANGE_CNT ){
+        beer_capacity.change = true;
+        beer_capacity.value = int_capacity;
+    }
+   
+
+   if (beer_capacity.change == true){
+      if (beer_capacity.value == ALARM_TASK_CAPACITY_ERR_VALUE) {
+         log_error("capacity err.code:E2.\r\n");
+      }else {
+         log_info("capacity changed dir:%d value:%dL.\r\n",beer_capacity.dir,beer_capacity.value);
+      }
      beer_capacity.change = false;
+     beer_capacity.dir = 0;
      /*发送报警消息*/   
      alarm_msg.type = ALARM_TASK_MSG_CAPACITY;
      alarm_msg.value = beer_capacity.value;  
