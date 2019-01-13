@@ -340,7 +340,9 @@ init:
     log_error("gsm module is err.\r\n");  
  }else{
     net.gsm.is_initial = true;
-    net.gsm.status = NET_STATUS_ONLINE;
+    if (net.gsm.is_sim_exsit == true ) {
+        net.gsm.status = NET_STATUS_ONLINE;
+    }
  }
  
  if(net.gsm.is_initial == false && net.wifi.is_initial == false){
@@ -363,8 +365,8 @@ init:
  
   while(1){
   os_event = osMessageGet(net_task_msg_q_id,osWaitForever);
-  if(os_event.status == osEventMessage){
-  msg = *(net_task_msg_t*)&os_event.value.v; 
+  if (os_event.status == osEventMessage){
+      msg = *(net_task_msg_t*)&os_event.value.v; 
  
  
   /*如果收到检查WIFI网络状态*/
@@ -409,7 +411,7 @@ init:
     display_msg.type = DISPLAY_TASK_MSG_WIFI;
     if(net.wifi.level == 0){
        display_msg.value = 3;
-       display_msg.blink = false;    
+       display_msg.blink = true;    
     }else{
        display_msg.value = net.wifi.level;
        display_msg.blink = false;         

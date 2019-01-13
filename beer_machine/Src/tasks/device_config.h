@@ -27,7 +27,7 @@
 #define  DEFAULT_HIGH_CAPACITY                      20 /*容量报警高值（暂不可配）*/
 #define  DEFAULT_REPORT_LOG_INTERVAL                (1 * 60 * 1000) /*默认日志上报间隔时间ms*/
 
-#define  DEFAULT_WIFI_CONFIG_TIMEOUT                (0.2 * 60 * 1000)             /*wifi配网时间ms*/
+#define  DEFAULT_WIFI_CONFIG_TIMEOUT                (2 * 60 * 1000)             /*wifi配网时间ms*/
 
 /*虽然压缩机温控可调，但也不能超出极限值，保证酒的品质*/
 #define  DEFAULT_COMPRESSOR_LOW_TEMPERATURE_LIMIT   0 /*可配置温度最低值*/

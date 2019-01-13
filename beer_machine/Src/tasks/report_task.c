@@ -1312,6 +1312,9 @@ void report_task(void const *argument)
              bytes_to_hex_str(md5_hex,md5_str,16);
              /*校验成功，启动升级*/
              if(strcmp(md5_str,report_upgrade.md5) == 0){
+                rc = bootloader_get_env(&env);
+                /*必须保证env存在且有效*/
+                log_assert(rc == 0 && env.status == BOOTLOADER_ENV_STATUS_VALID);
                 /*设置更新标志 bootloader使用*/
                 env.boot_flag = BOOTLOADER_FLAG_BOOT_UPDATE;
                 env.fw_update.size = report_upgrade.bin_size;

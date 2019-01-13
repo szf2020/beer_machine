@@ -158,7 +158,7 @@ __weak void vApplicationMallocFailedHook(void)
    FreeRTOSConfig.h, and the xPortGetFreeHeapSize() API function can be used
    to query the size of free heap space that remains (although it does not
    provide information on how the remaining heap might be fragmented). */
-   log_error("%s malloc fail.\r\n");
+   log_error("malloc fail.\r\n");
    log_assert(0);
 }
 /* USER CODE END 5 */
@@ -189,29 +189,29 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityBelowNormal, 0, 300);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 256);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  osThreadDef(adc_task, adc_task, osPriorityNormal, 0, 300);
+  osThreadDef(adc_task, adc_task, osPriorityNormal, 0, 256);
   adc_task_handle = osThreadCreate(osThread(adc_task), NULL);
   
-  osThreadDef(temperature_task, temperature_task, osPriorityNormal, 0, 300);
+  osThreadDef(temperature_task, temperature_task, osPriorityNormal, 0, 256);
   temperature_task_handle = osThreadCreate(osThread(temperature_task), NULL);
   
-  osThreadDef(pressure_task, pressure_task, osPriorityNormal, 0, 300);
+  osThreadDef(pressure_task, pressure_task, osPriorityNormal, 0, 256);
   pressure_task_handle = osThreadCreate(osThread(pressure_task), NULL);
   
-  osThreadDef(compressor_task, compressor_task, osPriorityNormal, 0, 300);
+  osThreadDef(compressor_task, compressor_task, osPriorityNormal, 0, 256);
   compressor_task_handle = osThreadCreate(osThread(compressor_task), NULL);
   
-  osThreadDef(alarm_task, alarm_task, osPriorityNormal, 0, 300);
+  osThreadDef(alarm_task, alarm_task, osPriorityNormal, 0, 256);
   alarm_task_handle = osThreadCreate(osThread(alarm_task), NULL);
   
-  osThreadDef(display_task, display_task, osPriorityNormal, 0, 300);
+  osThreadDef(display_task, display_task, osPriorityNormal, 0, 256);
   display_task_handle = osThreadCreate(osThread(display_task), NULL);
   
-  osThreadDef(capacity_task, capacity_task, osPriorityNormal, 0, 300);
+  osThreadDef(capacity_task, capacity_task, osPriorityNormal, 0, 256);
   capacity_task_handle = osThreadCreate(osThread(capacity_task), NULL);
   
   osThreadDef(net_task, net_task, osPriorityNormal, 0, 400);

@@ -81,7 +81,26 @@ static void display_timer_expired(void const *argument)
  }
 }
 
- 
+/*液位容量显示算法*/
+static uint8_t display_task_get_capacity_level(uint8_t capacity)
+{
+    uint8_t level;
+    if (capacity >= 18) {
+        level = 5;
+    }else if (capacity >= 14) {
+        level = 4;
+    }else if (capacity >= 10) {
+        level = 3;
+    }else if (capacity >= 6) {
+        level = 2;
+    }else if (capacity >= 2) {
+        level = 1;
+    }else {
+        level = 0;
+    }
+
+    return level;
+}
 
 void display_task(void const *argument)
 {
@@ -116,7 +135,7 @@ void display_task(void const *argument)
   }
   /*默认显示容积0L*/
   led_display_capacity(display.capacity.value);
-  led_display_capacity_icon_level(display.capacity.value / 4);
+  led_display_capacity_icon_level(display_task_get_capacity_level(display.capacity.value));
  
   /*等待任务同步*/
   /*
@@ -152,7 +171,7 @@ void display_task(void const *argument)
         display.capacity.value = msg.value;
         display.capacity.blink = msg.blink; 
         led_display_capacity(display.capacity.value);
-        led_display_capacity_icon_level(display.capacity.value / 4);
+        led_display_capacity_icon_level(display_task_get_capacity_level(display.capacity.value));
         display.is_update = true;
      }
     
@@ -223,7 +242,7 @@ void display_task(void const *argument)
   
     if(display.capacity.blink == true){
        led_display_capacity(display.capacity.value);
-       led_display_capacity_icon_level(display.capacity.value >= 20 ? 5 : display.capacity.value / 4);
+       led_display_capacity_icon_level(display_task_get_capacity_level(display.capacity.value));
        display.is_update = true;
     }
     

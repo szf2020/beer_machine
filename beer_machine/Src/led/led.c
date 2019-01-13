@@ -283,6 +283,7 @@ void led_display_capacity_icon_level(uint8_t level)
    bit4l=0;
    bit4r=0;
    bits31=LED_C_ICON_LEVEL1_BITS|LED_C_ICON_LEVEL2_BITS|LED_C_ICON_LEVEL3_BITS;
+   break;
  case 4:
    bit5=0;
    bit4l=LED_C_ICON_LEVEL4L_BITS;
