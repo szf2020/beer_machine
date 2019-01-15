@@ -38,8 +38,8 @@ static osMutexId gsm_mutex;
 #define  GSM_M6312_MALLOC(x)           pvPortMalloc((x))
 #define  GSM_M6312_FREE(x)             vPortFree((x))
 
-#define  GSM_M6312_PWR_ON_DELAY        4000
-#define  GSM_M6312_PWR_OFF_DELAY       12000
+#define  GSM_M6312_PWR_ON_DELAY        5000
+#define  GSM_M6312_PWR_OFF_DELAY       15000
 
 static at_t gsm_at;
 

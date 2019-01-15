@@ -18,7 +18,7 @@ void net_task(void const *argument);
 #define  NET_TASK_ERR_CNT_MAX                     20            /*硬件错误次数，到达后复位*/
 #define  NET_TASK_WIFI_INIT_TIMEOUT               3000          /*WIFI初始化超时时间ms*/
 #define  NET_TASK_GSM_INIT_TIMEOUT                30000         /*GSM初始化超时时间ms*/
-#define  NET_TASK_INIT_RETRY_DELAY                10000         /*初始化超时后等待重试间隔时间ms*/
+#define  NET_TASK_INIT_RETRY_DELAY                60000         /*初始化超时后等待重试间隔时间ms*/
 #define  NET_TASK_PUT_MSG_TIMEOUT                 5
 
 typedef struct

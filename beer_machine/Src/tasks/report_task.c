@@ -1154,7 +1154,7 @@ void report_task(void const *argument)
  device_config_t device_config;
  bootloader_env_t env;
 
- log_info("\r\n       firmware version: %s           \r\n\r\n",FIRMWARE_VERSION_STR);
+ log_info("\r\nfirmware version: %s\r\n\r\n",FIRMWARE_VERSION_STR);
  /*定时器初始化*/
  report_task_active_timer_init(&active_event);
  report_task_log_timer_init();

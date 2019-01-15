@@ -168,13 +168,13 @@ static int net_task_gsm_init(uint32_t timeout)
   utils_timer_init(&timer,timeout,false);
   /*复位*/
   rc = net_gsm_reset(utils_timer_value(&timer));
-  if(rc != 0){
+  if(rc != 0) {
      return -1;
   }
 
   /*通信接口初始化*/
   rc = net_gsm_comm_if_init(utils_timer_value(&timer));
-  if(rc != 0){
+  if (rc != 0) {
      return -1;
   }
   /*获取SIM卡ID*/           
@@ -182,20 +182,17 @@ static int net_task_gsm_init(uint32_t timeout)
   if(rc != 0){
      return -1;
   }
-  if(net.gsm.sim_id[0] != '\0'){
-  net.gsm.is_sim_exsit = true;
-  /*gprs初始化*/
-  rc = net_gsm_gprs_init(utils_timer_value(&timer));  
-  if(rc != 0){
-     return -1;
-  }
+  if (net.gsm.sim_id[0] != '\0'){
+      net.gsm.is_sim_exsit = true;
+        /*gprs初始化*/
+      rc = net_gsm_gprs_init(utils_timer_value(&timer));  
   }else{
-    net.gsm.is_sim_exsit = false;
-    return -1;
+      net.gsm.is_sim_exsit = false;
+      rc = -1;
   }
   
   log_debug("net task gsm init ok.\r\n");
-  return 0; 
+  return rc; 
 }
 
 static void net_task_config_wifi(uint32_t timeout)
@@ -302,54 +299,52 @@ net_status_t get_gsm_net_status()
 
 void net_task(void const *argument)
 {
- int rc;
+    int rc;
 
- osEvent  os_event;
- osStatus status;
+    osEvent  os_event;
+    osStatus status;
 
- net_task_msg_t msg;
- display_task_msg_t display_msg;
- char ssid_temp[33];
+    net_task_msg_t msg;
+    display_task_msg_t display_msg;
+    char ssid_temp[33];
 
 
- /*wifi和gsm轮询定时器*/
- wifi_query_timer_init();
- gsm_query_timer_init();
+    /*wifi和gsm轮询定时器*/
+    wifi_query_timer_init();
+    gsm_query_timer_init();
  
- /*上电处理流程*/
- /*网络连接初始化*/
- net_task_init();
+    /*上电处理流程*/
+    /*网络连接初始化*/
+    net_task_init();
  
 init:
-
- rc = net_task_wifi_init(NET_TASK_WIFI_INIT_TIMEOUT);
- if(rc != 0){
-    log_error("wifi module is err.\r\n"); 
- }else{
-    net.wifi.is_initial = true;
-    if(net.wifi.is_config == false){
-    net_task_config_wifi(DEFAULT_WIFI_CONFIG_TIMEOUT);
-    /*重新初始化wifi*/
-    net.wifi.is_initial = false;
-    goto init;
+    rc = net_task_wifi_init(NET_TASK_WIFI_INIT_TIMEOUT);
+    if (rc != 0) {
+        log_error("wifi module init fail.\r\n"); 
+    } else {
+        net.wifi.is_initial = true;
+        if (net.wifi.is_config == false){
+            net_task_config_wifi(DEFAULT_WIFI_CONFIG_TIMEOUT);
+            /*重新初始化wifi*/
+            net.wifi.is_initial = false;
+            goto init;
+        }
     }
- }
  
- rc = net_task_gsm_init(NET_TASK_GSM_INIT_TIMEOUT);
- if(rc != 0){
-    log_error("gsm module is err.\r\n");  
- }else{
-    net.gsm.is_initial = true;
-    if (net.gsm.is_sim_exsit == true ) {
+    rc = net_task_gsm_init(NET_TASK_GSM_INIT_TIMEOUT);
+    if (rc != 0){
+        log_error("gsm module init fail.\r\n");  
+    } else {
+        net.gsm.is_initial = true;
         net.gsm.status = NET_STATUS_ONLINE;
     }
- }
- 
- if(net.gsm.is_initial == false && net.wifi.is_initial == false){
-    log_error("all device is err.\r\n %d S later retry...\r\n",NET_TASK_INIT_RETRY_DELAY);
-    osDelay(NET_TASK_INIT_RETRY_DELAY);
-    goto init;
- }
+
+
+    if (net.gsm.is_initial == false && net.wifi.is_initial == false){
+        log_error("all device is err.\r\n %d S later retry...\r\n",NET_TASK_INIT_RETRY_DELAY);
+        osDelay(NET_TASK_INIT_RETRY_DELAY);
+        goto init;
+    }
 
  /*向上报任务提供设备信息 sim id 和 wifi mac*/
  net_task_send_hal_info_to_report_task();

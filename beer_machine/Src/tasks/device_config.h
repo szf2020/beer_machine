@@ -14,7 +14,7 @@
 
 
 #define  SN_LEN                                     16        /*SN字节长度*/
-#define  SN_ADDR                                    0x803FF00 /*SN在flash中的地址 */
+#define  SN_ADDR                                    0x803F800 /*SN在flash中的地址 */
 #define  ENV_DEVICE_CONFIG_OFFSET                   0  /*设备配置表在env中的偏移地址*/
 #define  ENV_WIFI_CONFIG_OFFSET                     4  /*WIFI配置表在env中的偏移地址*/
 
@@ -27,7 +27,7 @@
 #define  DEFAULT_HIGH_CAPACITY                      20 /*容量报警高值（暂不可配）*/
 #define  DEFAULT_REPORT_LOG_INTERVAL                (1 * 60 * 1000) /*默认日志上报间隔时间ms*/
 
-#define  DEFAULT_WIFI_CONFIG_TIMEOUT                (2 * 60 * 1000)             /*wifi配网时间ms*/
+#define  DEFAULT_WIFI_CONFIG_TIMEOUT                (2 * 60 * 1000) /*wifi配网时间ms*/
 
 /*虽然压缩机温控可调，但也不能超出极限值，保证酒的品质*/
 #define  DEFAULT_COMPRESSOR_LOW_TEMPERATURE_LIMIT   0 /*可配置温度最低值*/
