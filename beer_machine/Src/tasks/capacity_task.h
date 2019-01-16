@@ -18,8 +18,8 @@ void capacity_task(void const *argument);
 
 
 
-#define       R         130.0   /*mm 啤酒桶半径*/   
-#define       S         53093.0 /*mm2 啤酒桶横截面积*/
+#define       R         144.0               /*mm 啤酒桶半径*/   
+#define       S         (3.1415926 * R * R) /*mm2 啤酒桶横截面积*/
 
 #define  CAPACITY_TASK_DIR_CHANGE_CNT          3  /*容量值确认次数*/
 #define  CAPACITY_TASK_ERR_CNT                 6  /*故障确认次数*/    

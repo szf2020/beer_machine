@@ -143,11 +143,12 @@ void capacity_task(void const *argument)
   }else{
     beer_capacity.err_cnt = 0;
     capacity = beer_capacity.high * S / 1000000.0 ;/*单位L*/ 
+
+    log_debug("beer high:%dmm.capacity:%.2fL.\r\n",beer_capacity.high,capacity);
+
     if (capacity > 20.0 || capacity < 0){
         capacity = 20.0;  
      }
-    
-    log_debug("beer high:%dmm.capacity:%.2fL.\r\n",beer_capacity.high,capacity);
 
     int_capacity = (uint8_t)capacity;
     int_capacity += capacity - int_capacity >= 0.5 ? 1 : 0;
