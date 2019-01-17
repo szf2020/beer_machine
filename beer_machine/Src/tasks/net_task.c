@@ -211,7 +211,7 @@ static void net_task_config_wifi(uint32_t timeout)
     log_debug("wifi new config ok.ssid:%s passwd:%s.\r\n",wifi_new_config.ssid,wifi_new_config.passwd);
     if((strcmp(net.wifi.config.ssid,wifi_new_config.ssid) != 0      ||
         strcmp(net.wifi.config.passwd,wifi_new_config.passwd) != 0) &&
-        strlen(net.wifi.config.ssid) > 0){
+        strlen(wifi_new_config.ssid) > 0){
        log_debug("config is different and valid.save.\r\n");
        wifi_new_config.status = NET_WIFI_CONFIG_STATUS_VALID;
        *(net_wifi_config_t *)&env.reserved[ENV_WIFI_CONFIG_OFFSET] = wifi_new_config;
@@ -397,7 +397,7 @@ init:
                     net.wifi.status = NET_STATUS_ONLINE;
                 }
               }else{
-                 log_debug("wifi ssid:%s is not exsit.\r\n",net.wifi.config.ssid);
+                 log_info("wifi ssid:%s is not exsit.\r\n",net.wifi.config.ssid);
               }
           }
         }

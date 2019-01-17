@@ -56,8 +56,8 @@ typedef struct
 
 typedef struct
 {
-  char sn[20];
-  char sim_id[20];
+  char sn[24];
+  char sim_id[24];
   char wifi_mac[20];
   char *fw_version;
   bool is_active;
@@ -71,6 +71,7 @@ typedef struct
   char     version_str[16];
   char     download_url[100];
   char     md5[33];
+  bool     update;
 }report_upgrade_t;
 
 
@@ -430,7 +431,7 @@ err_exit:
  char timestamp_str[14] = { 0 };
  char sign_str[33] = { 0 };
  char *req;
- char rsp[200] = { 0 };
+ char rsp[400] = { 0 };
  char url[200] = { 0 };
  /*计算时间戳字符串*/
  timestamp = report_task_get_utc();
@@ -445,7 +446,7 @@ err_exit:
  context.range_size = 200;
  context.range_start = 0;
  context.rsp_buffer = rsp;
- context.rsp_buffer_size = 200;
+ context.rsp_buffer_size = 400;
  context.url = url;
  context.timeout = 10000;
  context.user_data = (char *)req;
@@ -626,7 +627,7 @@ static int report_task_report_active(const char *url_origin,report_active_t *act
  char timestamp_str[14] = { 0 };
  char sign_str[33] = { 0 };
  char *req;
- char rsp[200] = { 0 };
+ char rsp[400] = { 0 };
  char url[200] = { 0 };
  /*计算时间戳字符串*/
  timestamp = report_task_get_utc();
@@ -642,7 +643,7 @@ static int report_task_report_active(const char *url_origin,report_active_t *act
  context.range_size = 200;
  context.range_start = 0;
  context.rsp_buffer = rsp;
- context.rsp_buffer_size = 200;
+ context.rsp_buffer_size = 400;
  context.url = url;
  context.timeout = 10000;
  context.user_data = (char *)req;
@@ -736,7 +737,7 @@ static int report_task_report_fault(const char *url_origin,report_fault_t *fault
   char timestamp_str[14] = { 0 };
   char sign_str[33] = { 0 };
   char req[320];
-  char rsp[200] = { 0 };
+  char rsp[400] = { 0 };
   char url[200] = { 0 };
 
   /*计算时间戳字符串*/
@@ -753,7 +754,7 @@ static int report_task_report_fault(const char *url_origin,report_fault_t *fault
   context.range_size = 200;
   context.range_start = 0;
   context.rsp_buffer = rsp;
-  context.rsp_buffer_size = 200;
+  context.rsp_buffer_size = 400;
   context.url = url;
   context.timeout = 10000;
   context.user_data = (char *)req;
@@ -977,19 +978,26 @@ static int report_task_parse_upgrade_rsp_json(char *json_str,report_upgrade_t *r
      log_error("rsp is not json.\r\n");
      return -1;  
   }
-  /*检查code值 200成功*/
+  /*检查code值 200 获取的升级信息*/
   temp = cJSON_GetObjectItem(upgrade_rsp_json,"code");
   if(!cJSON_IsNumber(temp)){
      log_error("code is not num.\r\n");
      goto err_exit;  
   }
-               
+ 
   log_debug("code:%d\r\n", temp->valueint);
-  if(temp->valueint != 200 ){
-     log_error("active rsp err code:%d.\r\n",temp->valueint); 
-     goto err_exit;  
-  }  
-    
+  /*获取到升级信息*/    
+  if(temp->valueint == 200 ){
+    report_upgrade->update = true;
+  }else if (temp->valueint == 404) {
+    report_upgrade->update = false;
+    rc = 0;
+    goto err_exit; 
+  }else{
+    log_error("update rsp err code:%d.\r\n",temp->valueint); 
+    goto err_exit; 
+  }
+
   /*检查success值 true or false*/
   temp = cJSON_GetObjectItem(upgrade_rsp_json,"success");
   if(!cJSON_IsBool(temp) || !cJSON_IsTrue(temp)){
@@ -1071,7 +1079,7 @@ static int report_task_get_upgrade(const char *url_origin,const char *sn,report_
   http_client_context_t context;
   char timestamp_str[14] = { 0 };
   char sign_str[33] = { 0 };
-  char rsp[300] = { 0 };
+  char rsp[400] = { 0 };
   char url[200] = { 0 };
   /*计算时间戳字符串*/
   timestamp = report_task_get_utc();
@@ -1084,7 +1092,7 @@ static int report_task_get_upgrade(const char *url_origin,const char *sn,report_
   context.range_size = 200;
   context.range_start = 0;
   context.rsp_buffer = rsp;
-  context.rsp_buffer_size = 300;
+  context.rsp_buffer_size = 400;
   context.url = url;
   context.timeout = 10000;
   context.user_data = NULL;
@@ -1154,11 +1162,16 @@ void report_task(void const *argument)
  device_config_t device_config;
  bootloader_env_t env;
 
- log_info("\r\nfirmware version: %s\r\n\r\n",FIRMWARE_VERSION_STR);
  /*定时器初始化*/
  report_task_active_timer_init(&active_event);
  report_task_log_timer_init();
  report_task_fault_timer_init();
+
+ report_task_get_firmware_version(&report_active.fw_version);
+ report_task_get_sn(report_active.sn);
+ 
+ log_info("\r\nfirmware version: %s\r\n\r\n",report_active.fw_version);
+ log_info("\r\nSN: %s\r\n\r\n",report_active.sn);
 
  flash_utils_init();
  
@@ -1181,8 +1194,6 @@ void report_task(void const *argument)
  /*分发默认的开机配置参数*/
  report_task_dispatch_device_config(&device_config);
 
- report_task_get_firmware_version(&report_active.fw_version);
- report_task_get_sn(report_active.sn);
  
  /*等待任务同步*/
  /*
@@ -1265,7 +1276,7 @@ void report_task(void const *argument)
         /*获取成功处理*/   
          upgrade_retry = 0;
          /*对比现在的版本号*/
-         if(report_upgrade.version_code > fw_version_code){
+         if(report_upgrade.update == true && report_upgrade.version_code > fw_version_code){
            log_info("firmware need upgrade.ver_code:%d size:%d md5:%s.start download...\r\n",
                     report_upgrade.version_code,report_upgrade.bin_size,report_upgrade.md5);
             report_task_start_active_timer(0,REPORT_TASK_MSG_DOWNLOAD_UPGRADE);                 

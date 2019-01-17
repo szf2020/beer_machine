@@ -567,7 +567,7 @@ int wifi_8710bx_open_server(const uint16_t port,const wifi_8710bx_net_protocol_t
  memset(&wifi_at,0,sizeof(wifi_at));
  snprintf(wifi_at.send,AT_SEND_BUFFER_SIZE,"ATPS=%s,%d\r\n",protocol == WIFI_8710BX_NET_PROTOCOL_TCP ? "0" : "1",port);
  wifi_at.send_size = strlen(wifi_at.send);
- wifi_at.send_timeout = 5;
+ wifi_at.send_timeout = 50;
  wifi_at.recv_timeout = 10000;
  ok.str = "[ATPS] OK";
  ok.code = WIFI_ERR_OK;
@@ -606,7 +606,7 @@ int wifi_8710bx_open_client(const char *host,const uint16_t remote_port,const wi
  memset(&wifi_at,0,sizeof(wifi_at));
  snprintf(wifi_at.send,AT_SEND_BUFFER_SIZE,"ATPC=%s,%s,%d\r\n",protocol == WIFI_8710BX_NET_PROTOCOL_TCP ? "0" : "1",host,remote_port);
  wifi_at.send_size = strlen(wifi_at.send);
- wifi_at.send_timeout = 5;
+ wifi_at.send_timeout = 50;
  wifi_at.recv_timeout = 10000;
  ok.str = "[ATPC] OK";
  ok.code = WIFI_ERR_OK;

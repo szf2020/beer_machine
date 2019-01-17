@@ -128,7 +128,7 @@ void capacity_task(void const *argument)
   */
   /*上电默认值*/
   beer_capacity.value = 88;
-  
+  int_capacity = 88;
   while(1){
 
   beer_capacity.high = capacity_task_get_high(); 
