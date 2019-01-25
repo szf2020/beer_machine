@@ -404,7 +404,7 @@ init:
       }
     
     display_msg.type = DISPLAY_TASK_MSG_WIFI;
-    if(net.wifi.level == 0){
+    if(net.wifi.level == 0 || net.wifi.status == NET_STATUS_OFFLINE){
        display_msg.value = 3;
        display_msg.blink = true;    
     }else{

@@ -56,7 +56,7 @@ typedef struct
 
 typedef struct
 {
-  char sn[24];
+  char sn[SN_LEN + 1];
   char sim_id[24];
   char wifi_mac[20];
   char *fw_version;

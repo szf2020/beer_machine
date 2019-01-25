@@ -13,7 +13,7 @@
 #define  MODEL                                      "pijiuji"
 
 
-#define  SN_LEN                                     16        /*SN字节长度*/
+#define  SN_LEN                                     24        /*SN字节长度*/
 #define  SN_ADDR                                    0x803F800 /*SN在flash中的地址 */
 #define  ENV_DEVICE_CONFIG_OFFSET                   0  /*设备配置表在env中的偏移地址*/
 #define  ENV_WIFI_CONFIG_OFFSET                     4  /*WIFI配置表在env中的偏移地址*/
