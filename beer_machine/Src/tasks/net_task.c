@@ -300,7 +300,7 @@ net_status_t get_gsm_net_status()
 void net_task(void const *argument)
 {
     int rc;
-
+    uint8_t init_err_cnt = 0;
     osEvent  os_event;
     osStatus status;
 
@@ -340,23 +340,24 @@ init:
     }
 
 
-    if (net.gsm.is_initial == false && net.wifi.is_initial == false){
+    if (init_err_cnt < NET_TASK_NET_INIT_ERR_CNT_MAX && net.gsm.is_initial == false && net.wifi.is_initial == false){
         log_error("all device is err.\r\n %d S later retry...\r\n",NET_TASK_INIT_RETRY_DELAY);
         osDelay(NET_TASK_INIT_RETRY_DELAY);
+        init_err_cnt ++;
         goto init;
     }
-
- /*向上报任务提供设备信息 sim id 和 wifi mac*/
- net_task_send_hal_info_to_report_task();
+    init_err_cnt = 0;
+    /*向上报任务提供设备信息 sim id 和 wifi mac*/
+    net_task_send_hal_info_to_report_task();
  
- /*等待任务同步*/
- /*
- xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_NET_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
- log_debug("net task sync ok.\r\n");
- */
+    /*等待任务同步*/
+    /*
+    xEventGroupSync(tasks_sync_evt_group_hdl,TASKS_SYNC_EVENT_NET_TASK_RDY,TASKS_SYNC_EVENT_ALL_TASKS_RDY,osWaitForever);
+    log_debug("net task sync ok.\r\n");
+    */
 
- gsm_query_timer_start();
- wifi_query_timer_start();
+    gsm_query_timer_start();
+    wifi_query_timer_start();
  
   while(1){
   os_event = osMessageGet(net_task_msg_q_id,osWaitForever);
