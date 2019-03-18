@@ -167,7 +167,7 @@ void capacity_task(void const *argument)
     }
    
     int_capacity > beer_capacity.value ? beer_capacity.dir ++ : beer_capacity.dir --;
-    if (beer_capacity.dir > CAPACITY_TASK_DIR_CHANGE_CNT || beer_capacity.dir < -CAPACITY_TASK_DIR_CHANGE_CNT ){
+    if (beer_capacity.dir >= CAPACITY_TASK_DIR_CHANGE_CNT || beer_capacity.dir <= -CAPACITY_TASK_DIR_CHANGE_CNT ){
         beer_capacity.change = true;
         beer_capacity.value = int_capacity;
     }
