@@ -74,6 +74,7 @@ struct
 
 struct
 {
+    bool is_power_on;
   bool is_sim_exsit;
   bool is_initial;
   char sim_id[GSM_M6312_SIM_ID_STR_LEN + 1];

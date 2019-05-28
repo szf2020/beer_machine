@@ -167,10 +167,12 @@ static int net_task_gsm_init(uint32_t timeout)
   }
   utils_timer_init(&timer,timeout,false);
   /*复位*/
-  rc = net_gsm_reset(utils_timer_value(&timer));
-  if(rc != 0) {
-     return -1;
-  }
+    if (net.gsm.is_power_on == false) {
+        rc = net_gsm_reset(utils_timer_value(&timer));
+        if (rc != 0) {
+            return -1;
+        }
+    }
 
   /*通信接口初始化*/
   rc = net_gsm_comm_if_init(utils_timer_value(&timer));
@@ -316,6 +318,12 @@ void net_task(void const *argument)
     /*上电处理流程*/
     /*网络连接初始化*/
     net_task_init();
+
+    /*gsm上电*/
+    rc = gsm_m6312_pwr_on();
+    if (rc == 0) {
+        net.gsm.is_power_on = true;
+    }
  
 init:
     rc = net_task_wifi_init(NET_TASK_WIFI_INIT_TIMEOUT);

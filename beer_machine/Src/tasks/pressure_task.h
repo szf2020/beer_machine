@@ -23,7 +23,7 @@ void pressure_task(void const *argument);
 #define  PRESSURE_TASK_PRESSURE_CHANGE_CNT         2
 
 #define  PRESSURE_VALUE_STANDARD_ATM               10.33 /*标准大气压 kg/cm表示 放大10倍*/
-#define  PRESSURE_VALUE_IN_KG_CM2_ERR_MAX          25    /*最大过载压力 放大10倍   2.5kg/cm2 约0.25Mpa*/
+#define  PRESSURE_VALUE_IN_KG_CM2_ERR_MAX          99    /*最大过载压力 放大10倍   9.9kg/cm2 约0.99Mpa*/
 #define  PRESSURE_VALUE_IN_KG_CM2_ERR_MIN          -4    /*最小低载压力 放大10倍  -0.4kg/cm2 约0.04Mpa 比相当于0.6个标准大气压*/
 
 #define  PA_VALUE_PER_1KG_CM2                      98066.5 /*单位换算 1kg/cm2 == 98066.5Pa */
