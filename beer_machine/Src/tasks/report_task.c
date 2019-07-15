@@ -535,9 +535,8 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
   /*检查runConfig */ 
   run_config = cJSON_GetObjectItem(data,"runConfig");
   if(!cJSON_IsObject(run_config)){
-     log_error("run config is not obj.use default.\r\n");
-    *config = device_default_config;
-     return 0;  
+     log_error("run config is not obj.\r\n");
+     goto err_exit;  
   }
   /*检查log submit interval*/
   temp = cJSON_GetObjectItem(run_config,"logSubmitDur");
@@ -1239,9 +1238,12 @@ void report_task(void const *argument)
     if(msg.type == REPORT_TASK_MSG_ACTIVE){ 
        rc = report_task_report_active(URL_ACTIVE,&report_active,&device_config);
        if(rc != 0){
-          log_error("report task active timeout.%d S later retry.\r\n",report_task_retry_delay(active_retry) / 1000);
-          report_task_start_active_timer(report_task_retry_delay(active_retry),REPORT_TASK_MSG_ACTIVE); 
-          if(++active_retry >= 3){
+         if (active_retry < 3) {
+            log_error("report task active timeout.%d S later retry.\r\n",report_task_retry_delay(active_retry) / 1000);
+            report_task_start_active_timer(report_task_retry_delay(active_retry),REPORT_TASK_MSG_ACTIVE); 
+            active_retry++;
+        } else {    
+            /*立即停止，等待下次上电继续*/
              active_retry = 0;
           }
        }else{
@@ -1274,6 +1276,7 @@ void report_task(void const *argument)
             report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_GET_UPGRADE); 
             upgrade_retry ++;
             } else {
+            /*立即停止，等待下次上电继续*/
              upgrade_retry = 0;
           }
        }else{
@@ -1304,10 +1307,11 @@ void report_task(void const *argument)
             report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_DOWNLOAD_UPGRADE); 
             upgrade_retry ++;
           } else {
-            /*不再尝试，等待下次开机*/
+            /*立即停止，等待下次上电继续*/
              upgrade_retry = 0;
           }
        }else{
+       upgrade_retry = 0;
        /*保存下载的文件*/   
        rc = bootloader_write_fw(BOOTLOADER_FLASH_BASE_ADDR + BOOTLOADER_FLASH_UPDATE_APPLICATION_ADDR_OFFSET + report_upgrade.download_size,
                                (uint32_t)bin_data,
