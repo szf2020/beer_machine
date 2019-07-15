@@ -528,8 +528,9 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
   /*检查data */
   data = cJSON_GetObjectItem(active_rsp_json,"data");
   if(!cJSON_IsObject(data)){
-     log_error("data is not obj.\r\n");
-     goto err_exit;  
+     log_error("data is not obj.use default.\r\n");
+    *config = device_default_config;
+     return 0;  
   }
   /*检查runConfig */ 
   run_config = cJSON_GetObjectItem(data,"runConfig");
@@ -785,9 +786,13 @@ static int report_task_retry_delay(uint8_t retry)
      return REPORT_TASK_RETRY1_DELAY;
   }else if(retry == 1){
      return REPORT_TASK_RETRY2_DELAY;
+  } else if(retry == 2){
+     return REPORT_TASK_RETRY3_DELAY;
+  }else if(retry == 3){
+     return REPORT_TASK_RETRY4_DELAY;
   }
   
-  return REPORT_TASK_RETRY3_DELAY; 
+  return REPORT_TASK_RETRY4_DELAY; 
 }
 
 /*读取保存在ENV中的设备配置参数*/
@@ -1237,11 +1242,9 @@ void report_task(void const *argument)
     if(msg.type == REPORT_TASK_MSG_ACTIVE){ 
        rc = report_task_report_active(URL_ACTIVE,&report_active,&device_config);
        if(rc != 0){
-          log_error("report task active timeout.%d S later retry.\r\n",report_task_retry_delay(active_retry) / 1000);
-          report_task_start_active_timer(report_task_retry_delay(active_retry),REPORT_TASK_MSG_ACTIVE); 
-          if(++active_retry >= 3){
-             active_retry = 0;
-          }
+            log_error("report task active timeout.%d S later retry.\r\n",report_task_retry_delay(active_retry) / 1000);
+            report_task_start_active_timer(report_task_retry_delay(active_retry),REPORT_TASK_MSG_ACTIVE); 
+            active_retry++;
        }else{
          active_retry = 0;
          report_active.is_active = true;
@@ -1267,11 +1270,9 @@ void report_task(void const *argument)
     if(msg.type == REPORT_TASK_MSG_GET_UPGRADE){ 
        rc = report_task_get_upgrade(URL_UPGRADE,report_active.sn,&report_upgrade);
        if(rc != 0){
-          log_error("report task get upgrade timeout.%d S later retry.\r\n",report_task_retry_delay(upgrade_retry) / 1000);
-          report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_GET_UPGRADE); 
-          if(++upgrade_retry >= 3){
-             upgrade_retry = 0;
-          }
+            log_error("report task get upgrade timeout.%d S later retry.\r\n",report_task_retry_delay(upgrade_retry) / 1000);
+            report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_GET_UPGRADE); 
+            upgrade_retry ++;
        }else{
         /*获取成功处理*/   
          upgrade_retry = 0;
@@ -1295,12 +1296,11 @@ void report_task(void const *argument)
        size = report_upgrade.bin_size - report_upgrade.download_size > BOOTLOADER_FLASH_PAGE_SIZE ? BOOTLOADER_FLASH_PAGE_SIZE : report_upgrade.bin_size - report_upgrade.download_size;
        rc = report_task_download_upgrade_bin(report_upgrade.download_url,bin_data,report_upgrade.download_size,size);
        if(rc != 0){
-          log_error("report task download upgrade fail.%d S later retry.\r\n",report_task_retry_delay(upgrade_retry) / 1000);
-          report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_DOWNLOAD_UPGRADE); 
-          if(++upgrade_retry >= 3){
-             upgrade_retry = 0;
-          }
+            log_error("report task download upgrade fail.%d S later retry.\r\n",report_task_retry_delay(upgrade_retry) / 1000);
+            report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_DOWNLOAD_UPGRADE); 
+            upgrade_retry ++;
        }else{
+       upgrade_retry = 0;
        /*保存下载的文件*/   
        rc = bootloader_write_fw(BOOTLOADER_FLASH_BASE_ADDR + BOOTLOADER_FLASH_UPDATE_APPLICATION_ADDR_OFFSET + report_upgrade.download_size,
                                (uint32_t)bin_data,
