@@ -42,7 +42,8 @@ void bsp_compressor_ctrl_off(void)
 /*蜂鸣器控制*/
 void bsp_buzzer_ctrl_on(void)
 {
-  HAL_GPIO_WritePin(BSP_BUFFER_CTRL_POS_GPIO_Port, BSP_BUFFER_CTRL_POS_Pin, BSP_CTRL_BUZZER_ON); 
+  /*取消蜂鸣器响*/
+  //HAL_GPIO_WritePin(BSP_BUFFER_CTRL_POS_GPIO_Port, BSP_BUFFER_CTRL_POS_Pin, BSP_CTRL_BUZZER_ON); 
 }
 void bsp_buzzer_ctrl_off(void)
 {

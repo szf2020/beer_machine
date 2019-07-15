@@ -320,7 +320,7 @@ void net_task(void const *argument)
     net_task_init();
 
     /*gsm上电*/
-    rc = gsm_m6312_pwr_on();
+    rc = net_gsm_reset(NET_TASK_GSM_INIT_TIMEOUT);
     if (rc == 0) {
         net.gsm.is_power_on = true;
     }
