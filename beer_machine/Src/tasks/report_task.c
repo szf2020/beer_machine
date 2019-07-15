@@ -786,9 +786,13 @@ static int report_task_retry_delay(uint8_t retry)
      return REPORT_TASK_RETRY1_DELAY;
   }else if(retry == 1){
      return REPORT_TASK_RETRY2_DELAY;
+  } else if(retry == 2){
+     return REPORT_TASK_RETRY3_DELAY;
+  }else if(retry == 3){
+     return REPORT_TASK_RETRY4_DELAY;
   }
   
-  return REPORT_TASK_RETRY3_DELAY; 
+  return REPORT_TASK_RETRY4_DELAY; 
 }
 
 /*读取保存在ENV中的设备配置参数*/
@@ -1238,14 +1242,9 @@ void report_task(void const *argument)
     if(msg.type == REPORT_TASK_MSG_ACTIVE){ 
        rc = report_task_report_active(URL_ACTIVE,&report_active,&device_config);
        if(rc != 0){
-         if (active_retry < 3) {
             log_error("report task active timeout.%d S later retry.\r\n",report_task_retry_delay(active_retry) / 1000);
             report_task_start_active_timer(report_task_retry_delay(active_retry),REPORT_TASK_MSG_ACTIVE); 
             active_retry++;
-        } else {    
-            /*立即停止，等待下次上电继续*/
-             active_retry = 0;
-          }
        }else{
          active_retry = 0;
          report_active.is_active = true;
@@ -1271,14 +1270,9 @@ void report_task(void const *argument)
     if(msg.type == REPORT_TASK_MSG_GET_UPGRADE){ 
        rc = report_task_get_upgrade(URL_UPGRADE,report_active.sn,&report_upgrade);
        if(rc != 0){
-          if (upgrade_retry < 3) {
             log_error("report task get upgrade timeout.%d S later retry.\r\n",report_task_retry_delay(upgrade_retry) / 1000);
             report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_GET_UPGRADE); 
             upgrade_retry ++;
-            } else {
-            /*立即停止，等待下次上电继续*/
-             upgrade_retry = 0;
-          }
        }else{
         /*获取成功处理*/   
          upgrade_retry = 0;
@@ -1302,14 +1296,9 @@ void report_task(void const *argument)
        size = report_upgrade.bin_size - report_upgrade.download_size > BOOTLOADER_FLASH_PAGE_SIZE ? BOOTLOADER_FLASH_PAGE_SIZE : report_upgrade.bin_size - report_upgrade.download_size;
        rc = report_task_download_upgrade_bin(report_upgrade.download_url,bin_data,report_upgrade.download_size,size);
        if(rc != 0){
-          if (upgrade_retry < 3) {
             log_error("report task download upgrade fail.%d S later retry.\r\n",report_task_retry_delay(upgrade_retry) / 1000);
             report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_DOWNLOAD_UPGRADE); 
             upgrade_retry ++;
-          } else {
-            /*立即停止，等待下次上电继续*/
-             upgrade_retry = 0;
-          }
        }else{
        upgrade_retry = 0;
        /*保存下载的文件*/   

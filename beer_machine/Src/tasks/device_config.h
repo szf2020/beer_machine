@@ -25,7 +25,7 @@
 #define  DEFAULT_HIGH_PRESSURE                      10 /*默认压力报警最高值kg/cm2（放大10倍）*/
 #define  DEFAULT_LOW_CAPACITY                       5  /*容量报警低值（暂不可配）*/
 #define  DEFAULT_HIGH_CAPACITY                      20 /*容量报警高值（暂不可配）*/
-#define  DEFAULT_REPORT_LOG_INTERVAL                (1 * 60 * 1000) /*默认日志上报间隔时间ms*/
+#define  DEFAULT_REPORT_LOG_INTERVAL                (10 * 60 * 1000) /*默认日志上报间隔时间ms*/
 
 #define  DEFAULT_WIFI_CONFIG_TIMEOUT                (2 * 60 * 1000) /*wifi配网时间ms*/
 

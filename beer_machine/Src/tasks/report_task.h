@@ -17,6 +17,7 @@ void report_task(void const * argument);
 #define  REPORT_TASK_RETRY1_DELAY                   (1 * 60 * 1000)/*第一次重试间隔时间ms*/
 #define  REPORT_TASK_RETRY2_DELAY                   (5 * 60 * 1000)/*第二次重试间隔时间ms*/
 #define  REPORT_TASK_RETRY3_DELAY                   (10 * 60 * 1000)/*第三次重试间隔时间ms*/
+#define  REPORT_TASK_RETRY4_DELAY                   (60 * 60 * 1000)/*第三次及以后尝试间隔时间ms*/
 
 #define  REPORT_TASK_SYNC_UTC_DELAY                 (2 * 60 * 60 * 1000U)/*UTC同步间隔时间ms*/
 
