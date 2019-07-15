@@ -3,10 +3,10 @@
 
 
 /*啤酒机默认平台通信参数表*/
-#define  URL_LOG                                    "http://mh1597193030.uicp.cn:35787/device/log/submit"
-#define  URL_ACTIVE                                 "http://mh1597193030.uicp.cn:35787/device/info/active"
-#define  URL_FAULT                                  "http://mh1597193030.uicp.cn:35787/device/fault/submit"
-#define  URL_UPGRADE                                "http://mh1597193030.uicp.cn:35787/device/info/getUpgradeInfo"
+#define  URL_LOG                                    "http://v2236p1176.imwork.net:22132/device/log/submit"
+#define  URL_ACTIVE                                 "http://v2236p1176.imwork.net:22132/device/info/active"
+#define  URL_FAULT                                  "http://v2236p1176.imwork.net:22132/device/fault/submit"
+#define  URL_UPGRADE                                "http://v2236p1176.imwork.net:22132/device/info/getUpgradeInfo"
 #define  BOUNDARY                                   "##wkxboot##"
 #define  KEY                                        "meiling-beer"
 #define  SOURCE                                     "coolbeer"
