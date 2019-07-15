@@ -21,7 +21,7 @@
 /*啤酒机默认运行配置参数表*/
 #define  DEFAULT_COMPRESSOR_LOW_TEMPERATURE         2  /*默认压缩机最低温度*/
 #define  DEFAULT_COMPRESSOR_HIGH_TEMPERATURE        5  /*默认压缩机最高温度*/
-#define  DEFAULT_LOW_PRESSURE                       1  /*默认压力报警最低值kg/cm2（放大10倍）*/
+#define  DEFAULT_LOW_PRESSURE                       3  /*默认压力报警最低值kg/cm2（放大10倍）*/
 #define  DEFAULT_HIGH_PRESSURE                      10 /*默认压力报警最高值kg/cm2（放大10倍）*/
 #define  DEFAULT_LOW_CAPACITY                       5  /*容量报警低值（暂不可配）*/
 #define  DEFAULT_HIGH_CAPACITY                      20 /*容量报警高值（暂不可配）*/

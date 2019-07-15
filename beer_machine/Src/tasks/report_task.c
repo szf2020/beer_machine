@@ -528,14 +528,16 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
   /*检查data */
   data = cJSON_GetObjectItem(active_rsp_json,"data");
   if(!cJSON_IsObject(data)){
-     log_error("data is not obj.\r\n");
-     goto err_exit;  
+     log_error("data is not obj.use default.\r\n");
+    *config = device_default_config;
+     return 0;  
   }
   /*检查runConfig */ 
   run_config = cJSON_GetObjectItem(data,"runConfig");
   if(!cJSON_IsObject(run_config)){
-     log_error("run config is not obj.\r\n");
-     goto err_exit;  
+     log_error("run config is not obj.use default.\r\n");
+    *config = device_default_config;
+     return 0;  
   }
   /*检查log submit interval*/
   temp = cJSON_GetObjectItem(run_config,"logSubmitDur");
@@ -1267,9 +1269,11 @@ void report_task(void const *argument)
     if(msg.type == REPORT_TASK_MSG_GET_UPGRADE){ 
        rc = report_task_get_upgrade(URL_UPGRADE,report_active.sn,&report_upgrade);
        if(rc != 0){
-          log_error("report task get upgrade timeout.%d S later retry.\r\n",report_task_retry_delay(upgrade_retry) / 1000);
-          report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_GET_UPGRADE); 
-          if(++upgrade_retry >= 3){
+          if (upgrade_retry < 3) {
+            log_error("report task get upgrade timeout.%d S later retry.\r\n",report_task_retry_delay(upgrade_retry) / 1000);
+            report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_GET_UPGRADE); 
+            upgrade_retry ++;
+            } else {
              upgrade_retry = 0;
           }
        }else{
@@ -1295,9 +1299,12 @@ void report_task(void const *argument)
        size = report_upgrade.bin_size - report_upgrade.download_size > BOOTLOADER_FLASH_PAGE_SIZE ? BOOTLOADER_FLASH_PAGE_SIZE : report_upgrade.bin_size - report_upgrade.download_size;
        rc = report_task_download_upgrade_bin(report_upgrade.download_url,bin_data,report_upgrade.download_size,size);
        if(rc != 0){
-          log_error("report task download upgrade fail.%d S later retry.\r\n",report_task_retry_delay(upgrade_retry) / 1000);
-          report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_DOWNLOAD_UPGRADE); 
-          if(++upgrade_retry >= 3){
+          if (upgrade_retry < 3) {
+            log_error("report task download upgrade fail.%d S later retry.\r\n",report_task_retry_delay(upgrade_retry) / 1000);
+            report_task_start_active_timer(report_task_retry_delay(upgrade_retry),REPORT_TASK_MSG_DOWNLOAD_UPGRADE); 
+            upgrade_retry ++;
+          } else {
+            /*不再尝试，等待下次开机*/
              upgrade_retry = 0;
           }
        }else{
