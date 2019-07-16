@@ -795,7 +795,7 @@ int gsm_m6312_get_operator(operator_name_t *operator_name)
  rc = at_excute(gsm_m6312_serial_handle,&gsm_at);
  if(rc == GSM_ERR_OK){
  /*IMSI 移动GSM 46000 46002 46007*/
- if(strstr(gsm_at.recv,"46000") || strstr(gsm_at.recv,"46002") || strstr(gsm_at.recv,"46007")){
+ if(strstr(gsm_at.recv,"46000") || strstr(gsm_at.recv,"46002") || strstr(gsm_at.recv,"46004") || strstr(gsm_at.recv,"46007")){
  *operator_name = OPERATOR_CHINA_MOBILE;
  }else if(strstr(gsm_at.recv,"46001") || strstr(gsm_at.recv,"46006")){
   /*IMSI 联通GSM 46001*/

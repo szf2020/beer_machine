@@ -1449,9 +1449,7 @@ void report_task(void const *argument)
             if(rc != 0){
                log_error("report task report fault timeout.%d S later retry.\r\n",report_task_retry_delay(fault_retry) / 1000);
                report_task_start_fault_timer(report_task_retry_delay(fault_retry)); 
-               if(++fault_retry >= 3){
-                  fault_retry = 0;
-               }
+               fault_retry++;
             }else{
               report_task_delete_fault_from_queue(&fault_queue);
               fault_retry = 0;
