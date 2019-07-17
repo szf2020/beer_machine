@@ -491,9 +491,12 @@ int socket_recv(const int socket_handle,char *buffer,int size,uint32_t timeout)
       /*此连接handle是WIFI网络*/
        recv_size = wifi_8710bx_recv(socket_handle,hal_socket_recv_buffer,free_size);
     }
- 
-    if(recv_size >= 0){
+
+    if (recv_size == 0) {
+        osDelay(500);
+    }else if (recv_size > 0) {
        socket_write_buffer(socket_handle,hal_socket_recv_buffer,recv_size);
+       osDelay(100);
     }else{
        return -1;  
     }
