@@ -593,7 +593,7 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
      goto err_exit;  
   }
  /*把浮点数*10转换成uint8_t*/
-  config->pressure_low = (uint8_t)temp->valuedouble * 10;
+  config->pressure_low = (uint8_t)(temp->valuedouble * 10);
  /*检查pressure max */ 
   temp = cJSON_GetObjectItem(pressure,"max");
   if(!cJSON_IsNumber(temp)){
@@ -601,7 +601,7 @@ static int report_task_parse_active_rsp_json(char *json_str ,device_config_t *co
      goto err_exit;  
   }
   /*把浮点数*10转换成uint8_t*/
-  config->pressure_high = (uint8_t)temp->valuedouble * 10;
+  config->pressure_high = (uint8_t)(temp->valuedouble * 10);
   
   /*液位暂不可配,填写默认值*/
   config->capacity_low = DEFAULT_LOW_CAPACITY;
