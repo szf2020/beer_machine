@@ -124,8 +124,8 @@ void display_task(void const *argument)
   led_display_brand_icon(LED_DISPLAY_ON);
   
  
-  /*依次显示 8-7....0.*/
-  for(int8_t dis=88;dis >=0 ;dis-=11){
+  /*依次显示 00-11-22....88.*/
+  for(int8_t dis=0;dis <=88 ;dis+=11){
       led_display_temperature(dis);
       led_display_pressure(dis);
       led_display_capacity(dis);
