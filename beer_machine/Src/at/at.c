@@ -180,7 +180,8 @@ int at_excute(int handle,at_t *at)
   int rc;
   int recv_size;
   utils_timer_t timer;
- 
+
+  osDelay(100);
   utils_timer_init(&timer,at->send_timeout,false);
     
   rc = at_send(handle,at->send,at->send_size,utils_timer_value(&timer));
