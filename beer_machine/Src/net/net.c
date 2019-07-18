@@ -217,20 +217,27 @@ int net_wifi_config(char *ssid,char* passwd,uint32_t timeout)
                  }else{
                     log_debug("send config rsp err.\r\n"); 
                  }
-                 wifi_8710bx_close(0);
-                 net_wifi_switch_to_station_mode();
-                 return 0;
+                 rc = 0;
+                goto exit;
               }
              }
          }
        }
     }
   }
-  
-  log_error("wifi config timeout.\r\n");
-  wifi_8710bx_close(0);
-  net_wifi_switch_to_station_mode();
-  return -1;
+  rc = -1;
+exit:
+
+    wifi_8710bx_close(0);
+    net_wifi_switch_to_station_mode();
+    /*彻底退出ap*/
+    net_wifi_connect_ap("********","********");
+    if (rc != 0) {
+        log_error("wifi config timeout.\r\n");
+        return -1;
+    }
+
+  return 0;
 }
 
 /* 函数：net_query_wifi_mac
