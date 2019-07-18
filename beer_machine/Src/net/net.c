@@ -158,7 +158,7 @@ int net_wifi_config(char *ssid,char* passwd,uint32_t timeout)
   
   /*进入AP模式*/
   while(utils_timer_value(&timer) > 0){
-    rc =  wifi_8710bx_set_mode(WIFI_8710BX_AP_MODE);
+    rc =  net_wifi_switch_to_ap_mode();
     if(rc == 0){
        break;
     }
@@ -179,6 +179,7 @@ int net_wifi_config(char *ssid,char* passwd,uint32_t timeout)
     if(rc > 0){
        break;
     }
+    wifi_8710bx_close(0);
     osDelay(1000);
   }
   /*等待连接*/
@@ -216,6 +217,8 @@ int net_wifi_config(char *ssid,char* passwd,uint32_t timeout)
                  }else{
                     log_debug("send config rsp err.\r\n"); 
                  }
+                 wifi_8710bx_close(0);
+                 net_wifi_switch_to_station_mode();
                  return 0;
               }
              }
@@ -225,6 +228,8 @@ int net_wifi_config(char *ssid,char* passwd,uint32_t timeout)
   }
   
   log_error("wifi config timeout.\r\n");
+  wifi_8710bx_close(0);
+  net_wifi_switch_to_station_mode();
   return -1;
 }
 
