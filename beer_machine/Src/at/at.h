@@ -4,7 +4,7 @@
 #include "stdbool.h"
 
 #define  AT_SEND_BUFFER_SIZE              1000
-#define  AT_RECV_BUFFER_SIZE              2500
+#define  AT_RECV_BUFFER_SIZE              3000
 
 #define  AT_SELECT_TIMEOUT                2
 

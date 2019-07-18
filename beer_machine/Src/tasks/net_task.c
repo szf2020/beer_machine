@@ -130,11 +130,12 @@ static int net_task_wifi_init(uint32_t timeout)
   utils_timer_init(&timer,timeout,false);
   
   /*复位*/
+  /*
   rc = net_wifi_reset(utils_timer_value(&timer));
   if(rc != 0){
      return -1;
   }
-        
+  */
   /*通信接口初始化*/
   rc = net_wifi_comm_if_init(utils_timer_value(&timer));
   if(rc != 0){

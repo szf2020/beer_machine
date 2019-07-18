@@ -370,11 +370,12 @@ static int wifi_8710bx_dump_wifi_device_info(const char *buffer,wifi_8710bx_devi
  }
 
  /*找到gateway位置*/
+ /*
  str_rc = utils_get_str_value_by_num((char *)buffer,wifi_device->device.gateway,",",7);
  if(str_rc != 0){
     return WIFI_ERR_UNKNOW;
  }
-
+*/
  log_debug("dump wifi info ok.\r\n");
  return WIFI_ERR_OK;    
 }
