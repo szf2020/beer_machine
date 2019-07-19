@@ -367,7 +367,7 @@ init:
 
     gsm_query_timer_start();
     wifi_query_timer_start();
- 
+    net.wifi.rssi = 3;
   while(1){
   os_event = osMessageGet(net_task_msg_q_id,osWaitForever);
   if (os_event.status == osEventMessage){
@@ -378,11 +378,8 @@ init:
   if(msg.type == NET_TASK_MSG_QUERY_WIFI){ 
      /*wifi初始化完成和配网后才轮询wifi状态*/
      if(net.wifi.is_initial == true && net.wifi.is_config == true && net.wifi.config.status == NET_WIFI_CONFIG_STATUS_VALID){
-       /*扫描配置的ssid是否存在，同时获取信号强度*/
-       rc = net_query_wifi_rssi_level(net.wifi.config.ssid,&net.wifi.rssi,&net.wifi.level);      
-       if(rc != 0){
-          net.wifi.err_cnt ++;
-       }
+      /*扫描配置的ssid是否存在，同时获取信号强度*/
+      //net_query_wifi_rssi_level(net.wifi.config.ssid,&net.wifi.rssi,&net.wifi.level);      
       /*查询wifi当前的连接的ssid*/
        memset(ssid_temp,0,33);
        rc = net_query_wifi_ap_ssid(ssid_temp);
@@ -398,12 +395,10 @@ init:
              /*如果wifi当前的连接的ssid不是配置的或者不存在*/
              /*如果存在配置的ssid，尝试连接*/
              if(net.wifi.rssi != 0){
-                log_debug("wifi start conenct to %s\r\n",net.wifi.config.ssid);
+                log_debug("wifi start connect to %s\r\n",net.wifi.config.ssid);
                 rc = net_wifi_connect_ap(net.wifi.config.ssid,net.wifi.config.passwd);
-                 /*连接结果处理*/
-                 if(rc != 0){
-                    net.wifi.err_cnt ++;                    
-                 }else{
+                /*连接结果处理*/
+                if(rc == 0){
                     net.wifi.status = NET_STATUS_ONLINE;
                 }
               }else{
@@ -414,11 +409,11 @@ init:
       }
     
     display_msg.type = DISPLAY_TASK_MSG_WIFI;
-    if(net.wifi.level == 0 || net.wifi.status == NET_STATUS_OFFLINE){
+    if(net.wifi.status == NET_STATUS_OFFLINE){
        display_msg.value = 3;
        display_msg.blink = true;    
     }else{
-       display_msg.value = net.wifi.level;
+       display_msg.value = net.wifi.rssi;
        display_msg.blink = false;         
     }
     status = osMessagePut(display_task_msg_q_id,*(uint32_t*)&display_msg,NET_TASK_PUT_MSG_TIMEOUT);

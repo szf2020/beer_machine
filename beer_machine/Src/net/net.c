@@ -124,7 +124,7 @@ int net_wifi_switch_to_ap_mode(void)
  return wifi_8710bx_set_mode(WIFI_8710BX_AP_MODE);
 }
 
-/* 函数：net_wifi_switch_to_ap
+/* 函数：net_wifi_connect_ap
 *  功能：wifi切换到AP模式
 *  参数：无
 *  返回：0 成功 其他：失败
@@ -133,6 +133,17 @@ int net_wifi_connect_ap(char *ssid,char *passwd)
 {
  return wifi_8710bx_connect_ap(ssid,passwd);
 }
+
+/* 函数：net_wifi_disconnect_ap
+*  功能：wifi切换到AP模式
+*  参数：无
+*  返回：0 成功 其他：失败
+*/ 
+int net_wifi_disconnect_ap(void)
+{
+ return wifi_8710bx_disconnect_ap();
+}
+
 /* 函数：net_wifi_config
 *  功能：wifi配网
 *  参数：无
@@ -232,6 +243,7 @@ exit:
     net_wifi_switch_to_station_mode();
     /*彻底退出ap*/
     net_wifi_connect_ap("********","********");
+    net_wifi_disconnect_ap();
     if (rc != 0) {
         log_error("wifi config timeout.\r\n");
         return -1;
