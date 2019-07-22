@@ -448,7 +448,7 @@ err_exit:
  context.rsp_buffer = rsp;
  context.rsp_buffer_size = 400;
  context.url = url;
- context.timeout = 10000;
+ context.timeout = 50000;
  context.user_data = (char *)req;
  context.user_data_size = strlen(req);
  context.boundary = BOUNDARY;
@@ -646,7 +646,7 @@ static int report_task_report_active(const char *url_origin,report_active_t *act
  context.rsp_buffer = rsp;
  context.rsp_buffer_size = 400;
  context.url = url;
- context.timeout = 10000;
+ context.timeout = 50000;
  context.user_data = (char *)req;
  context.user_data_size = strlen(req);
  context.boundary = BOUNDARY;
@@ -757,7 +757,7 @@ static int report_task_report_fault(const char *url_origin,report_fault_t *fault
   context.rsp_buffer = rsp;
   context.rsp_buffer_size = 400;
   context.url = url;
-  context.timeout = 10000;
+  context.timeout = 50000;
   context.user_data = (char *)req;
   context.user_data_size = strlen(req);
   context.boundary = BOUNDARY;
@@ -1099,7 +1099,7 @@ static int report_task_get_upgrade(const char *url_origin,const char *sn,report_
   context.rsp_buffer = rsp;
   context.rsp_buffer_size = 400;
   context.url = url;
-  context.timeout = 10000;
+  context.timeout = 50000;
   context.user_data = NULL;
   context.user_data_size = 0;
   context.boundary = BOUNDARY;
@@ -1135,7 +1135,7 @@ static int report_task_download_upgrade_bin(char *url,char *buffer,uint32_t star
   context.rsp_buffer = buffer;
   context.rsp_buffer_size = size;
   context.url = url;
-  context.timeout = 10000;
+  context.timeout = 50000;
   context.user_data = NULL;
   context.user_data_size = 0;
   context.boundary = BOUNDARY;
